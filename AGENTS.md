@@ -89,5 +89,11 @@ multi-tenant admin. Don't build toward those unless the project plan changes.
 - Dev server: `uvicorn app.main:app --reload` (http://localhost:8000, docs at `/docs`)
 - Lint: `ruff check .`
 
+### Infra (`infra/`)
+- Local dev stack: `docker compose -f infra/docker-compose.yml up` brings up
+  the FastAPI backend, ChromaDB (persistent volume), and an OpenTelemetry
+  Collector. The frontend still runs separately via `npm run dev`.
+- Tear down: `docker compose -f infra/docker-compose.yml down`
+
 No test runner is configured yet in either app. Tests are not currently a
 required gate.

@@ -33,3 +33,11 @@ python -m venv .venv
 pip install -e ".[dev]"
 uvicorn app.main:app --reload   # http://localhost:8000  (docs at /docs)
 ```
+
+### Docker (local dev)
+```bash
+docker compose -f infra/docker-compose.yml up
+```
+Brings up the FastAPI backend, ChromaDB (persistent volume), and an
+OpenTelemetry Collector together. The frontend still runs separately via
+`next dev`.
