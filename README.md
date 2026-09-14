@@ -1,12 +1,18 @@
 # ScholarLens
 
-Scholarship & grant eligibility assistant — Agentic RAG (Pydantic AI) with a Next.js front end and a FastAPI back end.
+Students often don't know which scholarships or grants they actually qualify
+for: eligibility rules are buried in long PDFs and program pages, and keyword
+search either misses real matches or confidently returns wrong ones.
+ScholarLens takes a student's basic information (income, state, GPA, major,
+and so on) and determines which programs they may qualify for, showing the
+exact rule behind each result, so the answer is auditable rather than a
+black box.
 
 ## Repo layout
 
 ```
-frontend/   Next.js (App Router, TypeScript, Tailwind) — the SaaS client
-backend/    FastAPI + Pydantic AI — the API and Agentic RAG engine
+frontend/   Next.js (App Router, TypeScript, Tailwind), the SaaS client
+backend/    FastAPI + Pydantic AI, the API and Agentic RAG engine
 infra/      Deployment / observability config (Docker Compose, env templates)
 ```
 
@@ -27,5 +33,3 @@ python -m venv .venv
 pip install -e ".[dev]"
 uvicorn app.main:app --reload   # http://localhost:8000  (docs at /docs)
 ```
-
-See `project-requirement-docs/` for the project plan, build plan, and design reference.
