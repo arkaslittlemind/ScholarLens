@@ -9,6 +9,7 @@ from starlette.exceptions import HTTPException
 ENGINE_UNAVAILABLE = "engine_unavailable"
 
 _STATUS_CODES = {
+    400: "bad_request",
     404: "not_found",
     405: "method_not_allowed",
     503: ENGINE_UNAVAILABLE,
@@ -16,11 +17,19 @@ _STATUS_CODES = {
 
 _MESSAGES = {
     "validation_error": "The request body failed validation.",
+    "bad_request": "The request could not be processed.",
     "not_found": "The requested path does not exist.",
     "method_not_allowed": "That method is not allowed on this path.",
     ENGINE_UNAVAILABLE: "The eligibility engine is not available.",
     "internal_error": "The server encountered an unexpected error.",
 }
+
+
+def _code_for_status(status_code: int) -> str:
+    # An unmapped status must never blame the server for a client error, or the reverse.
+    if status_code in _STATUS_CODES:
+        return _STATUS_CODES[status_code]
+    return "bad_request" if status_code < 500 else "internal_error"
 
 
 class ErrorDetail(BaseModel):
@@ -57,8 +66,7 @@ def register_error_handlers(app: FastAPI) -> None:
     # Starlette's base class, so unmatched routes are covered alongside FastAPI's subclass.
     @app.exception_handler(HTTPException)
     async def http_error(_: Request, exc: HTTPException) -> JSONResponse:
-        code = _STATUS_CODES.get(exc.status_code, "internal_error")
-        return _envelope(exc.status_code, code)
+        return _envelope(exc.status_code, _code_for_status(exc.status_code))
 
     @app.exception_handler(Exception)
     async def unhandled_error(_: Request, __: Exception) -> JSONResponse:
