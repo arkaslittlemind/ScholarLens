@@ -42,7 +42,8 @@ def _failed_fields(exc: RequestValidationError) -> list[str]:
     # Names only: the raw location carries the submitted value, which must not be echoed.
     names = []
     for error in exc.errors():
-        location = [str(part) for part in error["loc"] if part != "body"]
+        # Integer parts are a list index, or a character offset when the body is not valid JSON.
+        location = [part for part in error["loc"] if isinstance(part, str) and part != "body"]
         if location:
             names.append(".".join(location))
     return names
