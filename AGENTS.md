@@ -85,7 +85,8 @@ multi-tenant admin. Don't build toward those unless the project plan changes.
 - Lint: `npm run lint`
 
 ### Backend (`backend/`)
-- Setup: `python -m venv .venv` then `pip install -e ".[dev]"`
+- Requires Python 3.11+; all commands below assume the venv is active
+- Setup: `py -3.11 -m venv .venv` (`python3.11` on macOS/Linux) then `pip install -e ".[dev]"`
 - Dev server: `uvicorn app.main:app --reload` (http://localhost:8000, docs at `/docs`)
 - Lint: `ruff check .`
 

@@ -1,11 +1,11 @@
 """Eligibility result models, used as the agent's structured output type."""
 
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
 
-class EligibilityStatus(str, Enum):
+class EligibilityStatus(StrEnum):
     ELIGIBLE = "eligible"
     PARTIAL = "partial"
     NOT_ELIGIBLE = "not_eligible"
