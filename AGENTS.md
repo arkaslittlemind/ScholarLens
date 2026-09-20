@@ -89,6 +89,8 @@ multi-tenant admin. Don't build toward those unless the project plan changes.
 - Setup: `py -3.11 -m venv .venv` (`python3.11` on macOS/Linux) then `pip install -e ".[dev]"`
 - Dev server: `uvicorn app.main:app --reload` (http://localhost:8000, docs at `/docs`)
 - Lint: `ruff check .`
+- Ingest knowledge base: `python -m app.ingestion` (rebuilds the ChromaDB collection
+  from `backend/data/programs/`; needs ChromaDB running and `GOOGLE_API_KEY`)
 
 ### Infra (`infra/`)
 - Local dev stack: `docker compose -f infra/docker-compose.yml up` brings up

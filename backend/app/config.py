@@ -23,6 +23,11 @@ class Settings(BaseSettings):
     web_search_timeout_seconds: float = 10.0
     agent_run_timeout_seconds: float = 45.0
 
+    ingestion_source_dir: str = "data/programs"
+    ingestion_status_path: str = "data/ingestion-status.json"
+    ingestion_chunk_max_chars: int = 1200
+    ingestion_timeout_seconds: float = 60.0
+
 
 @lru_cache
 def get_settings() -> Settings:

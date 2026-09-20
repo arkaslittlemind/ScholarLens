@@ -1,1 +1,1 @@
-"""Knowledge ingestion pipeline: chunking, embeddings, persistence (feature 6)."""
+"""Knowledge ingestion pipeline: load, chunk, embed, and persist program documents."""

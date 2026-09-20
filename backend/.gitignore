@@ -22,3 +22,7 @@ env/
 # Local vector store data
 chroma/
 *.sqlite3
+
+# Ingestion status record (per-machine run output)
+data/ingestion-status.json
+data/ingestion-status.json.tmp

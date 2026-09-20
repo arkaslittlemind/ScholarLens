@@ -5,11 +5,29 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 
 import chromadb
+from chromadb.api import ClientAPI
 from chromadb.api.models.Collection import Collection
+from chromadb.api.types import EmbeddingFunction
 from chromadb.utils import embedding_functions
 from pydantic import BaseModel
 
 from app.config import Settings
+
+
+def get_chroma_client(settings: Settings) -> ClientAPI:
+    return chromadb.HttpClient(host=settings.chroma_host, port=settings.chroma_port)
+
+
+def build_embedding_function(settings: Settings) -> EmbeddingFunction:
+    """The one embedding function shared by retrieval and ingestion, so both use the same space."""
+    # GoogleGenaiEmbeddingFunction only reads its key from an env var, never a
+    # constructor argument, so the setting has to be projected there first.
+    if settings.google_api_key:
+        os.environ["GOOGLE_API_KEY"] = settings.google_api_key
+    return embedding_functions.GoogleGenaiEmbeddingFunction(
+        model_name=settings.embedding_model,
+        api_key_env_var="GOOGLE_API_KEY",
+    )
 
 
 class RetrievalUnavailableError(Exception):
@@ -24,7 +42,7 @@ class RetrievedChunk(BaseModel):
 
 
 class DocumentRetriever:
-    """Queries the ChromaDB collection the ingestion pipeline (feature 6) fills.
+    """Queries the ChromaDB collection the ingestion pipeline fills.
 
     The collection may not exist yet or may be empty; both are normal states,
     not errors. Only a connection failure or timeout raises.
@@ -41,20 +59,9 @@ class DocumentRetriever:
 
     def _get_collection(self) -> Collection:
         if self._collection is None:
-            client = chromadb.HttpClient(
-                host=self._settings.chroma_host, port=self._settings.chroma_port
-            )
-            # GoogleGenaiEmbeddingFunction only reads its key from an env var, never a
-            # constructor argument, so the setting has to be projected there first.
-            if self._settings.google_api_key:
-                os.environ["GOOGLE_API_KEY"] = self._settings.google_api_key
-            embedding_function = embedding_functions.GoogleGenaiEmbeddingFunction(
-                model_name=self._settings.embedding_model,
-                api_key_env_var="GOOGLE_API_KEY",
-            )
-            self._collection = client.get_or_create_collection(
+            self._collection = get_chroma_client(self._settings).get_or_create_collection(
                 name=self._settings.chroma_collection_name,
-                embedding_function=embedding_function,
+                embedding_function=build_embedding_function(self._settings),
             )
         return self._collection
 
