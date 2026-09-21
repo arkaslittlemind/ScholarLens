@@ -1,5 +1,6 @@
 """Run the labeled profiles through the agent and append the outcome to the run record."""
 
+import asyncio
 import time
 import uuid
 from collections.abc import Callable
@@ -59,8 +60,8 @@ async def run_evaluation(
 ) -> EvaluationRun:
     """Score every profile `evaluation_repeats` times, then append one record for the run.
 
-    Attempts run one at a time to stay inside the model provider's rate limits. Nothing is
-    written when the run aborts.
+    Attempts run one at a time, optionally spaced by `evaluation_attempt_delay_seconds`, to stay
+    inside the model provider's rate limits. Nothing is written when the run aborts.
     """
     run_at = datetime.now(UTC).isoformat()
     corpus_bodies = [document.body for document in documents]
@@ -68,6 +69,9 @@ async def run_evaluation(
     consecutive_errors = 0
     for profile in profiles:
         for attempt in range(1, settings.evaluation_repeats + 1):
+            # Outside `_run_attempt` so the wait never counts toward an attempt's latency.
+            if attempts and settings.evaluation_attempt_delay_seconds > 0:
+                await asyncio.sleep(settings.evaluation_attempt_delay_seconds)
             scored = await _run_attempt(agent, profile, attempt, corpus_bodies)
             attempts.append(scored)
             if on_attempt is not None:

@@ -90,6 +90,17 @@ It needs the same setup as the agent itself: ChromaDB running with the corpus in
 up to `AGENT_RUN_TIMEOUT_SECONDS`, so a full run takes a while. Set `EVALUATION_REPEATS=1`
 for a quick smoke run; consistency is not measured then.
 
+A rate-limited model key (the Gemini free tier, for one) can stop a full run partway with
+HTTP 429 errors, which the runner treats as engine errors and aborts on. Set
+`EVALUATION_ATTEMPT_DELAY_SECONDS` to wait that long before each attempt after the first; it
+defaults to 0 (no wait) and the wait is not counted in the recorded latency. The right value
+depends on your key's per-minute limit, so find it by trying: start around 30, which adds about
+37 minutes to a full 75-attempt run, or about 12 to a 25-attempt `EVALUATION_REPEATS=1` run.
+
+Pacing only helps with a per-minute limit. A per-day quota (the Gemini free tier has one) still
+ends a run partway with the same 429 errors, and only a paid key or the next day's reset fixes
+that. A free-tier key may not have enough daily requests for even a 25-attempt run.
+
 The report covers eligibility accuracy (target above 80%), citation accuracy (above 70%),
 hallucination rate (below 10%), consistency, mean latency, mean tool calls, and the failing
 attempts by category. Scoring is deterministic text matching, not a model judge:

@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     evaluation_profiles_path: str = "data/evaluation/profiles.json"
     evaluation_runs_path: str = "data/evaluation-runs.jsonl"
     evaluation_repeats: int = Field(default=3, ge=1)
+    evaluation_attempt_delay_seconds: float = Field(default=0.0, ge=0)
 
 
 @lru_cache
