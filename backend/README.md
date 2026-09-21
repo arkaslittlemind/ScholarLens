@@ -74,3 +74,37 @@ before the old collection is deleted, so bad input or an embedding failure leave
 existing knowledge base untouched. The outcome of the latest run, success or failure,
 is written to `data/ingestion-status.json` (override with `INGESTION_STATUS_PATH`).
 The command exits 1 on failure.
+
+## Evaluate the agent
+
+One command runs the eligibility agent over the labeled student profiles in
+`backend/data/evaluation/profiles.json` and reports how well it does:
+
+```bash
+python -m app.evaluation
+```
+
+It needs the same setup as the agent itself: ChromaDB running with the corpus ingested
+(`python -m app.ingestion`) and `GOOGLE_API_KEY` set. Each profile runs
+`EVALUATION_REPEATS` times (3 by default), one attempt at a time, and every attempt can take
+up to `AGENT_RUN_TIMEOUT_SECONDS`, so a full run takes a while. Set `EVALUATION_REPEATS=1`
+for a quick smoke run; consistency is not measured then.
+
+The report covers eligibility accuracy (target above 80%), citation accuracy (above 70%),
+hallucination rate (below 10%), consistency, mean latency, mean tool calls, and the failing
+attempts by category. Scoring is deterministic text matching, not a model judge:
+
+- **Citation:** the answer's source program equals the label's and its quoted clause contains
+  the label's citation phrase.
+- **Hallucination:** an eligible or partial answer with no clause or source (unless it is a
+  partial answer that lists missing information), or a quoted clause that does not appear in
+  the corpus. Answers that used web search are not scored for this.
+- **Consistency:** the share of profiles whose attempts all return the same status.
+
+Each profile names the program it asks about, and `expected_citation` is a short phrase copied
+verbatim from that program's document. The loader rejects a label the current corpus cannot
+back, so re-check the profiles after editing the documents.
+
+Every completed run appends one JSON line to `data/evaluation-runs.jsonl` (override with
+`EVALUATION_RUNS_PATH`), so trends can be read later. A run that aborts writes nothing. The
+command exits 0 when a run completes, even if a target is missed, and 1 when it cannot run.

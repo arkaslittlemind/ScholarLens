@@ -2,6 +2,7 @@
 
 from functools import lru_cache
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -27,6 +28,10 @@ class Settings(BaseSettings):
     ingestion_status_path: str = "data/ingestion-status.json"
     ingestion_chunk_max_chars: int = 1200
     ingestion_timeout_seconds: float = 60.0
+
+    evaluation_profiles_path: str = "data/evaluation/profiles.json"
+    evaluation_runs_path: str = "data/evaluation-runs.jsonl"
+    evaluation_repeats: int = Field(default=3, ge=1)
 
 
 @lru_cache

@@ -91,6 +91,9 @@ multi-tenant admin. Don't build toward those unless the project plan changes.
 - Lint: `ruff check .`
 - Ingest knowledge base: `python -m app.ingestion` (rebuilds the ChromaDB collection
   from `backend/data/programs/`; needs ChromaDB running and `GOOGLE_API_KEY`)
+- Evaluate the agent: `python -m app.evaluation` (runs the labeled profiles in
+  `backend/data/evaluation/profiles.json`, appends a record to
+  `data/evaluation-runs.jsonl`; needs the ingested corpus and `GOOGLE_API_KEY`)
 
 ### Infra (`infra/`)
 - Local dev stack: `docker compose -f infra/docker-compose.yml up` brings up

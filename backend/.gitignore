@@ -26,3 +26,6 @@ chroma/
 # Ingestion status record (per-machine run output)
 data/ingestion-status.json
 data/ingestion-status.json.tmp
+
+# Evaluation run record (per-machine run output)
+data/evaluation-runs.jsonl

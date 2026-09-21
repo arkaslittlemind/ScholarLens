@@ -46,6 +46,8 @@ class _Deps:
     retriever: DocumentRetriever
     web_search: WebSearchClient
     trace: list[str] = field(default_factory=list)
+    # `trace` dedupes labels, so it cannot say how many times a tool ran.
+    tool_calls: int = 0
 
 
 def _build_agent(settings: Settings) -> Agent[_Deps, EligibilityResult]:
@@ -64,6 +66,7 @@ def _build_agent(settings: Settings) -> Agent[_Deps, EligibilityResult]:
     @agent.tool
     async def retrieve_program_rules(ctx: RunContext[_Deps], query: str) -> list[dict]:
         """Search the ScholarLens knowledge base for program rules matching `query`."""
+        ctx.deps.tool_calls += 1
         # A repeat call (multi-query retrieval) must not repeat the label in the rendered trace.
         if SEARCHING_PROGRAM_RULES not in ctx.deps.trace:
             ctx.deps.trace.append(SEARCHING_PROGRAM_RULES)
@@ -73,6 +76,7 @@ def _build_agent(settings: Settings) -> Agent[_Deps, EligibilityResult]:
     @agent.tool
     async def search_the_web(ctx: RunContext[_Deps], query: str) -> list[dict]:
         """Search the web for official program information matching `query`."""
+        ctx.deps.tool_calls += 1
         if CHECKING_OFFICIAL_SOURCES not in ctx.deps.trace:
             ctx.deps.trace.append(CHECKING_OFFICIAL_SOURCES)
         results = await ctx.deps.web_search.search(query)
@@ -104,6 +108,13 @@ class EligibilityAgent:
         self._run_timeout_seconds = settings.agent_run_timeout_seconds
 
     async def check_eligibility(self, request: EligibilityRequest) -> EligibilityResult:
+        result, _ = await self.check_eligibility_measured(request)
+        return result
+
+    async def check_eligibility_measured(
+        self, request: EligibilityRequest
+    ) -> tuple[EligibilityResult, int]:
+        """Like `check_eligibility`, plus how many tool calls the run made."""
         deps = _Deps(retriever=self._retriever, web_search=self._web_search)
         try:
             run_result = await asyncio.wait_for(
@@ -119,7 +130,7 @@ class EligibilityAgent:
 
         output = run_result.output
         output.tool_trace = [*deps.trace, VALIDATING_ELIGIBILITY, PREPARING_CITED_ANSWER]
-        return output
+        return output, deps.tool_calls
 
 
 @lru_cache

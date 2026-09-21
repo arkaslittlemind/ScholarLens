@@ -1,0 +1,282 @@
+[
+  {
+    "profile_id": "pell-low-income-undergrad",
+    "request": {
+      "description": "I am a U.S. citizen starting my first year as an undergraduate. I have no prior degree, I filed the FAFSA, and I live in a two-parent household of four. Am I eligible for the Federal Pell Grant?",
+      "income": 40000
+    },
+    "expected_status": "eligible",
+    "expected_program": "Federal Pell Grant",
+    "expected_citation": "at or below roughly $54,600",
+    "category": "clear"
+  },
+  {
+    "profile_id": "pell-has-bachelors",
+    "request": {
+      "description": "I already earned a Bachelor's degree and I am now enrolled in a second undergraduate program. Am I eligible for the Federal Pell Grant?"
+    },
+    "expected_status": "not_eligible",
+    "expected_program": "Federal Pell Grant",
+    "expected_citation": "not already hold a Bachelor's or professional degree",
+    "category": "clear"
+  },
+  {
+    "profile_id": "pell-sai-over-cutoff",
+    "request": {
+      "description": "I am an undergraduate for the 2026-27 award year and my FAFSA shows a Student Aid Index of $15,000. Am I eligible for the Federal Pell Grant?"
+    },
+    "expected_status": "not_eligible",
+    "expected_program": "Federal Pell Grant",
+    "expected_citation": "SAI of $14,790 or higher are not eligible for any Pell Grant award",
+    "category": "borderline"
+  },
+  {
+    "profile_id": "fseog-half-time-fail",
+    "request": {
+      "description": "I am an undergraduate with a low Student Aid Index and I receive a Pell Grant, but I am taking one class, which is less than half-time. Am I eligible for the Federal Supplemental Educational Opportunity Grant (FSEOG)?"
+    },
+    "expected_status": "not_eligible",
+    "expected_program": "Federal Supplemental Educational Opportunity Grant (FSEOG)",
+    "expected_citation": "enrolled at least half-time in an eligible program",
+    "category": "clear"
+  },
+  {
+    "profile_id": "fseog-school-unknown",
+    "request": {
+      "description": "I am a half-time undergraduate with a very low Student Aid Index and a Pell Grant. I do not know if my school takes part in the FSEOG program. Am I eligible for the Federal Supplemental Educational Opportunity Grant (FSEOG)?"
+    },
+    "expected_status": "partial",
+    "expected_program": "Federal Supplemental Educational Opportunity Grant (FSEOG)",
+    "expected_citation": "not all schools do",
+    "category": "borderline"
+  },
+  {
+    "profile_id": "teach-gpa-too-low",
+    "request": {
+      "description": "My cumulative GPA is 3.0 and I have never taken an admissions test. I am in a teacher preparation program for a high-need field. Am I eligible for the Federal TEACH Grant?",
+      "gpa": 3.0
+    },
+    "expected_status": "not_eligible",
+    "expected_program": "Federal TEACH Grant (Teacher Education Assistance for College and Higher Education)",
+    "expected_citation": "cumulative GPA of at least 3.25",
+    "category": "clear"
+  },
+  {
+    "profile_id": "teach-meets-gpa",
+    "request": {
+      "description": "My cumulative GPA is 3.6 and I am in a TEACH-Grant-eligible program that prepares me to teach high school math, a high-need field. I am ready to sign the Agreement to Serve. Am I eligible for the Federal TEACH Grant?",
+      "gpa": 3.6,
+      "major": "Mathematics Education"
+    },
+    "expected_status": "eligible",
+    "expected_program": "Federal TEACH Grant (Teacher Education Assistance for College and Higher Education)",
+    "expected_citation": "cumulative GPA of at least 3.25",
+    "category": "clear"
+  },
+  {
+    "profile_id": "teach-test-score-route",
+    "request": {
+      "description": "My cumulative GPA is 3.0, but I scored above the 75th percentile on the quantitative section of the GRE. I am in an eligible program for a high-need field and I will sign the Agreement to Serve. Am I eligible for the Federal TEACH Grant?",
+      "gpa": 3.0
+    },
+    "expected_status": "eligible",
+    "expected_program": "Federal TEACH Grant (Teacher Education Assistance for College and Higher Education)",
+    "expected_citation": "score above the 75th percentile",
+    "category": "borderline"
+  },
+  {
+    "profile_id": "calgrant-a-meets-gpa",
+    "request": {
+      "description": "I am a California resident and a U.S. citizen with a 3.4 high school GPA verified with CSAC. My family income is below the CSAC ceiling for our family size and I am working toward my first undergraduate degree at a Cal Grant-eligible school. Am I eligible for Cal Grant A?",
+      "state": "California",
+      "gpa": 3.4
+    },
+    "expected_status": "eligible",
+    "expected_program": "California Cal Grant (A and B)",
+    "expected_citation": "Minimum 3.00 GPA (high school)",
+    "category": "clear"
+  },
+  {
+    "profile_id": "calgrant-a-gpa-too-low",
+    "request": {
+      "description": "I am a California resident and a U.S. citizen with a 2.5 high school GPA verified with CSAC. My family income is below the CSAC ceiling for our family size. Am I eligible for Cal Grant A?",
+      "state": "California",
+      "gpa": 2.5
+    },
+    "expected_status": "not_eligible",
+    "expected_program": "California Cal Grant (A and B)",
+    "expected_citation": "Minimum 3.00 GPA (high school)",
+    "category": "borderline"
+  },
+  {
+    "profile_id": "calgrant-income-unknown",
+    "request": {
+      "description": "I am a California resident and a U.S. citizen with a 3.5 high school GPA. I do not know my family's income or assets, or the current CSAC ceilings. Am I eligible for Cal Grant A?",
+      "state": "California",
+      "gpa": 3.5
+    },
+    "expected_status": "partial",
+    "category": "missing_info"
+  },
+  {
+    "profile_id": "fl-fas-meets-all",
+    "request": {
+      "description": "I am a Florida resident and U.S. citizen in the Class of 2026. I completed the 16 required credits with a 3.7 weighted core GPA, scored 1400 on the SAT (Reading/Writing plus Math), and logged 120 community service hours. I will submit the FFAA in senior year. Am I eligible for the Florida Academic Scholars award?",
+      "state": "Florida",
+      "gpa": 3.7
+    },
+    "expected_status": "eligible",
+    "expected_program": "Florida Bright Futures - Florida Academic Scholars (FAS) Award",
+    "expected_citation": "weighted GPA of at least 3.50",
+    "category": "clear"
+  },
+  {
+    "profile_id": "fl-fas-sat-too-low",
+    "request": {
+      "description": "I am a Florida resident and U.S. citizen in the Class of 2026. I completed the 16 required credits with a 3.7 weighted core GPA, scored 1250 on the SAT (Reading/Writing plus Math), and logged 120 community service hours. Am I eligible for the Florida Academic Scholars award?",
+      "state": "Florida",
+      "gpa": 3.7
+    },
+    "expected_status": "not_eligible",
+    "expected_program": "Florida Bright Futures - Florida Academic Scholars (FAS) Award",
+    "expected_citation": "minimum SAT score of 1330",
+    "category": "clear"
+  },
+  {
+    "profile_id": "fl-fas-service-hours-short",
+    "request": {
+      "description": "I am a Florida resident and U.S. citizen in the Class of 2026 with a 3.7 weighted core GPA, all 16 required credits, and a 1400 SAT. I have 85 documented community service hours so far and plan to finish 100 before I graduate. Am I eligible for the Florida Academic Scholars award?",
+      "state": "Florida",
+      "gpa": 3.7
+    },
+    "expected_status": "partial",
+    "expected_program": "Florida Bright Futures - Florida Academic Scholars (FAS) Award",
+    "expected_citation": "at least 100 hours of community service",
+    "category": "borderline"
+  },
+  {
+    "profile_id": "hope-gpa-too-low",
+    "request": {
+      "description": "I graduated from a Georgia high school with a 2.8 GPA as calculated by the Georgia Student Finance Commission. I am a Georgia resident and U.S. citizen. Am I eligible for the Georgia HOPE Scholarship?",
+      "state": "Georgia",
+      "gpa": 2.8
+    },
+    "expected_status": "not_eligible",
+    "expected_program": "Georgia HOPE Scholarship",
+    "expected_citation": "minimum 3.00 GPA",
+    "category": "clear"
+  },
+  {
+    "profile_id": "hope-rigor-credits-unknown",
+    "request": {
+      "description": "I am a Georgia resident and U.S. citizen graduating from a Georgia high school with a 3.2 GPA, and I am starting my first Bachelor's degree. I do not know how many full-rigor courses I took. Am I eligible for the Georgia HOPE Scholarship?",
+      "state": "Georgia",
+      "gpa": 3.2
+    },
+    "expected_status": "partial",
+    "category": "missing_info"
+  },
+  {
+    "profile_id": "eof-not-resident-long-enough",
+    "request": {
+      "description": "I moved to New Jersey six months ago. I am a first-generation student, I have a high school diploma, and I filed the FAFSA. Am I eligible for the New Jersey Educational Opportunity Fund (EOF)?",
+      "state": "New Jersey"
+    },
+    "expected_status": "not_eligible",
+    "expected_program": "New Jersey Educational Opportunity Fund (EOF)",
+    "expected_citation": "resident for at least 12 consecutive months",
+    "category": "clear"
+  },
+  {
+    "profile_id": "eof-income-scale-unknown",
+    "request": {
+      "description": "I have lived in New Jersey for three years, I am a first-generation student with a high school diploma, and I filed the FAFSA. I do not know whether my family income fits the EOF Income Eligibility Scale for our family size. Am I eligible for the New Jersey Educational Opportunity Fund (EOF)?",
+      "state": "New Jersey"
+    },
+    "expected_status": "partial",
+    "expected_program": "New Jersey Educational Opportunity Fund (EOF)",
+    "expected_citation": "EOF Income Eligibility Scale",
+    "category": "borderline"
+  },
+  {
+    "profile_id": "stars-meets-all",
+    "request": {
+      "description": "I am a New Jersey resident and a recent New Jersey high school graduate with a 3.4 unweighted GPA. I ranked in the top 10% of my class at the end of senior year, completed 4 years of English and 3 years of math, and will enroll full-time at a New Jersey county college. Am I eligible for NJ STARS?",
+      "state": "New Jersey",
+      "gpa": 3.4
+    },
+    "expected_status": "eligible",
+    "expected_program": "New Jersey NJ STARS (and NJ STARS II)",
+    "expected_citation": "top 15% of your graduating class",
+    "category": "clear"
+  },
+  {
+    "profile_id": "stars-rank-too-low",
+    "request": {
+      "description": "I am a New Jersey resident and a recent New Jersey high school graduate with a 3.4 unweighted GPA. I ranked in the top 30% of my class, completed 4 years of English and 3 years of math, and will enroll full-time at a New Jersey county college. Am I eligible for NJ STARS?",
+      "state": "New Jersey",
+      "gpa": 3.4
+    },
+    "expected_status": "not_eligible",
+    "expected_program": "New Jersey NJ STARS (and NJ STARS II)",
+    "expected_citation": "top 15% of your graduating class",
+    "category": "clear"
+  },
+  {
+    "profile_id": "tag-has-bachelors",
+    "request": {
+      "description": "I have lived in New Jersey for five years and I am enrolled full-time at a New Jersey university, but I already earned a Bachelor's degree. Am I eligible for the New Jersey Tuition Aid Grant (TAG)?",
+      "state": "New Jersey"
+    },
+    "expected_status": "not_eligible",
+    "expected_program": "New Jersey Tuition Aid Grant (TAG)",
+    "expected_citation": "if a Bachelor's degree has already been earned",
+    "category": "clear"
+  },
+  {
+    "profile_id": "tag-meets-all",
+    "request": {
+      "description": "I am a dependent student and a New Jersey resident for three years, enrolled full-time in an approved undergraduate program at a New Jersey four-year college. My family income is $55,000. I filed the FAFSA, have no prior degree, make satisfactory academic progress, have no loan default or grant refund owed, and have received no TAG payments. Am I eligible for the New Jersey Tuition Aid Grant (TAG)?",
+      "income": 55000,
+      "state": "New Jersey"
+    },
+    "expected_status": "eligible",
+    "expected_program": "New Jersey Tuition Aid Grant (TAG)",
+    "expected_citation": "below approximately $70,000-$80,000",
+    "category": "clear"
+  },
+  {
+    "profile_id": "tap-dependent-under-limit",
+    "request": {
+      "description": "I am a dependent student and a U.S. citizen who has lived in New York for three years. My family's New York State net taxable income is $80,000. I graduated from a U.S. high school, I am enrolled full-time at a SUNY school, and I will file the FAFSA and the TAP application. Am I eligible for the New York Tuition Assistance Program (TAP)?",
+      "income": 80000,
+      "state": "New York"
+    },
+    "expected_status": "eligible",
+    "expected_program": "New York Tuition Assistance Program (TAP)",
+    "expected_citation": "cannot exceed $125,000 for a dependent student",
+    "category": "clear"
+  },
+  {
+    "profile_id": "tap-single-independent-over-limit",
+    "request": {
+      "description": "I am a single, independent student with no dependents and my New York State net taxable income is $35,000. I am a U.S. citizen who has lived in New York for four years, and I am enrolled full-time at a SUNY school with a U.S. high school diploma. Am I eligible for the New York Tuition Assistance Program (TAP)?",
+      "income": 35000,
+      "state": "New York"
+    },
+    "expected_status": "not_eligible",
+    "expected_program": "New York Tuition Assistance Program (TAP)",
+    "expected_citation": "cannot exceed $30,000 for a single, independent student",
+    "category": "borderline"
+  },
+  {
+    "profile_id": "tap-residency-unknown",
+    "request": {
+      "description": "I am a dependent U.S. citizen with a U.S. high school diploma, enrolled full-time at a New York college, and my family's New York State net taxable income is $50,000. I do not remember how long I have lived in New York. Am I eligible for the New York Tuition Assistance Program (TAP)?",
+      "income": 50000,
+      "state": "New York"
+    },
+    "expected_status": "partial",
+    "category": "missing_info"
+  }
+]
