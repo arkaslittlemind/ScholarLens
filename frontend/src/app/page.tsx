@@ -94,7 +94,7 @@ export default function Home() {
           </p>
           <a
             href="/check"
-            className="mt-4 rounded-full bg-sunshine-highlight px-6 py-4 text-base font-medium text-ink"
+            className="mt-4 rounded-full border border-ink px-6 py-4 text-base font-medium text-ink"
           >
             Check your eligibility
           </a>
