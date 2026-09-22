@@ -30,7 +30,7 @@
   --accent-foreground: var(--color-ink);
   --destructive: oklch(0.577 0.245 27.325);
   --border: var(--color-ink);
-  --input: var(--color-graphite);
+  --input: var(--color-ink);
   --ring: var(--color-mint-signal);
   --radius: 999px;
 }
