@@ -1,3 +1,5 @@
+import { SiteHeader } from "@/components/layout/SiteHeader";
+
 function StepCircle({ n }: { n: number }) {
   return (
     <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full border border-ink text-sm font-medium">
@@ -18,15 +20,7 @@ function FeatureCard({ title, body }: { title: string; body: string }) {
 export default function Home() {
   return (
     <div className="min-h-screen bg-cream-paper text-ink">
-      <header className="mx-auto flex max-w-[1200px] items-center justify-between px-6 py-8">
-        <span className="text-lg font-medium">ScholarLens</span>
-        <a
-          href="/check"
-          className="rounded-full border border-ink px-4 py-2 text-sm font-medium"
-        >
-          Check eligibility
-        </a>
-      </header>
+      <SiteHeader />
 
       <section className="mx-auto flex max-w-[1200px] flex-col items-center gap-8 px-6 py-16 text-center">
         <h1 className="max-w-3xl text-[40px] leading-[1.25] font-medium tracking-[-0.016em] sm:text-[64px]">

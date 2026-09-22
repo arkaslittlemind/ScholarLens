@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
 /* Design tokens from project-requirement-docs/design.md - warm paper-notebook
    system. Single light theme; the plan does not call for a dark variant. */
@@ -8,6 +10,29 @@
   --color-graphite: #707070;
   --color-sunshine-highlight: #ffda6e;
   --color-mint-signal: #6ece9d;
+
+  /* shadcn/ui semantic tokens, mapped onto the palette above instead of the
+     generic neutral/oklch defaults so generated components (Button, etc.)
+     read as ScholarLens, not a stock shadcn theme. */
+  --background: var(--color-cream-paper);
+  --foreground: var(--color-ink);
+  --card: var(--color-cream-paper);
+  --card-foreground: var(--color-ink);
+  --popover: var(--color-cream-paper);
+  --popover-foreground: var(--color-ink);
+  --primary: var(--color-sunshine-highlight);
+  --primary-foreground: var(--color-ink);
+  --secondary: var(--color-cream-paper);
+  --secondary-foreground: var(--color-ink);
+  --muted: var(--color-cream-paper);
+  --muted-foreground: var(--color-graphite);
+  --accent: var(--color-mint-signal);
+  --accent-foreground: var(--color-ink);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: var(--color-ink);
+  --input: var(--color-graphite);
+  --ring: var(--color-mint-signal);
+  --radius: 999px;
 }
 
 @theme inline {
@@ -17,6 +42,31 @@
   --color-sunshine-highlight: var(--color-sunshine-highlight);
   --color-mint-signal: var(--color-mint-signal);
   --font-sans: var(--font-dm-sans);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
 body {
@@ -24,4 +74,16 @@ body {
   color: var(--color-ink);
   font-family: var(--font-dm-sans);
   font-feature-settings: "ss03", "ss04";
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
 }
