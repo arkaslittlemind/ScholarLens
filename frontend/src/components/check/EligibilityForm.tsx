@@ -31,15 +31,25 @@ type FieldErrors = Partial<Record<keyof EligibilityRequest, string>>;
 interface EligibilityFormProps {
   onSubmit: (request: EligibilityRequest) => void;
   disabled?: boolean;
+  // Field names the backend's validation_error response flagged (backend/app/api/errors.py's
+  // ErrorDetail.fields), so a server-side rejection highlights the same input a client-side
+  // one would.
+  serverFieldErrors?: string[];
 }
 
-export function EligibilityForm({ onSubmit, disabled = false }: EligibilityFormProps) {
+export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors }: EligibilityFormProps) {
   const [description, setDescription] = useState("");
   const [income, setIncome] = useState("");
   const [state, setState] = useState("");
   const [gpa, setGpa] = useState("");
   const [major, setMajor] = useState("");
   const [errors, setErrors] = useState<FieldErrors>({});
+
+  function displayError(field: keyof EligibilityRequest): string | undefined {
+    if (errors[field]) return errors[field];
+    if (serverFieldErrors?.includes(field)) return "The server flagged this field. Please check it.";
+    return undefined;
+  }
 
   function validate(): { request: EligibilityRequest } | { errors: FieldErrors } {
     const nextErrors: FieldErrors = {};
@@ -125,12 +135,12 @@ export function EligibilityForm({ onSubmit, disabled = false }: EligibilityFormP
           maxLength={DESCRIPTION_MAX}
           rows={5}
           placeholder="I'm a first-year undergraduate, U.S. citizen, household income..."
-          aria-invalid={Boolean(errors.description)}
-          aria-describedby={errors.description ? "description-error" : undefined}
+          aria-invalid={Boolean(displayError("description"))}
+          aria-describedby={displayError("description") ? "description-error" : undefined}
         />
-        {errors.description && (
+        {displayError("description") && (
           <p id="description-error" className="text-sm text-graphite">
-            {errors.description}
+            {displayError("description")}
           </p>
         )}
       </div>
@@ -145,12 +155,12 @@ export function EligibilityForm({ onSubmit, disabled = false }: EligibilityFormP
             value={income}
             onChange={(event) => setIncome(event.target.value)}
             disabled={disabled}
-            aria-invalid={Boolean(errors.income)}
-            aria-describedby={errors.income ? "income-error" : undefined}
+            aria-invalid={Boolean(displayError("income"))}
+            aria-describedby={displayError("income") ? "income-error" : undefined}
           />
-          {errors.income && (
+          {displayError("income") && (
             <p id="income-error" className="text-sm text-graphite">
-              {errors.income}
+              {displayError("income")}
             </p>
           )}
         </div>
@@ -163,12 +173,12 @@ export function EligibilityForm({ onSubmit, disabled = false }: EligibilityFormP
             onChange={(event) => setState(event.target.value)}
             disabled={disabled}
             maxLength={STATE_MAX}
-            aria-invalid={Boolean(errors.state)}
-            aria-describedby={errors.state ? "state-error" : undefined}
+            aria-invalid={Boolean(displayError("state"))}
+            aria-describedby={displayError("state") ? "state-error" : undefined}
           />
-          {errors.state && (
+          {displayError("state") && (
             <p id="state-error" className="text-sm text-graphite">
-              {errors.state}
+              {displayError("state")}
             </p>
           )}
         </div>
@@ -183,12 +193,12 @@ export function EligibilityForm({ onSubmit, disabled = false }: EligibilityFormP
             value={gpa}
             onChange={(event) => setGpa(event.target.value)}
             disabled={disabled}
-            aria-invalid={Boolean(errors.gpa)}
-            aria-describedby={errors.gpa ? "gpa-error" : undefined}
+            aria-invalid={Boolean(displayError("gpa"))}
+            aria-describedby={displayError("gpa") ? "gpa-error" : undefined}
           />
-          {errors.gpa && (
+          {displayError("gpa") && (
             <p id="gpa-error" className="text-sm text-graphite">
-              {errors.gpa}
+              {displayError("gpa")}
             </p>
           )}
         </div>
@@ -201,12 +211,12 @@ export function EligibilityForm({ onSubmit, disabled = false }: EligibilityFormP
             onChange={(event) => setMajor(event.target.value)}
             disabled={disabled}
             maxLength={MAJOR_MAX}
-            aria-invalid={Boolean(errors.major)}
-            aria-describedby={errors.major ? "major-error" : undefined}
+            aria-invalid={Boolean(displayError("major"))}
+            aria-describedby={displayError("major") ? "major-error" : undefined}
           />
-          {errors.major && (
+          {displayError("major") && (
             <p id="major-error" className="text-sm text-graphite">
-              {errors.major}
+              {displayError("major")}
             </p>
           )}
         </div>

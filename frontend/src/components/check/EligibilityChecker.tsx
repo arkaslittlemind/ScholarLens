@@ -1,5 +1,6 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { EligibilityForm } from "@/components/check/EligibilityForm";
 import { VerdictCard } from "@/components/check/VerdictCard";
@@ -14,24 +15,29 @@ type CheckState =
   | { status: "idle" }
   | { status: "loading" }
   | { status: "success"; result: EligibilityResult }
-  | { status: "error"; message: string };
+  | { status: "error"; message: string; fields?: string[] };
 
-function messageFor(error: unknown): string {
+function describeError(error: unknown): { message: string; fields?: string[] } {
   if (error instanceof EligibilityClientError) {
     if (error.kind === "timeout") {
-      return "That's taking longer than expected. Please try again in a moment.";
+      return { message: "That's taking longer than expected. Please try again in a moment." };
     }
     if (error.kind === "network") {
-      return "Couldn't reach the eligibility service. Check your connection and try again.";
+      return {
+        message: "Couldn't reach the eligibility service. Check your connection and try again.",
+      };
     }
     if (error.detail?.code === "engine_unavailable") {
-      return "The eligibility engine is temporarily unavailable. Please try again shortly.";
+      return { message: "The eligibility engine is temporarily unavailable. Please try again shortly." };
     }
     if (error.detail?.code === "validation_error" && error.detail.fields.length > 0) {
-      return `Please check: ${error.detail.fields.join(", ")}.`;
+      return {
+        message: `Please check the highlighted field${error.detail.fields.length > 1 ? "s" : ""}.`,
+        fields: error.detail.fields,
+      };
     }
   }
-  return "Something went wrong. Please try again.";
+  return { message: "Something went wrong. Please try again." };
 }
 
 export function EligibilityChecker() {
@@ -43,16 +49,21 @@ export function EligibilityChecker() {
       const result = await checkEligibility(request);
       setState({ status: "success", result });
     } catch (error) {
-      setState({ status: "error", message: messageFor(error) });
+      setState({ status: "error", ...describeError(error) });
     }
   }
 
   return (
     <div className="flex flex-col gap-8">
-      <EligibilityForm onSubmit={handleSubmit} disabled={state.status === "loading"} />
+      <EligibilityForm
+        onSubmit={handleSubmit}
+        disabled={state.status === "loading"}
+        serverFieldErrors={state.status === "error" ? state.fields : undefined}
+      />
 
       {state.status === "loading" && (
-        <p role="status" className="text-base text-graphite">
+        <p role="status" className="flex items-center gap-2 text-base text-graphite">
+          <Loader2 aria-hidden="true" className="size-4 animate-spin" />
           Checking eligibility...
         </p>
       )}
