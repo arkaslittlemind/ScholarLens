@@ -1,7 +1,7 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
 import { useState } from "react";
+import { AgentActivitySteps } from "@/components/check/AgentActivitySteps";
 import { EligibilityForm } from "@/components/check/EligibilityForm";
 import { VerdictCard } from "@/components/check/VerdictCard";
 import {
@@ -61,12 +61,7 @@ export function EligibilityChecker() {
         serverFieldErrors={state.status === "error" ? state.fields : undefined}
       />
 
-      {state.status === "loading" && (
-        <p role="status" className="flex items-center gap-2 text-base text-graphite">
-          <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-          Checking eligibility...
-        </p>
-      )}
+      {state.status === "loading" && <AgentActivitySteps />}
 
       {state.status === "success" && <VerdictCard result={state.result} />}
 
