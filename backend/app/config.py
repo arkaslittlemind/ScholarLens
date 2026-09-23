@@ -1,6 +1,7 @@
 """Typed application settings, loaded from the environment (and `.env` in dev)."""
 
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -12,6 +13,7 @@ class Settings(BaseSettings):
     google_api_key: str | None = None
     tavily_api_key: str | None = None
     frontend_origin: str = "http://localhost:3000"
+    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
 
     chroma_host: str = "localhost"
     chroma_port: int = 8001

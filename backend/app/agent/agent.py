@@ -1,6 +1,7 @@
 """Pydantic AI ReAct-style eligibility agent: retrieval or web search, then a cited verdict."""
 
 import asyncio
+import logging
 import os
 from dataclasses import dataclass, field
 from functools import lru_cache
@@ -25,6 +26,8 @@ CHECKING_OFFICIAL_SOURCES = "checking official sources"
 VALIDATING_ELIGIBILITY = "validating eligibility"
 PREPARING_CITED_ANSWER = "preparing cited answer"
 
+_logger = logging.getLogger(__name__)
+
 _SYSTEM_PROMPT = (
     "You are ScholarLens, a scholarship and grant eligibility assistant. "
     "For every request, call retrieve_program_rules first to check the "
@@ -39,6 +42,11 @@ _SYSTEM_PROMPT = (
 
 class EligibilityEngineError(Exception):
     """Raised when the agent cannot produce a result: a tool, model, or timeout failure."""
+
+
+def _log_failure(message: str, exc: Exception) -> None:
+    # Only the type: a provider exception's message can echo the prompt or tool query.
+    _logger.warning(message, extra={"error_type": type(exc).__name__})
 
 
 @dataclass
@@ -122,10 +130,13 @@ class EligibilityAgent:
                 timeout=self._run_timeout_seconds,
             )
         except TimeoutError as exc:
+            _log_failure("agent run timed out", exc)
             raise EligibilityEngineError("Agent run timed out") from exc
         except (RetrievalUnavailableError, WebSearchUnavailableError) as exc:
+            _log_failure("agent tool unavailable", exc)
             raise EligibilityEngineError(str(exc)) from exc
         except Exception as exc:
+            _log_failure("agent run failed", exc)
             raise EligibilityEngineError("Agent run failed") from exc
 
         output = run_result.output
@@ -140,4 +151,5 @@ def get_agent() -> EligibilityAgent:
     try:
         return EligibilityAgent(get_settings())
     except Exception as exc:
+        _log_failure("agent construction failed", exc)
         raise EligibilityEngineError("Agent construction failed") from exc

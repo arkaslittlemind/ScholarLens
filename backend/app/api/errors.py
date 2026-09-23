@@ -1,10 +1,17 @@
 """One error envelope for every non-2xx response, and the handlers that emit it."""
 
+import logging
+import traceback
+
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException
+
+from app.api.middleware import REQUEST_ID_HEADER
+
+_logger = logging.getLogger(__name__)
 
 ENGINE_UNAVAILABLE = "engine_unavailable"
 
@@ -69,5 +76,20 @@ def register_error_handlers(app: FastAPI) -> None:
         return _envelope(exc.status_code, _code_for_status(exc.status_code))
 
     @app.exception_handler(Exception)
-    async def unhandled_error(_: Request, __: Exception) -> JSONResponse:
-        return _envelope(500, "internal_error")
+    async def unhandled_error(request: Request, exc: Exception) -> JSONResponse:
+        request_id = getattr(request.state, "request_id", None)
+        _logger.error(
+            "unhandled exception",
+            extra={
+                "correlation_id": request_id,
+                "path": request.url.path,
+                "status_code": 500,
+                "error_type": type(exc).__name__,
+                # Frames only: an exception message can carry the student's input.
+                "stack": "".join(traceback.format_tb(exc.__traceback__)),
+            },
+        )
+        response = _envelope(500, "internal_error")
+        if request_id:
+            response.headers[REQUEST_ID_HEADER] = request_id
+        return response
