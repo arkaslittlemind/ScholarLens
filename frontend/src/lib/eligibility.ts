@@ -52,6 +52,56 @@ export class EligibilityClientError extends Error {
   }
 }
 
+const UNEXPECTED_SHAPE_DETAIL: ErrorDetail = {
+  code: "internal_error",
+  message: "The server returned an unexpected response.",
+  fields: [],
+};
+
+const STATUSES: EligibilityStatus[] = ["eligible", "partial", "not_eligible"];
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isSource(value: unknown): value is Source {
+  return (
+    isRecord(value) &&
+    typeof value.program === "string" &&
+    typeof value.document === "string" &&
+    typeof value.url === "string"
+  );
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string");
+}
+
+function isErrorDetail(value: unknown): value is ErrorDetail {
+  return (
+    isRecord(value) &&
+    typeof value.code === "string" &&
+    typeof value.message === "string" &&
+    isStringArray(value.fields)
+  );
+}
+
+// Trusts the wire only after every field matches the shape backend/app/agent/models.py
+// defines - a malformed response degrades to the existing error path instead of
+// rendering `undefined`s or crashing a component.
+function isEligibilityResult(value: unknown): value is EligibilityResult {
+  if (!isRecord(value)) return false;
+  const result = value;
+  return (
+    STATUSES.includes(result.status as EligibilityStatus) &&
+    typeof result.explanation === "string" &&
+    (result.supporting_clause === null || typeof result.supporting_clause === "string") &&
+    (result.source === null || isSource(result.source)) &&
+    isStringArray(result.missing_info) &&
+    isStringArray(result.tool_trace)
+  );
+}
+
 export async function checkEligibility(request: EligibilityRequest): Promise<EligibilityResult> {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
   const controller = new AbortController();
@@ -75,19 +125,25 @@ export async function checkEligibility(request: EligibilityRequest): Promise<Eli
   }
 
   if (!response.ok) {
-    let detail: ErrorDetail;
+    let detail: ErrorDetail = {
+      code: "internal_error",
+      message: "The server encountered an unexpected error.",
+      fields: [],
+    };
     try {
-      const body = (await response.json()) as ErrorResponse;
-      detail = body.error;
+      const body: unknown = await response.json();
+      if (typeof body === "object" && body !== null && isErrorDetail((body as ErrorResponse).error)) {
+        detail = (body as ErrorResponse).error;
+      }
     } catch {
-      detail = {
-        code: "internal_error",
-        message: "The server encountered an unexpected error.",
-        fields: [],
-      };
+      // Non-JSON body: keep the internal_error fallback above.
     }
     throw new EligibilityClientError("api", detail, response.status);
   }
 
-  return (await response.json()) as EligibilityResult;
+  const body: unknown = await response.json();
+  if (!isEligibilityResult(body)) {
+    throw new EligibilityClientError("api", UNEXPECTED_SHAPE_DETAIL);
+  }
+  return body;
 }

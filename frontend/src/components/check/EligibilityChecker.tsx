@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { AgentActivitySteps } from "@/components/check/AgentActivitySteps";
 import { EligibilityForm } from "@/components/check/EligibilityForm";
 import { VerdictCard } from "@/components/check/VerdictCard";
@@ -11,11 +11,16 @@ import {
   type EligibilityResult,
 } from "@/lib/eligibility";
 
-type CheckState =
-  | { status: "idle" }
-  | { status: "loading" }
-  | { status: "success"; result: EligibilityResult }
-  | { status: "error"; message: string; fields?: string[] };
+// Retry only a transport failure (the request never reached the server, or
+// timed out client-side). A response the server already sent back - 422, 503,
+// or any other non-2xx - never auto-retries: resubmitting an already-answered
+// request just repeats a paid LLM call with no reason to expect a different
+// outcome. The form stays enabled so the user can resubmit manually anytime.
+const MAX_TRANSPORT_RETRIES = 2;
+
+function isRetryableTransportError(error: EligibilityClientError): boolean {
+  return error.kind === "network" || error.kind === "timeout";
+}
 
 function describeError(error: unknown): { message: string; fields?: string[] } {
   if (error instanceof EligibilityClientError) {
@@ -41,33 +46,37 @@ function describeError(error: unknown): { message: string; fields?: string[] } {
 }
 
 export function EligibilityChecker() {
-  const [state, setState] = useState<CheckState>({ status: "idle" });
+  const mutation = useMutation<EligibilityResult, EligibilityClientError, EligibilityRequest>({
+    mutationFn: checkEligibility,
+    retry: (failureCount, error) =>
+      failureCount < MAX_TRANSPORT_RETRIES && isRetryableTransportError(error),
+    // TanStack Query calls this with the pre-increment failure count (0, then 1),
+    // so +1 is needed to get 1s then 2s rather than 0s then 1s.
+    retryDelay: (failureCount) => (failureCount + 1) * 1000,
+  });
 
-  async function handleSubmit(request: EligibilityRequest) {
-    setState({ status: "loading" });
-    try {
-      const result = await checkEligibility(request);
-      setState({ status: "success", result });
-    } catch (error) {
-      setState({ status: "error", ...describeError(error) });
-    }
+  function handleSubmit(request: EligibilityRequest) {
+    mutation.reset();
+    mutation.mutate(request);
   }
+
+  const errorInfo = mutation.isError ? describeError(mutation.error) : undefined;
 
   return (
     <div className="flex flex-col gap-8">
       <EligibilityForm
         onSubmit={handleSubmit}
-        disabled={state.status === "loading"}
-        serverFieldErrors={state.status === "error" ? state.fields : undefined}
+        disabled={mutation.isPending}
+        serverFieldErrors={errorInfo?.fields}
       />
 
-      {state.status === "loading" && <AgentActivitySteps />}
+      {mutation.isPending && <AgentActivitySteps />}
 
-      {state.status === "success" && <VerdictCard result={state.result} />}
+      {mutation.isSuccess && <VerdictCard result={mutation.data} />}
 
-      {state.status === "error" && (
+      {errorInfo && (
         <p role="alert" className="rounded-md border border-ink p-4 text-base text-ink">
-          {state.message}
+          {errorInfo.message}
         </p>
       )}
     </div>
