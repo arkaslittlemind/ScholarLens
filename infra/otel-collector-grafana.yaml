@@ -7,7 +7,7 @@ extensions:
       password: ${env:GRAFANA_CLOUD_API_TOKEN}
 
 exporters:
-  otlphttp/grafana:
+  otlp_http/grafana:
     endpoint: ${env:GRAFANA_CLOUD_OTLP_ENDPOINT}
     auth:
       authenticator: basicauth/grafana
@@ -16,4 +16,4 @@ service:
   extensions: [basicauth/grafana]
   pipelines:
     traces:
-      exporters: [debug, otlphttp/grafana]
+      exporters: [debug, otlp_http/grafana]
