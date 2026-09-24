@@ -25,11 +25,14 @@ services:
       retries: 5
 
   chromadb:
-    image: chromadb/chroma:latest
+    # Pinned by digest (chroma 1.4.4; no matching version tag is published): a floating
+    # tag once moved the data directory and silently made the store ephemeral.
+    image: chromadb/chroma@sha256:1e0b73a187a28757c572acba508c46f48c9e8b0acaf5c20e6d95cdedce1acdf6
     ports:
       - "8001:8000"
     volumes:
-      - chromadb_data:/chroma/chroma
+      # The image's /config.yaml sets persist_path to /data.
+      - chromadb_data:/data
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib:latest
