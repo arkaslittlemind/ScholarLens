@@ -10,7 +10,8 @@ from functools import lru_cache
 os.environ.setdefault("PYDANTIC_AI_NO_BANNER", "1")
 
 import httpx2
-from pydantic_ai import Agent, RunContext
+from pydantic_ai import Agent, InstrumentationSettings, RunContext
+from pydantic_ai.capabilities import Instrumentation
 from pydantic_ai.models.google import GoogleModel
 from pydantic_ai.providers.google import GoogleProvider
 
@@ -18,6 +19,7 @@ from app.agent.models import EligibilityResult
 from app.api.models import EligibilityRequest
 from app.config import Settings, get_settings
 from app.retrieval.client import DocumentRetriever, RetrievalUnavailableError
+from app.telemetry import traced_span
 from app.tools.web_search import WebSearchClient, WebSearchUnavailableError
 
 # Stable, user-facing activity labels — feature 11's transparency UI renders these verbatim.
@@ -69,6 +71,9 @@ def _build_agent(settings: Settings) -> Agent[_Deps, EligibilityResult]:
         deps_type=_Deps,
         output_type=EligibilityResult,
         system_prompt=_SYSTEM_PROMPT,
+        # Spans keep model, token usage, and tool names; prompts and tool payloads carry
+        # student data, so they stay out of telemetry.
+        capabilities=[Instrumentation(settings=InstrumentationSettings(include_content=False))],
     )
 
     @agent.tool
@@ -125,10 +130,12 @@ class EligibilityAgent:
         """Like `check_eligibility`, plus how many tool calls the run made."""
         deps = _Deps(retriever=self._retriever, web_search=self._web_search)
         try:
-            run_result = await asyncio.wait_for(
-                self._agent.run(_build_prompt(request), deps=deps),
-                timeout=self._run_timeout_seconds,
-            )
+            with traced_span("scholarlens.agent.run") as span:
+                run_result = await asyncio.wait_for(
+                    self._agent.run(_build_prompt(request), deps=deps),
+                    timeout=self._run_timeout_seconds,
+                )
+                span.set_attribute("app.agent.tool_calls", deps.tool_calls)
         except TimeoutError as exc:
             _log_failure("agent run timed out", exc)
             raise EligibilityEngineError("Agent run timed out") from exc

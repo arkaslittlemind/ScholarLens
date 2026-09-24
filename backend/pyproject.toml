@@ -13,6 +13,9 @@ dependencies = [
     "chromadb>=1.5",
     "httpx>=0.27",
     "httpx2>=2.13",
+    "opentelemetry-sdk>=1.44",
+    "opentelemetry-exporter-otlp-proto-grpc>=1.44",
+    "opentelemetry-instrumentation-fastapi>=0.65b0",
 ]
 
 [project.optional-dependencies]

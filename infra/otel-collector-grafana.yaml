@@ -1,0 +1,19 @@
+# Merged over otel-collector-config.yaml by docker-compose.grafana.yml. Traces keep
+# printing to the collector log and are also sent to Grafana Cloud Tempo.
+extensions:
+  basicauth/grafana:
+    client_auth:
+      username: ${env:GRAFANA_CLOUD_INSTANCE_ID}
+      password: ${env:GRAFANA_CLOUD_API_TOKEN}
+
+exporters:
+  otlphttp/grafana:
+    endpoint: ${env:GRAFANA_CLOUD_OTLP_ENDPOINT}
+    auth:
+      authenticator: basicauth/grafana
+
+service:
+  extensions: [basicauth/grafana]
+  pipelines:
+    traces:
+      exporters: [debug, otlphttp/grafana]

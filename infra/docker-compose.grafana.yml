@@ -1,0 +1,13 @@
+# Opt-in override: also export traces to Grafana Cloud Tempo.
+#   docker compose -f infra/docker-compose.yml -f infra/docker-compose.grafana.yml up
+# Needs infra/.env (copy infra/.env.example); the base stack runs without it.
+services:
+  otel-collector:
+    command:
+      - --config=/etc/otel-collector-config.yaml
+      - --config=/etc/otel-collector-grafana.yaml
+    volumes:
+      - ./otel-collector-grafana.yaml:/etc/otel-collector-grafana.yaml:ro
+    env_file:
+      - path: ./.env
+        required: true

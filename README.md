@@ -41,3 +41,13 @@ docker compose -f infra/docker-compose.yml up
 Brings up the FastAPI backend, ChromaDB (persistent volume), and an
 OpenTelemetry Collector together. The frontend still runs separately via
 `next dev`.
+
+The backend traces each request (API, agent, LLM calls, retrieval, web search)
+and sends spans to the collector, which prints them
+(`docker compose -f infra/docker-compose.yml logs otel-collector`). Spans carry
+timings, models, token counts, and error types, never student input. To also
+send traces to Grafana Cloud Tempo, copy `infra/.env.example` to `infra/.env`,
+fill in your stack's OTLP credentials, and add the override:
+```bash
+docker compose -f infra/docker-compose.yml -f infra/docker-compose.grafana.yml up
+```

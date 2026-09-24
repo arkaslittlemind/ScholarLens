@@ -1,6 +1,7 @@
 """Thin, timeout-guarded ChromaDB retrieval client."""
 
 import asyncio
+import contextvars
 import os
 from concurrent.futures import ThreadPoolExecutor
 
@@ -12,6 +13,7 @@ from chromadb.utils import embedding_functions
 from pydantic import BaseModel
 
 from app.config import Settings
+from app.telemetry import traced_span
 
 
 def get_chroma_client(settings: Settings) -> ClientAPI:
@@ -51,23 +53,34 @@ class DocumentRetriever:
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
         self._collection: Collection | None = None
+        self._embedding_function: EmbeddingFunction | None = None
         # A dedicated, bounded pool: a blackholed ChromaDB host leaks a thread per
         # timeout (chromadb's own HTTP session has no socket timeout), so this keeps
         # that leak capped and attributable instead of draining the shared default
         # executor every other `run_in_executor` caller in the process relies on.
         self._executor = ThreadPoolExecutor(max_workers=8, thread_name_prefix="chroma-retrieval")
 
-    def _get_collection(self) -> Collection:
-        if self._collection is None:
+    def _get_collection(self) -> tuple[Collection, EmbeddingFunction]:
+        if self._collection is None or self._embedding_function is None:
+            embedding_function = build_embedding_function(self._settings)
             self._collection = get_chroma_client(self._settings).get_or_create_collection(
                 name=self._settings.chroma_collection_name,
-                embedding_function=build_embedding_function(self._settings),
+                embedding_function=embedding_function,
             )
-        return self._collection
+            self._embedding_function = embedding_function
+        return self._collection, self._embedding_function
 
     def _query(self, query: str) -> list[RetrievedChunk]:
-        collection = self._get_collection()
-        result = collection.query(query_texts=[query], n_results=self._settings.retrieval_top_k)
+        collection, embedding_function = self._get_collection()
+        # Embedding explicitly (rather than `query_texts`) gives it its own span; `embed_query`
+        # is the method Chroma's `query_texts` path calls, so the vectors are unchanged.
+        with traced_span("scholarlens.retrieval.embed") as span:
+            span.set_attribute("gen_ai.request.model", self._settings.embedding_model)
+            embeddings = embedding_function.embed_query(input=[query])
+        with traced_span("scholarlens.retrieval.query"):
+            result = collection.query(
+                query_embeddings=embeddings, n_results=self._settings.retrieval_top_k
+            )
         documents = (result.get("documents") or [[]])[0]
         metadatas = (result.get("metadatas") or [[]])[0]
         chunks = []
@@ -87,10 +100,17 @@ class DocumentRetriever:
         """Return the top matching chunks for `query`, or `[]` if none exist."""
         loop = asyncio.get_running_loop()
         try:
-            return await asyncio.wait_for(
-                loop.run_in_executor(self._executor, self._query, query),
-                timeout=self._settings.chroma_timeout_seconds,
-            )
+            with traced_span("scholarlens.retrieval.retrieve") as span:
+                span.set_attribute("db.system.name", "chromadb")
+                span.set_attribute("app.retrieval.top_k", self._settings.retrieval_top_k)
+                # Executor threads don't inherit contextvars, so child spans would start new traces.
+                context = contextvars.copy_context()
+                chunks = await asyncio.wait_for(
+                    loop.run_in_executor(self._executor, context.run, self._query, query),
+                    timeout=self._settings.chroma_timeout_seconds,
+                )
+                span.set_attribute("app.retrieval.result_count", len(chunks))
+                return chunks
         except TimeoutError as exc:
             raise RetrievalUnavailableError("ChromaDB query timed out") from exc
         except Exception as exc:

@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     web_search_timeout_seconds: float = 10.0
     agent_run_timeout_seconds: float = 45.0
 
+    # Tracing stays a no-op unless an OTLP collector endpoint is configured.
+    otel_exporter_otlp_endpoint: str | None = None
+    otel_export_timeout_seconds: float = 5.0
+
     ingestion_source_dir: str = "data/programs"
     ingestion_status_path: str = "data/ingestion-status.json"
     ingestion_chunk_max_chars: int = 1200

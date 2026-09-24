@@ -12,6 +12,7 @@ services:
       # In-network ChromaDB address; overrides the host-machine default in .env.
       CHROMA_HOST: chromadb
       CHROMA_PORT: "8000"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
     volumes:
       - ../backend:/app
     depends_on:

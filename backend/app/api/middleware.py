@@ -5,6 +5,7 @@ import re
 import time
 import uuid
 
+from opentelemetry import trace
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
@@ -30,6 +31,8 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
         # Starlette runs the unhandled-exception handler outside this middleware, after the reset.
         request.state.request_id = request_id
         token = set_correlation_id(request_id)
+        # Lets a trace be found from any log line of the same request.
+        trace.get_current_span().set_attribute("app.request_id", request_id)
         start = time.perf_counter()
         status_code = 500
         try:
