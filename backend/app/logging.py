@@ -6,6 +6,8 @@ import sys
 from contextvars import ContextVar, Token
 from datetime import UTC, datetime
 
+REQUEST_ID_HEADER = "X-Request-ID"
+
 _correlation_id: ContextVar[str | None] = ContextVar("correlation_id", default=None)
 
 # Attributes every LogRecord has; anything else on a record came from `extra=`.

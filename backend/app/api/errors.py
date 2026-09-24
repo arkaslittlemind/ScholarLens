@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException
 
-from app.api.middleware import REQUEST_ID_HEADER
+from app.logging import REQUEST_ID_HEADER
 
 _logger = logging.getLogger(__name__)
 
@@ -65,6 +65,22 @@ def _failed_fields(exc: RequestValidationError) -> list[str]:
     return names
 
 
+def unhandled_error_response(request: Request, exc: Exception) -> JSONResponse:
+    """Log an unexpected exception without its message and build the 500 envelope."""
+    _logger.error(
+        "unhandled exception",
+        extra={
+            "correlation_id": getattr(request.state, "request_id", None),
+            "path": request.url.path,
+            "status_code": 500,
+            "error_type": type(exc).__name__,
+            # Frames only: an exception message can carry the student's input.
+            "stack": "".join(traceback.format_tb(exc.__traceback__)),
+        },
+    )
+    return _envelope(500, "internal_error")
+
+
 def register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(RequestValidationError)
     async def validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
@@ -75,21 +91,11 @@ def register_error_handlers(app: FastAPI) -> None:
     async def http_error(_: Request, exc: HTTPException) -> JSONResponse:
         return _envelope(exc.status_code, _code_for_status(exc.status_code))
 
+    # CorrelationIdMiddleware handles app failures; this covers only a failure outside it.
     @app.exception_handler(Exception)
     async def unhandled_error(request: Request, exc: Exception) -> JSONResponse:
         request_id = getattr(request.state, "request_id", None)
-        _logger.error(
-            "unhandled exception",
-            extra={
-                "correlation_id": request_id,
-                "path": request.url.path,
-                "status_code": 500,
-                "error_type": type(exc).__name__,
-                # Frames only: an exception message can carry the student's input.
-                "stack": "".join(traceback.format_tb(exc.__traceback__)),
-            },
-        )
-        response = _envelope(500, "internal_error")
+        response = unhandled_error_response(request, exc)
         if request_id:
             response.headers[REQUEST_ID_HEADER] = request_id
         return response
