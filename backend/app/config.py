@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     chroma_host: str = "localhost"
     chroma_port: int = 8001
     chroma_collection_name: str = "scholarship_programs"
-    agent_model: str = "google:gemini-2.5-flash"
+    agent_model: str = "google:gemini-3.8-flash"
     embedding_model: str = "gemini-embedding-001"
     retrieval_top_k: int = 5
     llm_timeout_seconds: float = 20.0
