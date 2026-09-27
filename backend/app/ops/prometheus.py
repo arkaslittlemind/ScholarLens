@@ -69,7 +69,7 @@ async def _query_range(
 
 async def fetch_traffic(settings: Settings, window_seconds: int, step_seconds: int) -> Traffic:
     """The traffic section; degrades to not_configured or unavailable, never raises."""
-    empty = Traffic(
+    not_configured = Traffic(
         status="not_configured", window_seconds=window_seconds, step_seconds=step_seconds
     )
     if not (
@@ -77,7 +77,7 @@ async def fetch_traffic(settings: Settings, window_seconds: int, step_seconds: i
         and settings.grafana_prometheus_user
         and settings.grafana_prometheus_token
     ):
-        return empty
+        return not_configured
 
     end = int(time.time())
     start = end - window_seconds
@@ -86,12 +86,15 @@ async def fetch_traffic(settings: Settings, window_seconds: int, step_seconds: i
             auth=(settings.grafana_prometheus_user, settings.grafana_prometheus_token),
             timeout=settings.grafana_query_timeout_seconds,
         ) as client:
-            results = await asyncio.gather(
-                *(
-                    _query_range(client, settings, query, start, end, step_seconds)
-                    for query in _QUERIES.values()
+            # httpx's timeout applies per phase, so a slowly streamed body could outlast it;
+            # this caps the whole batch, since the queries run in parallel.
+            async with asyncio.timeout(settings.grafana_query_timeout_seconds):
+                results = await asyncio.gather(
+                    *(
+                        _query_range(client, settings, query, start, end, step_seconds)
+                        for query in _QUERIES.values()
+                    )
                 )
-            )
         by_name = dict(zip(_QUERIES, results, strict=True))
         series = TrafficSeries(
             request_rate=_single(by_name["request_rate"]),
@@ -103,7 +106,15 @@ async def fetch_traffic(settings: Settings, window_seconds: int, step_seconds: i
                 for item in by_name["tool_calls_per_min"]
             },
         )
-    except (httpx.HTTPError, _QueryFailed, ValueError, KeyError, TypeError, AttributeError) as exc:
+    except (
+        httpx.HTTPError,
+        TimeoutError,
+        _QueryFailed,
+        ValueError,
+        KeyError,
+        TypeError,
+        AttributeError,
+    ) as exc:
         # Type only: the URL carries the stack name and an httpx message can echo request details.
         _logger.warning(
             "grafana query failed",
@@ -112,7 +123,7 @@ async def fetch_traffic(settings: Settings, window_seconds: int, step_seconds: i
                 "status_code": getattr(exc, "status_code", None),
             },
         )
-        return empty.model_copy(update={"status": "unavailable"})
+        return not_configured.model_copy(update={"status": "unavailable"})
     return Traffic(
         status="ok", window_seconds=window_seconds, step_seconds=step_seconds, series=series
     )

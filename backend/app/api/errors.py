@@ -36,14 +36,12 @@ _MESSAGES = {
 }
 
 
-class ApiError(Exception):
-    """An error whose code can't be derived from its status, such as a second kind of 503."""
+class ApiError(HTTPException):
+    """An HTTPException whose code can't be derived from its status, such as a second 503."""
 
     def __init__(self, status_code: int, code: str, headers: dict[str, str] | None = None) -> None:
-        super().__init__(code)
-        self.status_code = status_code
+        super().__init__(status_code=status_code, headers=headers)
         self.code = code
-        self.headers = headers or {}
 
 
 def _code_for_status(status_code: int) -> str:
@@ -108,7 +106,7 @@ def register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(ApiError)
     async def api_error(_: Request, exc: ApiError) -> JSONResponse:
         response = _envelope(exc.status_code, exc.code)
-        response.headers.update(exc.headers)
+        response.headers.update(exc.headers or {})
         return response
 
     # CorrelationIdMiddleware handles app failures; this covers only a failure outside it.

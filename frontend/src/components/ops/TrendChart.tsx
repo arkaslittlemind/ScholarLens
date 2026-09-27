@@ -2,7 +2,7 @@
 
 import { Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { Point } from "@/lib/ops";
-import { formatNumber, formatPercent, NO_DATA } from "@/lib/ops-format";
+import { formatNumber, formatPercent, formatSeconds, NO_DATA } from "@/lib/ops-format";
 
 export type TrendFormat = "reqps" | "percent" | "ms" | "per-minute";
 
@@ -32,7 +32,7 @@ function formatValue(value: number | null, format: TrendFormat): string {
     case "percent":
       return formatPercent(value);
     case "ms":
-      return `${(value / 1000).toFixed(1)} s`;
+      return formatSeconds(value);
     case "reqps":
       return `${formatNumber(value, 3)} req/s`;
     case "per-minute":
@@ -58,12 +58,9 @@ function formatTime(seconds: number): string {
   return new Date(seconds * 1000).toISOString().slice(11, 16);
 }
 
+// The newest point only: falling back to an older one would label a stale value "Latest".
 function latestValue(points: Point[]): number | null {
-  for (let index = points.length - 1; index >= 0; index -= 1) {
-    const value = points[index][1];
-    if (value !== null) return value;
-  }
-  return null;
+  return points.at(-1)?.[1] ?? null;
 }
 
 type Row = { t: number } & Record<string, number | null>;

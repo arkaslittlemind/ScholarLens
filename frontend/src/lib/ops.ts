@@ -12,7 +12,8 @@ export interface TrafficSeries {
   tool_calls_per_min: Record<string, Point[]>;
 }
 
-export type TrafficStatus = "ok" | "not_configured" | "unavailable";
+const TRAFFIC_STATUSES = ["ok", "not_configured", "unavailable"] as const;
+export type TrafficStatus = (typeof TRAFFIC_STATUSES)[number];
 
 export interface Traffic {
   status: TrafficStatus;
@@ -96,9 +97,7 @@ function isTrafficSeries(value: unknown): value is TrafficSeries {
 function isTraffic(value: unknown): value is Traffic {
   return (
     isRecord(value) &&
-    (value.status === "ok" ||
-      value.status === "not_configured" ||
-      value.status === "unavailable") &&
+    TRAFFIC_STATUSES.some((status) => status === value.status) &&
     typeof value.window_seconds === "number" &&
     typeof value.step_seconds === "number" &&
     (value.series === null || isTrafficSeries(value.series))
