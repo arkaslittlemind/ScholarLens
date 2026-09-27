@@ -48,6 +48,8 @@ web_search_duration = _meter.create_histogram(
 # let any caller mint new series; keep only closed-value attributes. One view per instrument,
 # because two views matching the same instrument would export it twice.
 _HTTP_SERVER_ATTRIBUTES = {"http.method", "http.target", "http.status_code"}
+# Must list every http.server.* instrument the FastAPI instrumentor creates (checked on 0.66b0):
+# one left out keeps its Host-derived labels.
 _HTTP_SERVER_INSTRUMENTS = (
     "http.server.request.size",
     "http.server.response.size",
