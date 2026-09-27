@@ -101,7 +101,7 @@ class DocumentRetriever:
         """Return the top matching chunks for `query`, or `[]` if none exist."""
         loop = asyncio.get_running_loop()
         started = time.perf_counter()
-        outcome = "error"
+        outcome: str | None = "error"
         try:
             with traced_span("scholarlens.retrieval.retrieve") as span:
                 span.set_attribute("db.system.name", "chromadb")
@@ -115,10 +115,15 @@ class DocumentRetriever:
                 span.set_attribute("app.retrieval.result_count", len(chunks))
                 outcome = "success"
                 return chunks
+        except asyncio.CancelledError:
+            # The agent's run timeout cancels an in-flight call; that is not a dependency failure.
+            outcome = None
+            raise
         except TimeoutError as exc:
             outcome = "timeout"
             raise RetrievalUnavailableError("ChromaDB query timed out") from exc
         except Exception as exc:
             raise RetrievalUnavailableError("ChromaDB query failed") from exc
         finally:
-            retrieval_duration.record(time.perf_counter() - started, {"app.outcome": outcome})
+            if outcome is not None:
+                retrieval_duration.record(time.perf_counter() - started, {"app.outcome": outcome})

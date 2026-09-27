@@ -10,6 +10,7 @@ from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExport
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+from opentelemetry.sdk.metrics.view import View
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -62,6 +63,14 @@ def configure_telemetry(settings: Settings, app: FastAPI) -> None:
     metrics.set_meter_provider(
         MeterProvider(
             resource=resource,
+            # The instrumentor also labels by server name, taken from the client's Host header,
+            # which would let any caller mint new series; keep only closed-value attributes.
+            views=[
+                View(
+                    instrument_name="http.server.*",
+                    attribute_keys={"http.method", "http.target", "http.status_code"},
+                )
+            ],
             metric_readers=[
                 PeriodicExportingMetricReader(
                     OTLPMetricExporter(

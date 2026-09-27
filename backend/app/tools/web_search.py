@@ -1,5 +1,6 @@
 """Thin, timeout-guarded Tavily web-search client."""
 
+import asyncio
 import time
 
 import httpx
@@ -29,13 +30,18 @@ class WebSearchClient:
 
     async def search(self, query: str) -> list[WebResult]:
         started = time.perf_counter()
-        outcome = "error"
+        outcome: str | None = "error"
         try:
             results = await self._search(query)
             outcome = "success"
             return results
+        except asyncio.CancelledError:
+            # The agent's run timeout cancels an in-flight call; that is not a dependency failure.
+            outcome = None
+            raise
         finally:
-            web_search_duration.record(time.perf_counter() - started, {"app.outcome": outcome})
+            if outcome is not None:
+                web_search_duration.record(time.perf_counter() - started, {"app.outcome": outcome})
 
     async def _search(self, query: str) -> list[WebResult]:
         with traced_span("scholarlens.web_search.search") as span:
