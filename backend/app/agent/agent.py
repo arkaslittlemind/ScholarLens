@@ -22,7 +22,7 @@ from app.retrieval.client import DocumentRetriever, RetrievalUnavailableError
 from app.telemetry import traced_span
 from app.tools.web_search import WebSearchClient, WebSearchUnavailableError
 
-# Stable, user-facing activity labels — feature 11's transparency UI renders these verbatim.
+# Stable, user-facing activity labels, feature 11's transparency UI renders these verbatim.
 SEARCHING_PROGRAM_RULES = "searching program rules"
 CHECKING_OFFICIAL_SOURCES = "checking official sources"
 VALIDATING_ELIGIBILITY = "validating eligibility"
@@ -154,7 +154,7 @@ class EligibilityAgent:
 @lru_cache
 def get_agent() -> EligibilityAgent:
     # Missing/invalid credentials fail here (e.g. GoogleProvider raises UserError with no
-    # key), before any request runs — that's still an engine-unavailable condition, not a crash.
+    # key), before any request runs, that's still an engine-unavailable condition, not a crash.
     try:
         return EligibilityAgent(get_settings())
     except Exception as exc:
