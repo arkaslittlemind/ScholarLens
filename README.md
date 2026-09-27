@@ -78,7 +78,7 @@ docker compose -f infra/docker-compose.yml -f infra/docker-compose.grafana.yml u
 
 Two Grafana dashboards live in `infra/grafana/dashboards/`:
 
-- `service-health.json`: request rate, 5xx and 4xx ratios, `/eligibility`
+- `service-health.json`: request rate, 5xx ratio and 4xx rate, `/eligibility`
   latency, agent outcomes and duration, and ChromaDB and Tavily latency and
   failures.
 - `ai-quality.json`: the latest evaluation run, evaluation trends against the
@@ -93,7 +93,8 @@ The panels only fill while the backend runs with the Grafana override above.
 A few things to know when reading them:
 
 - The evaluation panels show the latest run. The backend re-reads it at every
-  metric export, so a trend line is flat between runs, steps when
+  metric export and Grafana Cloud's Prometheus (Mimir) stores each sample, so a
+  trend line is flat between runs, steps when
   `python -m app.evaluation` finishes, and has gaps while the backend is down. A
   quality stat with no value means the run could not measure it (for example, no
   hallucination judgement); it is never shown as 0.

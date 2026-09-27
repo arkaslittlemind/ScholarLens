@@ -301,7 +301,7 @@
     },
     {
       "type": "stat",
-      "title": "Avg latency",
+      "title": "Eval avg latency",
       "description": "Mean agent latency per evaluation attempt in the latest run.",
       "datasource": {
         "type": "prometheus",
@@ -360,7 +360,7 @@
     },
     {
       "type": "stat",
-      "title": "Avg tool calls",
+      "title": "Eval avg tool calls",
       "description": "Mean tool calls per evaluation attempt in the latest run.",
       "datasource": {
         "type": "prometheus",
