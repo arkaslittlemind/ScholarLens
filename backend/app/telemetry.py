@@ -10,7 +10,7 @@ from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExport
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
-from opentelemetry.sdk.metrics.view import View
+from opentelemetry.sdk.metrics.view import ExplicitBucketHistogramAggregation, View
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -44,6 +44,39 @@ web_search_duration = _meter.create_histogram(
 )
 
 
+# The instrumentor also labels by server name, taken from the client's Host header, which would
+# let any caller mint new series; keep only closed-value attributes. One view per instrument,
+# because two views matching the same instrument would export it twice.
+_HTTP_SERVER_ATTRIBUTES = {"http.method", "http.target", "http.status_code"}
+# Must list every http.server.* instrument the FastAPI instrumentor creates (checked on 0.66b0):
+# one left out keeps its Host-derived labels.
+_HTTP_SERVER_INSTRUMENTS = (
+    "http.server.request.size",
+    "http.server.response.size",
+    "http.server.active_requests",
+)
+# SDK defaults stop at 10 s, but eligibility requests run up to the 45 s agent timeout, so
+# percentiles past 10 s would all read as 10 s.
+_HTTP_DURATION_BOUNDARIES_MS = (
+    0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000,
+    15000, 20000, 30000, 45000, 60000,
+)
+
+
+def _http_server_views() -> list[View]:
+    return [
+        View(
+            instrument_name="http.server.duration",
+            attribute_keys=_HTTP_SERVER_ATTRIBUTES,
+            aggregation=ExplicitBucketHistogramAggregation(_HTTP_DURATION_BOUNDARIES_MS),
+        ),
+        *(
+            View(instrument_name=name, attribute_keys=_HTTP_SERVER_ATTRIBUTES)
+            for name in _HTTP_SERVER_INSTRUMENTS
+        ),
+    ]
+
+
 def configure_telemetry(settings: Settings, app: FastAPI) -> None:
     """Export spans and metrics when a collector endpoint is set; otherwise stay no-op."""
     if not settings.otel_exporter_otlp_endpoint:
@@ -63,14 +96,7 @@ def configure_telemetry(settings: Settings, app: FastAPI) -> None:
     metrics.set_meter_provider(
         MeterProvider(
             resource=resource,
-            # The instrumentor also labels by server name, taken from the client's Host header,
-            # which would let any caller mint new series; keep only closed-value attributes.
-            views=[
-                View(
-                    instrument_name="http.server.*",
-                    attribute_keys={"http.method", "http.target", "http.status_code"},
-                )
-            ],
+            views=_http_server_views(),
             metric_readers=[
                 PeriodicExportingMetricReader(
                     OTLPMetricExporter(
