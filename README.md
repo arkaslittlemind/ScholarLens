@@ -98,8 +98,6 @@ A few things to know when reading them:
   `python -m app.evaluation` finishes, and has gaps while the backend is down. A
   quality stat with no value means the run could not measure it (for example, no
   hallucination judgement); it is never shown as 0.
-- The request histogram's top bucket is 10 s, so `/eligibility` percentiles
-  above 10 s read as 10 s. The mean latency series is exact.
 - Prometheus `rate()` cannot see the first sample of a new series, so the first
   request with a new status code or failure outcome after a backend start does
   not show up in rate panels. Later ones do.
