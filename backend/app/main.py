@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.eligibility import router as eligibility_router
 from app.api.errors import register_error_handlers
 from app.api.middleware import CorrelationIdMiddleware
+from app.api.ops import router as ops_router
 from app.api.routes import router
 from app.config import get_settings
 from app.logging import configure_logging
@@ -42,3 +43,4 @@ register_error_handlers(app)
 
 app.include_router(router)
 app.include_router(eligibility_router)
+app.include_router(ops_router)

@@ -34,6 +34,30 @@ pip install -e ".[dev]"
 uvicorn app.main:app --reload   # http://localhost:8000  (docs at /docs)
 ```
 
+### Operations view (`/ops`)
+
+`/ops` is a password-protected page for maintainers. It shows traffic trends for
+the last 6 hours (request rate, 5xx ratio, `/eligibility` latency, tool calls),
+the latest and recent evaluation runs against their targets, and ingestion
+health. The evaluation and ingestion sections read the backend's own status
+files. The trends come from Grafana Cloud.
+
+To enable it:
+
+1. Generate one long random token and set it as `OPS_API_TOKEN` in both
+   `backend/.env` and `frontend/.env.local`. The frontend sends it server-side
+   only, so the browser never sees it.
+2. Set `OPS_USERNAME` and `OPS_PASSWORD` in `frontend/.env.local`. `/ops` asks
+   for them through the browser's login prompt, and returns 503 while either is
+   unset.
+3. Optional, for the trend charts: set `GRAFANA_PROMETHEUS_URL`,
+   `GRAFANA_PROMETHEUS_USER`, and `GRAFANA_PROMETHEUS_TOKEN` in `backend/.env`.
+   The comments in `backend/.env.example` say where to find them. Without
+   them, the page says the trends are not configured and shows everything else.
+
+The shared password has no rate limiting or lockout yet (feature 18), so use a
+long one.
+
 ### Docker (local dev)
 ```bash
 docker compose -f infra/docker-compose.yml up

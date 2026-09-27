@@ -40,6 +40,14 @@ class Settings(BaseSettings):
     evaluation_repeats: int = Field(default=3, ge=1)
     evaluation_attempt_delay_seconds: float = Field(default=0.0, ge=0)
 
+    # Shared with the frontend's server side; unset disables /ops/summary.
+    ops_api_token: str | None = None
+    # A read-only (metrics:read) Grafana Cloud Prometheus login, separate from the OTLP push one.
+    grafana_prometheus_url: str | None = None
+    grafana_prometheus_user: str | None = None
+    grafana_prometheus_token: str | None = None
+    grafana_query_timeout_seconds: float = 5.0
+
 
 @lru_cache
 def get_settings() -> Settings:
