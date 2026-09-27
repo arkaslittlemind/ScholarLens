@@ -14,6 +14,8 @@ from app.logging import REQUEST_ID_HEADER
 _logger = logging.getLogger(__name__)
 
 ENGINE_UNAVAILABLE = "engine_unavailable"
+UNAUTHORIZED = "unauthorized"
+OPS_NOT_CONFIGURED = "ops_not_configured"
 
 _STATUS_CODES = {
     400: "bad_request",
@@ -28,8 +30,18 @@ _MESSAGES = {
     "not_found": "The requested path does not exist.",
     "method_not_allowed": "That method is not allowed on this path.",
     ENGINE_UNAVAILABLE: "The eligibility engine is not available.",
+    UNAUTHORIZED: "Missing or invalid ops token.",
+    OPS_NOT_CONFIGURED: "The operations view is not configured.",
     "internal_error": "The server encountered an unexpected error.",
 }
+
+
+class ApiError(HTTPException):
+    """An HTTPException whose code can't be derived from its status, such as a second 503."""
+
+    def __init__(self, status_code: int, code: str, headers: dict[str, str] | None = None) -> None:
+        super().__init__(status_code=status_code, headers=headers)
+        self.code = code
 
 
 def _code_for_status(status_code: int) -> str:
@@ -90,6 +102,12 @@ def register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(HTTPException)
     async def http_error(_: Request, exc: HTTPException) -> JSONResponse:
         return _envelope(exc.status_code, _code_for_status(exc.status_code))
+
+    @app.exception_handler(ApiError)
+    async def api_error(_: Request, exc: ApiError) -> JSONResponse:
+        response = _envelope(exc.status_code, exc.code)
+        response.headers.update(exc.headers or {})
+        return response
 
     # CorrelationIdMiddleware handles app failures; this covers only a failure outside it.
     @app.exception_handler(Exception)
