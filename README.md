@@ -73,3 +73,32 @@ credentials, and add the override:
 ```bash
 docker compose -f infra/docker-compose.yml -f infra/docker-compose.grafana.yml up
 ```
+
+#### Dashboards
+
+Two Grafana dashboards live in `infra/grafana/dashboards/`:
+
+- `service-health.json`: request rate, 5xx and 4xx ratios, `/eligibility`
+  latency, agent outcomes and duration, and ChromaDB and Tavily latency and
+  failures.
+- `ai-quality.json`: the latest evaluation run, evaluation trends against the
+  targets (eligibility above 80%, citation above 70%, hallucination below 10%),
+  tool calls, LLM requests, and token usage.
+
+To import one, open Grafana Cloud, go to Dashboards > New > Import, and upload
+the file. Pick your stack's Prometheus data source in the "Data source" drop-down
+at the top of the dashboard. Importing a file again replaces the existing copy.
+The panels only fill while the backend runs with the Grafana override above.
+
+A few things to know when reading them:
+
+- The evaluation panels show the latest run. The backend re-reads it at every
+  metric export, so a trend line is flat between runs, steps when
+  `python -m app.evaluation` finishes, and has gaps while the backend is down. A
+  quality stat with no value means the run could not measure it (for example, no
+  hallucination judgement); it is never shown as 0.
+- The request histogram's top bucket is 10 s, so `/eligibility` percentiles
+  above 10 s read as 10 s. The mean latency series is exact.
+- Prometheus `rate()` cannot see the first sample of a new series, so the first
+  request with a new status code or failure outcome after a backend start does
+  not show up in rate panels. Later ones do.
