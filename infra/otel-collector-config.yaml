@@ -12,6 +12,9 @@ processors:
 exporters:
   debug:
     verbosity: detailed
+  # Serves metrics in Prometheus format at http://localhost:8889/metrics for local checks.
+  prometheus:
+    endpoint: 0.0.0.0:8889
 
 service:
   pipelines:
@@ -22,7 +25,8 @@ service:
     metrics:
       receivers: [otlp]
       processors: [batch]
-      exporters: [debug]
+      # Not debug: a detailed metric dump every export interval would bury the trace output.
+      exporters: [prometheus]
     logs:
       receivers: [otlp]
       processors: [batch]

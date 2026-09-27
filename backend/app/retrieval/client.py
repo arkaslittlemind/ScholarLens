@@ -3,6 +3,7 @@
 import asyncio
 import contextvars
 import os
+import time
 from concurrent.futures import ThreadPoolExecutor
 
 import chromadb
@@ -13,7 +14,7 @@ from chromadb.utils import embedding_functions
 from pydantic import BaseModel
 
 from app.config import Settings
-from app.telemetry import traced_span
+from app.telemetry import retrieval_duration, traced_span
 
 
 def get_chroma_client(settings: Settings) -> ClientAPI:
@@ -99,6 +100,8 @@ class DocumentRetriever:
     async def retrieve(self, query: str) -> list[RetrievedChunk]:
         """Return the top matching chunks for `query`, or `[]` if none exist."""
         loop = asyncio.get_running_loop()
+        started = time.perf_counter()
+        outcome: str | None = "error"
         try:
             with traced_span("scholarlens.retrieval.retrieve") as span:
                 span.set_attribute("db.system.name", "chromadb")
@@ -110,8 +113,17 @@ class DocumentRetriever:
                     timeout=self._settings.chroma_timeout_seconds,
                 )
                 span.set_attribute("app.retrieval.result_count", len(chunks))
+                outcome = "success"
                 return chunks
+        except asyncio.CancelledError:
+            # The agent's run timeout cancels an in-flight call; that is not a dependency failure.
+            outcome = None
+            raise
         except TimeoutError as exc:
+            outcome = "timeout"
             raise RetrievalUnavailableError("ChromaDB query timed out") from exc
         except Exception as exc:
             raise RetrievalUnavailableError("ChromaDB query failed") from exc
+        finally:
+            if outcome is not None:
+                retrieval_duration.record(time.perf_counter() - started, {"app.outcome": outcome})

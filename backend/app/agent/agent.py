@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import os
+import time
 from dataclasses import dataclass, field
 from functools import lru_cache
 
@@ -19,7 +20,7 @@ from app.agent.models import EligibilityResult
 from app.api.models import EligibilityRequest
 from app.config import Settings, get_settings
 from app.retrieval.client import DocumentRetriever, RetrievalUnavailableError
-from app.telemetry import traced_span
+from app.telemetry import agent_duration, llm_requests, tool_calls, traced_span
 from app.tools.web_search import WebSearchClient, WebSearchUnavailableError
 
 # Stable, user-facing activity labels, feature 11's transparency UI renders these verbatim.
@@ -60,11 +61,14 @@ class _Deps:
     tool_calls: int = 0
 
 
+def _model_name(settings: Settings) -> str:
+    return settings.agent_model.removeprefix("google:")
+
+
 def _build_agent(settings: Settings) -> Agent[_Deps, EligibilityResult]:
     http_client = httpx2.AsyncClient(timeout=settings.llm_timeout_seconds)
     provider = GoogleProvider(api_key=settings.google_api_key, http_client=http_client)
-    model_name = settings.agent_model.removeprefix("google:")
-    model = GoogleModel(model_name, provider=provider)
+    model = GoogleModel(_model_name(settings), provider=provider)
 
     agent: Agent[_Deps, EligibilityResult] = Agent(
         model,
@@ -80,6 +84,7 @@ def _build_agent(settings: Settings) -> Agent[_Deps, EligibilityResult]:
     async def retrieve_program_rules(ctx: RunContext[_Deps], query: str) -> list[dict]:
         """Search the ScholarLens knowledge base for program rules matching `query`."""
         ctx.deps.tool_calls += 1
+        tool_calls.add(1, {"app.tool.name": "retrieve_program_rules"})
         # A repeat call (multi-query retrieval) must not repeat the label in the rendered trace.
         if SEARCHING_PROGRAM_RULES not in ctx.deps.trace:
             ctx.deps.trace.append(SEARCHING_PROGRAM_RULES)
@@ -90,6 +95,7 @@ def _build_agent(settings: Settings) -> Agent[_Deps, EligibilityResult]:
     async def search_the_web(ctx: RunContext[_Deps], query: str) -> list[dict]:
         """Search the web for official program information matching `query`."""
         ctx.deps.tool_calls += 1
+        tool_calls.add(1, {"app.tool.name": "search_the_web"})
         if CHECKING_OFFICIAL_SOURCES not in ctx.deps.trace:
             ctx.deps.trace.append(CHECKING_OFFICIAL_SOURCES)
         results = await ctx.deps.web_search.search(query)
@@ -118,6 +124,7 @@ class EligibilityAgent:
         self._retriever = DocumentRetriever(settings)
         self._web_search = WebSearchClient(settings)
         self._agent = _build_agent(settings)
+        self._model_name = _model_name(settings)
         self._run_timeout_seconds = settings.agent_run_timeout_seconds
 
     async def check_eligibility(self, request: EligibilityRequest) -> EligibilityResult:
@@ -129,6 +136,11 @@ class EligibilityAgent:
     ) -> tuple[EligibilityResult, int]:
         """Like `check_eligibility`, plus how many tool calls the run made."""
         deps = _Deps(retriever=self._retriever, web_search=self._web_search)
+        started = time.perf_counter()
+
+        def record(outcome: str) -> None:
+            agent_duration.record(time.perf_counter() - started, {"app.agent.outcome": outcome})
+
         try:
             with traced_span("scholarlens.agent.run") as span:
                 run_result = await asyncio.wait_for(
@@ -137,15 +149,20 @@ class EligibilityAgent:
                 )
                 span.set_attribute("app.agent.tool_calls", deps.tool_calls)
         except TimeoutError as exc:
+            record("timeout")
             _log_failure("agent run timed out", exc)
             raise EligibilityEngineError("Agent run timed out") from exc
         except (RetrievalUnavailableError, WebSearchUnavailableError) as exc:
+            record("tool_unavailable")
             _log_failure("agent tool unavailable", exc)
             raise EligibilityEngineError(str(exc)) from exc
         except Exception as exc:
+            record("error")
             _log_failure("agent run failed", exc)
             raise EligibilityEngineError("Agent run failed") from exc
 
+        record("success")
+        llm_requests.add(run_result.usage.requests, {"gen_ai.request.model": self._model_name})
         output = run_result.output
         output.tool_trace = [*deps.trace, VALIDATING_ELIGIBILITY, PREPARING_CITED_ANSWER]
         return output, deps.tool_calls
