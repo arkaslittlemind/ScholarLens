@@ -72,7 +72,8 @@ class OpsSummary(BaseModel):
 def read_recent_runs(path: str) -> list[EvaluationRunSummary]:
     """Newest runs first. A malformed line is skipped; a missing file means no runs yet."""
     try:
-        lines = Path(path).read_text(encoding="utf-8").splitlines()
+        # "replace" so one corrupt byte can't fail the whole summary; a line it breaks is skipped.
+        lines = Path(path).read_text(encoding="utf-8", errors="replace").splitlines()
     except OSError:
         return []
     runs: list[EvaluationRunSummary] = []
@@ -93,6 +94,6 @@ def read_ingestion(path: str) -> IngestionSummary | None:
     """None when ingestion never ran or its status file can't be read."""
     try:
         status = IngestionStatus.model_validate_json(Path(path).read_text(encoding="utf-8"))
-    except (OSError, ValidationError):
+    except (OSError, UnicodeDecodeError, ValidationError):
         return None
     return IngestionSummary.model_validate(status.model_dump())
