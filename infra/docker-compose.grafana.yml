@@ -1,4 +1,4 @@
-# Opt-in override: also export traces to Grafana Cloud Tempo.
+# Opt-in override: also export traces to Grafana Cloud Tempo and metrics to Grafana Cloud.
 #   docker compose -f infra/docker-compose.yml -f infra/docker-compose.grafana.yml up
 # Needs infra/.env (copy infra/.env.example); the base stack runs without it.
 services:

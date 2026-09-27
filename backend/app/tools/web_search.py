@@ -1,10 +1,12 @@
 """Thin, timeout-guarded Tavily web-search client."""
 
+import time
+
 import httpx
 from pydantic import BaseModel
 
 from app.config import Settings
-from app.telemetry import traced_span
+from app.telemetry import traced_span, web_search_duration
 
 _TAVILY_SEARCH_URL = "https://api.tavily.com/search"
 
@@ -26,6 +28,16 @@ class WebSearchClient:
         self._settings = settings
 
     async def search(self, query: str) -> list[WebResult]:
+        started = time.perf_counter()
+        outcome = "error"
+        try:
+            results = await self._search(query)
+            outcome = "success"
+            return results
+        finally:
+            web_search_duration.record(time.perf_counter() - started, {"app.outcome": outcome})
+
+    async def _search(self, query: str) -> list[WebResult]:
         with traced_span("scholarlens.web_search.search") as span:
             span.set_attribute("app.web_search.provider", "tavily")
             if not self._settings.tavily_api_key:

@@ -13,7 +13,8 @@ from app.api.middleware import CorrelationIdMiddleware
 from app.api.routes import router
 from app.config import get_settings
 from app.logging import configure_logging
-from app.telemetry import configure_tracing
+from app.status_metrics import register_status_gauges
+from app.telemetry import configure_telemetry
 
 settings = get_settings()
 configure_logging(settings.log_level)
@@ -34,7 +35,8 @@ app.add_middleware(
 # Registered last so it is outermost and also sees requests CORS rejects.
 app.add_middleware(CorrelationIdMiddleware)
 
-configure_tracing(settings, app)
+configure_telemetry(settings, app)
+register_status_gauges(settings)
 
 register_error_handlers(app)
 
