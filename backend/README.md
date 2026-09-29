@@ -35,6 +35,17 @@ uvicorn app.main:app --reload
 - Health: http://localhost:8000/health
 - Interactive docs: http://localhost:8000/docs
 
+## Test
+
+```bash
+pytest
+ruff check .
+```
+
+Unit tests sit next to the module they cover (`app/**/test_*.py`). They build `Settings`
+through the `make_settings` fixture in `app/conftest.py`, which ignores `.env`, and stub
+ChromaDB and Tavily at their thin clients, so they run without keys or network.
+
 ## Rate limits, timeouts, and retries
 
 Every accepted `POST /eligibility` spends model credits, so the endpoint is rate limited:
