@@ -46,6 +46,7 @@ export class EligibilityClientError extends Error {
     public readonly kind: "api" | "network" | "timeout",
     public readonly detail?: ErrorDetail,
     public readonly status?: number,
+    public readonly retryAfterSeconds?: number,
   ) {
     super(detail?.message ?? kind);
     this.name = "EligibilityClientError";
@@ -102,6 +103,11 @@ function isEligibilityResult(value: unknown): value is EligibilityResult {
   );
 }
 
+// The backend sends whole seconds; an HTTP-date or anything else is ignored rather than guessed at.
+function parseRetryAfter(value: string | null): number | undefined {
+  return value !== null && /^\d+$/.test(value) ? Number(value) : undefined;
+}
+
 export async function checkEligibility(request: EligibilityRequest): Promise<EligibilityResult> {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
   const controller = new AbortController();
@@ -138,7 +144,12 @@ export async function checkEligibility(request: EligibilityRequest): Promise<Eli
     } catch {
       // Non-JSON body: keep the internal_error fallback above.
     }
-    throw new EligibilityClientError("api", detail, response.status);
+    throw new EligibilityClientError(
+      "api",
+      detail,
+      response.status,
+      parseRetryAfter(response.headers.get("Retry-After")),
+    );
   }
 
   const body: unknown = await response.json();

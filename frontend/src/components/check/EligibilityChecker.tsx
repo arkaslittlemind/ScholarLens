@@ -22,6 +22,15 @@ function isRetryableTransportError(error: EligibilityClientError): boolean {
   return error.kind === "network" || error.kind === "timeout";
 }
 
+function describeWait(seconds: number | undefined): string {
+  if (seconds === undefined) return "later";
+  if (seconds <= 60) return "in about a minute";
+  const minutes = Math.ceil(seconds / 60);
+  if (minutes < 60) return `in about ${minutes} minutes`;
+  const hours = Math.ceil(seconds / 3600);
+  return `in about ${hours} hour${hours > 1 ? "s" : ""}`;
+}
+
 function describeError(error: unknown): { message: string; fields?: string[] } {
   if (error instanceof EligibilityClientError) {
     if (error.kind === "timeout") {
@@ -34,6 +43,11 @@ function describeError(error: unknown): { message: string; fields?: string[] } {
     }
     if (error.detail?.code === "engine_unavailable") {
       return { message: "The eligibility engine is temporarily unavailable. Please try again shortly." };
+    }
+    if (error.detail?.code === "rate_limited") {
+      return {
+        message: `You've reached the limit for eligibility checks. Please try again ${describeWait(error.retryAfterSeconds)}.`,
+      };
     }
     if (error.detail?.code === "validation_error" && error.detail.fields.length > 0) {
       return {
