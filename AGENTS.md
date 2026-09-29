@@ -89,6 +89,8 @@ multi-tenant admin. Don't build toward those unless the project plan changes.
 - Setup: `py -3.11 -m venv .venv` (`python3.11` on macOS/Linux) then `pip install -e ".[dev]"`
 - Dev server: `uvicorn app.main:app --reload` (http://localhost:8000, docs at `/docs`)
 - Lint: `ruff check .`
+- Test: `pytest` (unit tests live next to their modules as `test_*.py`; they need no
+  `.env`, network, ChromaDB, or API keys)
 - Ingest knowledge base: `python -m app.ingestion` (rebuilds the ChromaDB collection
   from `backend/data/programs/`; needs ChromaDB running and `GOOGLE_API_KEY`)
 - Evaluate the agent: `python -m app.evaluation` (runs the labeled profiles in
@@ -101,5 +103,5 @@ multi-tenant admin. Don't build toward those unless the project plan changes.
   Collector. The frontend still runs separately via `npm run dev`.
 - Tear down: `docker compose -f infra/docker-compose.yml down`
 
-No test runner is configured yet in either app. Tests are not currently a
-required gate.
+The backend `pytest` command is the test gate for logic-bearing backend steps.
+The frontend has no test runner yet.
