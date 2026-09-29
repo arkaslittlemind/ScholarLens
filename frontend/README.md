@@ -20,6 +20,22 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Browser tests
+
+One Playwright test (`e2e/eligibility.spec.ts`) walks the main `/check` journey in Chromium:
+fill the form, see the loading state, and read a cited verdict.
+
+```bash
+npx playwright install chromium   # first time only
+npm run test:e2e
+```
+
+`playwright.config.ts` starts its own dev server on port 3100 with `NEXT_PUBLIC_API_URL`
+pointed at an address nothing listens on, and the test answers `POST /eligibility` itself
+with `page.route`. No backend is needed and no Gemini credits are spent. Stop any running
+`npm run dev` first: Next refuses to start a second dev server in the same folder, and the
+test run fails with "Process from config.webServer was not able to start".
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

@@ -83,6 +83,10 @@ multi-tenant admin. Don't build toward those unless the project plan changes.
 - Build: `npm run build`
 - Production server: `npm run start`
 - Lint: `npm run lint`
+- Browser tests: `npm run test:e2e` (Playwright, Chromium; the first run needs
+  `npx playwright install chromium`). It starts its own dev server on port 3100 and
+  stubs the backend API, so no backend is needed, but stop any running `npm run dev`
+  first: Next refuses a second dev server in the same folder.
 
 ### Backend (`backend/`)
 - Requires Python 3.11+; all commands below assume the venv is active
@@ -104,4 +108,5 @@ multi-tenant admin. Don't build toward those unless the project plan changes.
 - Tear down: `docker compose -f infra/docker-compose.yml down`
 
 The backend `pytest` command is the test gate for logic-bearing backend steps.
-The frontend has no test runner yet.
+The frontend has no unit-test runner; `npm run test:e2e` covers the main `/check`
+journey in a browser.
