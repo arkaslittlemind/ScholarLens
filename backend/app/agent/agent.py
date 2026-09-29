@@ -18,7 +18,7 @@ from pydantic_ai.providers.google import GoogleProvider
 
 from app.agent.models import EligibilityResult
 from app.api.models import EligibilityRequest
-from app.config import Settings, get_settings
+from app.config import Settings, get_settings, secret_value
 from app.retrieval.client import DocumentRetriever, RetrievalUnavailableError
 from app.telemetry import agent_duration, llm_requests, tool_calls, traced_span
 from app.tools.web_search import WebSearchClient, WebSearchUnavailableError
@@ -72,7 +72,9 @@ def _build_agent(settings: Settings) -> Agent[_Deps, EligibilityResult]:
         # read timeouts and error statuses are not, and the agent run timeout bounds the total.
         transport=httpx2.AsyncHTTPTransport(retries=1),
     )
-    provider = GoogleProvider(api_key=settings.google_api_key, http_client=http_client)
+    provider = GoogleProvider(
+        api_key=secret_value(settings.google_api_key) or None, http_client=http_client
+    )
     model = GoogleModel(_model_name(settings), provider=provider)
 
     agent: Agent[_Deps, EligibilityResult] = Agent(

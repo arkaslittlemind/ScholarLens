@@ -6,7 +6,7 @@ import time
 import httpx
 from pydantic import BaseModel
 
-from app.config import Settings
+from app.config import Settings, secret_value
 from app.telemetry import traced_span, web_search_duration
 
 _TAVILY_SEARCH_URL = "https://api.tavily.com/search"
@@ -46,7 +46,8 @@ class WebSearchClient:
     async def _search(self, query: str) -> list[WebResult]:
         with traced_span("scholarlens.web_search.search") as span:
             span.set_attribute("app.web_search.provider", "tavily")
-            if not self._settings.tavily_api_key:
+            api_key = secret_value(self._settings.tavily_api_key)
+            if not api_key:
                 raise WebSearchUnavailableError("TAVILY_API_KEY is not configured")
 
             try:
@@ -59,7 +60,7 @@ class WebSearchClient:
                     response = await client.post(
                         _TAVILY_SEARCH_URL,
                         json={
-                            "api_key": self._settings.tavily_api_key,
+                            "api_key": api_key,
                             "query": query,
                             "max_results": self._settings.retrieval_top_k,
                         },
