@@ -1,5 +1,6 @@
 """Typed application settings, loaded from the environment (and `.env` in dev)."""
 
+import re
 from functools import lru_cache
 from typing import Literal
 from urllib.parse import urlsplit
@@ -61,15 +62,21 @@ class Settings(BaseSettings):
         error = "must be a single origin such as https://app.example.com"
         parts = urlsplit(value)
         try:
-            parts.port  # noqa: B018 - raises on a non-numeric or out-of-range port
+            port = parts.port
         except ValueError as exc:
             raise ValueError(error) from exc
+        hostname = parts.hostname or ""
+        default_port = {"http": 80, "https": 443}.get(parts.scheme)
         if (
-            parts.scheme not in ("http", "https")
-            or not parts.hostname
-            or "@" in parts.netloc
-            or value != f"{parts.scheme}://{parts.netloc}"
+            default_port is None
+            or not re.fullmatch(r"[a-z0-9.-]+|[0-9a-f:.]+", hostname)
+            or port in (0, default_port)
         ):
+            raise ValueError(error)
+        # Browsers send the origin lowercased and without a default port, so anything but that
+        # exact form (case, empty port, path, userinfo) would never match.
+        host = f"[{hostname}]" if ":" in hostname else hostname
+        if value != f"{parts.scheme}://{host}" + (f":{port}" if port is not None else ""):
             raise ValueError(error)
         return value
 

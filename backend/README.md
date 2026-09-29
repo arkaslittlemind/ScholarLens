@@ -72,11 +72,12 @@ Every external call has a timeout (each must be above 0):
 | OTLP export | `OTEL_EXPORT_TIMEOUT_SECONDS` | 5 s |
 | Grafana query for `/ops` | `GRAFANA_QUERY_TIMEOUT_SECONDS` | 5 s |
 | Ingestion embedding and upsert | `INGESTION_TIMEOUT_SECONDS` | 60 s |
+| Browser request from `/check` | `REQUEST_TIMEOUT_MS` in `frontend/src/lib/eligibility.ts` | 60 s |
 
 The Gemini and Tavily clients retry once, and only when the connection itself fails. That
 request never reached the provider, so a retry cannot bill twice or repeat a search. Read
 timeouts, HTTP error statuses, and ChromaDB failures are not retried. The browser client
-retries only when the request never got a response (it gives up after 60 s).
+retries only when the request never got a response.
 
 ## Ingest the knowledge base
 

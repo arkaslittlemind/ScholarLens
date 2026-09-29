@@ -9,7 +9,8 @@ from app.config import get_settings
 
 _MINUTE = 60
 _DAY = 86_400
-_GLOBAL_KEY = ""
+# Not a valid IP, so it can never collide with a client's own bucket.
+_GLOBAL_KEY = "*all-clients*"
 
 
 class _FixedWindow:

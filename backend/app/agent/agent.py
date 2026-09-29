@@ -69,7 +69,7 @@ def _build_agent(settings: Settings) -> Agent[_Deps, EligibilityResult]:
     http_client = httpx2.AsyncClient(
         timeout=settings.llm_timeout_seconds,
         # Retries only a failed connect, which never reached Gemini, so it can't bill twice;
-        # read timeouts and error statuses are not retried.
+        # read timeouts and error statuses are not, and the agent run timeout bounds the total.
         transport=httpx2.AsyncHTTPTransport(retries=1),
     )
     provider = GoogleProvider(api_key=settings.google_api_key, http_client=http_client)

@@ -25,8 +25,7 @@ function isRetryableTransportError(error: EligibilityClientError): boolean {
 function describeWait(seconds: number | undefined): string {
   if (seconds === undefined) return "later";
   if (seconds <= 60) return "in about a minute";
-  const minutes = Math.ceil(seconds / 60);
-  if (minutes < 60) return `in about ${minutes} minutes`;
+  if (seconds < 3600) return `in about ${Math.ceil(seconds / 60)} minutes`;
   const hours = Math.ceil(seconds / 3600);
   return `in about ${hours} hour${hours > 1 ? "s" : ""}`;
 }
