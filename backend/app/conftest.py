@@ -1,8 +1,13 @@
 from collections.abc import Callable
 
 import pytest
+from pydantic_ai import models
 
 from app.config import Settings
+
+# Any real model request from a test fails loudly instead of spending Gemini credits; the
+# scripted FunctionModel and TestModel are exempt.
+models.ALLOW_MODEL_REQUESTS = False
 
 
 @pytest.fixture
