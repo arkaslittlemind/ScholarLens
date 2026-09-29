@@ -8,7 +8,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Header
 
 from app.api.errors import OPS_NOT_CONFIGURED, UNAUTHORIZED, ApiError, ErrorResponse
-from app.config import Settings, get_settings
+from app.config import Settings, get_settings, secret_value
 from app.ops.prometheus import fetch_traffic
 from app.ops.summary import EvaluationSection, OpsSummary, read_ingestion, read_recent_runs
 
@@ -22,12 +22,13 @@ def require_ops_token(
     settings: Annotated[Settings, Depends(get_settings)],
     authorization: Annotated[str | None, Header()] = None,
 ) -> None:
-    if not settings.ops_api_token:
+    expected = secret_value(settings.ops_api_token)
+    if not expected:
         raise ApiError(503, OPS_NOT_CONFIGURED)
     scheme, _, presented = (authorization or "").partition(" ")
     # compare_digest so the response time doesn't reveal how much of the token matched.
     if scheme.lower() != "bearer" or not secrets.compare_digest(
-        presented.encode(), settings.ops_api_token.encode()
+        presented.encode(), expected.encode()
     ):
         raise ApiError(401, UNAUTHORIZED, {"WWW-Authenticate": "Bearer"})
 

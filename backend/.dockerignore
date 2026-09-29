@@ -18,6 +18,5 @@ env/
 chroma/
 *.sqlite3
 
-requirements.txt
 .env.example
 .gitignore

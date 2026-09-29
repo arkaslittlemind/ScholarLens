@@ -13,7 +13,7 @@ from chromadb.api.types import EmbeddingFunction
 from chromadb.utils import embedding_functions
 from pydantic import BaseModel
 
-from app.config import Settings
+from app.config import Settings, secret_value
 from app.telemetry import retrieval_duration, traced_span
 
 
@@ -25,8 +25,8 @@ def build_embedding_function(settings: Settings) -> EmbeddingFunction:
     """The one embedding function shared by retrieval and ingestion, so both use the same space."""
     # GoogleGenaiEmbeddingFunction only reads its key from an env var, never a
     # constructor argument, so the setting has to be projected there first.
-    if settings.google_api_key:
-        os.environ["GOOGLE_API_KEY"] = settings.google_api_key
+    if api_key := secret_value(settings.google_api_key):
+        os.environ["GOOGLE_API_KEY"] = api_key
     return embedding_functions.GoogleGenaiEmbeddingFunction(
         model_name=settings.embedding_model,
         api_key_env_var="GOOGLE_API_KEY",

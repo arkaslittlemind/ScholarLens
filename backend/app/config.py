@@ -5,15 +5,16 @@ from functools import lru_cache
 from typing import Literal
 from urllib.parse import urlsplit
 
-from pydantic import Field, field_validator
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
-    google_api_key: str | None = None
-    tavily_api_key: str | None = None
+    # SecretStr keeps keys out of reprs, dumps, and validation errors; read them with secret_value.
+    google_api_key: SecretStr | None = None
+    tavily_api_key: SecretStr | None = None
     frontend_origin: str = "http://localhost:3000"
     # Per process and reset on restart; they bound Gemini spend on the public endpoint.
     rate_limit_per_minute: int = Field(default=5, ge=1)
@@ -47,11 +48,11 @@ class Settings(BaseSettings):
     evaluation_attempt_delay_seconds: float = Field(default=0.0, ge=0)
 
     # Shared with the frontend's server side; unset disables /ops/summary.
-    ops_api_token: str | None = None
+    ops_api_token: SecretStr | None = None
     # A read-only (metrics:read) Grafana Cloud Prometheus login, separate from the OTLP push one.
     grafana_prometheus_url: str | None = None
     grafana_prometheus_user: str | None = None
-    grafana_prometheus_token: str | None = None
+    grafana_prometheus_token: SecretStr | None = None
     grafana_query_timeout_seconds: float = Field(default=5.0, gt=0)
 
     @field_validator("frontend_origin")
@@ -79,6 +80,11 @@ class Settings(BaseSettings):
         if value != f"{parts.scheme}://{host}" + (f":{port}" if port is not None else ""):
             raise ValueError(error)
         return value
+
+
+def secret_value(secret: SecretStr | None) -> str:
+    """The raw secret, or "" when unset; an empty value means not configured."""
+    return secret.get_secret_value() if secret is not None else ""
 
 
 @lru_cache

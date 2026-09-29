@@ -5,6 +5,7 @@ from contextlib import contextmanager
 
 from fastapi import FastAPI
 from opentelemetry import metrics, trace
+from opentelemetry.context import Context
 from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
@@ -12,7 +13,7 @@ from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.sdk.metrics.view import ExplicitBucketHistogramAggregation, View
 from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace import Event, ReadableSpan, SpanProcessor, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import Span, Status, StatusCode
 
@@ -77,6 +78,78 @@ def _http_server_views() -> list[View]:
     ]
 
 
+# The ASGI instrumentation records these from the connection and the User-Agent header, under
+# both the old and the new semantic-convention names; each identifies the visitor.
+_VISITOR_ATTRIBUTES = frozenset(
+    {
+        "client.address",
+        "client.port",
+        "net.peer.ip",
+        "net.peer.port",
+        "network.peer.address",
+        "network.peer.port",
+        "http.client_ip",
+        "http.user_agent",
+        "user_agent.original",
+    }
+)
+# Any library may record a full exception, and its message can echo the student's input or a
+# provider response.
+_EXCEPTION_TEXT = frozenset({"exception.message", "exception.stacktrace"})
+
+
+def _scrubbed(span: ReadableSpan) -> ReadableSpan:
+    status = span.status
+    if status.description:
+        # The SDK describes an exception as "Type: message"; keep only the type.
+        status = Status(status.status_code, status.description.split(": ", 1)[0])
+    return ReadableSpan(
+        name=span.name,
+        context=span.context,
+        parent=span.parent,
+        resource=span.resource,
+        attributes={
+            key: value
+            for key, value in (span.attributes or {}).items()
+            if key not in _VISITOR_ATTRIBUTES
+        },
+        events=[
+            Event(
+                event.name,
+                {k: v for k, v in (event.attributes or {}).items() if k not in _EXCEPTION_TEXT},
+                event.timestamp,
+            )
+            for event in span.events
+        ],
+        links=span.links,
+        kind=span.kind,
+        status=status,
+        start_time=span.start_time,
+        end_time=span.end_time,
+        instrumentation_scope=span.instrumentation_scope,
+    )
+
+
+class ScrubbingSpanProcessor(SpanProcessor):
+    """Hands the wrapped processor a copy of each ended span without visitor identifiers or
+    exception text, so nothing downstream of the app ever receives them."""
+
+    def __init__(self, inner: SpanProcessor) -> None:
+        self._inner = inner
+
+    def on_start(self, span: Span, parent_context: Context | None = None) -> None:
+        self._inner.on_start(span, parent_context=parent_context)
+
+    def on_end(self, span: ReadableSpan) -> None:
+        self._inner.on_end(_scrubbed(span))
+
+    def shutdown(self) -> None:
+        self._inner.shutdown()
+
+    def force_flush(self, timeout_millis: int = 30000) -> bool:
+        return self._inner.force_flush(timeout_millis)
+
+
 def configure_telemetry(settings: Settings, app: FastAPI) -> None:
     """Export spans and metrics when a collector endpoint is set; otherwise stay no-op."""
     if not settings.otel_exporter_otlp_endpoint:
@@ -85,10 +158,12 @@ def configure_telemetry(settings: Settings, app: FastAPI) -> None:
     resource = Resource.create({"service.name": SERVICE_NAME, "service.version": app.version})
     provider = TracerProvider(resource=resource)
     provider.add_span_processor(
-        BatchSpanProcessor(
-            OTLPSpanExporter(
-                endpoint=settings.otel_exporter_otlp_endpoint,
-                timeout=settings.otel_export_timeout_seconds,
+        ScrubbingSpanProcessor(
+            BatchSpanProcessor(
+                OTLPSpanExporter(
+                    endpoint=settings.otel_exporter_otlp_endpoint,
+                    timeout=settings.otel_export_timeout_seconds,
+                )
             )
         )
     )

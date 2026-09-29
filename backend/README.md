@@ -20,7 +20,7 @@ py -3.11 -m venv .venv
 # python3.11 -m venv .venv
 # source .venv/bin/activate
 
-pip install -e ".[dev]"   # or: pip install -r requirements.txt
+pip install -e ".[dev]"
 ```
 
 Every command below assumes that venv is active.
@@ -78,6 +78,46 @@ The Gemini and Tavily clients retry once, and only when the connection itself fa
 request never reached the provider, so a retry cannot bill twice or repeat a search. Read
 timeouts, HTTP error statuses, and ChromaDB failures are not retried. The browser client
 retries only when the request never got a response.
+
+## Dependencies
+
+`pyproject.toml` declares the dependencies as version ranges. `requirements.txt` is the lock:
+the exact version of every package, including indirect ones, resolved in the container's
+Python (`python:3.11.16-slim`). The Docker image installs from the lock, so every build gets the
+same audited set. Local development keeps using `pip install -e ".[dev]"`, which resolves the
+ranges for your own Python version.
+
+After changing a dependency in `pyproject.toml`, regenerate the pins with the command in the
+header of `requirements.txt`, then rebuild the image. Check the result with:
+
+```bash
+docker compose -f infra/docker-compose.yml run --rm backend sh -c "pip check && pip freeze --exclude scholarlens-backend"
+```
+
+The collector image is pinned by version (`otel/opentelemetry-collector-contrib:0.160.0`) and
+ChromaDB by digest, so neither changes under a rebuild.
+
+To look for known vulnerabilities (Git Bash: prefix the `docker` command with
+`MSYS_NO_PATHCONV=1`):
+
+```bash
+# backend/, against the lock, in the container's Python
+docker run --rm -v "$(pwd):/src:ro" python:3.11.16-slim sh -c "pip install -q pip-audit && pip-audit -r /src/requirements.txt"
+# frontend/, production dependencies from package-lock.json
+npm audit --omit=dev
+```
+
+Last review, 2026-09-29:
+
+- `npm audit --omit=dev`: 0 vulnerabilities.
+- `pip-audit`: advisories against `chromadb` 1.5.9, none with a fixed version yet:
+  CVE-2026-45829 and CVE-2026-45833 (code execution through the collections endpoint with
+  `trust_remote_code`), CVE-2026-45831 and CVE-2026-45830 (missing tenant checks in Chroma's
+  authorization). **Accepted:** all four are in the Chroma *server*. The backend uses the
+  package only as an HTTP client and never starts a server, so none of these code paths run in
+  this service. The Chroma server container is the exposed part, so Docker Compose publishes
+  it on `127.0.0.1` only, and a deployment must keep it off the public network. Re-run the audit
+  and upgrade once a fixed release exists.
 
 ## Ingest the knowledge base
 
