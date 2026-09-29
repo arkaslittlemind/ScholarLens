@@ -16,6 +16,7 @@ _logger = logging.getLogger(__name__)
 ENGINE_UNAVAILABLE = "engine_unavailable"
 UNAUTHORIZED = "unauthorized"
 OPS_NOT_CONFIGURED = "ops_not_configured"
+RATE_LIMITED = "rate_limited"
 
 _STATUS_CODES = {
     400: "bad_request",
@@ -32,6 +33,7 @@ _MESSAGES = {
     ENGINE_UNAVAILABLE: "The eligibility engine is not available.",
     UNAUTHORIZED: "Missing or invalid ops token.",
     OPS_NOT_CONFIGURED: "The operations view is not configured.",
+    RATE_LIMITED: "Too many eligibility checks. Please try again later.",
     "internal_error": "The server encountered an unexpected error.",
 }
 

@@ -35,6 +35,50 @@ uvicorn app.main:app --reload
 - Health: http://localhost:8000/health
 - Interactive docs: http://localhost:8000/docs
 
+## Rate limits, timeouts, and retries
+
+Every accepted `POST /eligibility` spends model credits, so the endpoint is rate limited:
+
+| Limit | Variable | Default |
+| --- | --- | --- |
+| Per client IP, per minute | `RATE_LIMIT_PER_MINUTE` | 5 |
+| Per client IP, per UTC day | `RATE_LIMIT_PER_DAY` | 20 |
+| All clients together, per UTC day | `RATE_LIMIT_GLOBAL_PER_DAY` | 100 |
+
+Over a limit, the API answers `429` with the error code `rate_limited` and a `Retry-After`
+header in seconds. Only requests that pass validation count, and a rejected request counts
+toward nothing. The counters live in process memory: they reset on restart and each process
+keeps its own, so running several workers multiplies the limits. Raise the values in `.env`
+when testing locally. The evaluation command calls the agent directly and is not limited.
+
+The client IP is the connecting address. uvicorn replaces it with the `X-Forwarded-For` value
+only when the connection comes from an address in `FORWARDED_ALLOW_IPS` (default `127.0.0.1`).
+Behind a hosting proxy, set that variable to the proxy's address, or every visitor shares one
+per-IP bucket. Never set it to `*` on a directly exposed server, since anyone could then pick
+their own IP.
+
+`FRONTEND_ORIGIN` must be a single origin such as `https://app.example.com`, with no trailing
+slash or path. The app refuses to start otherwise, because CORS would silently block the
+browser.
+
+Every external call has a timeout (each must be above 0):
+
+| Call | Variable | Default |
+| --- | --- | --- |
+| One Gemini HTTP request | `LLM_TIMEOUT_SECONDS` | 20 s |
+| A whole agent run | `AGENT_RUN_TIMEOUT_SECONDS` | 45 s |
+| ChromaDB query | `CHROMA_TIMEOUT_SECONDS` | 5 s |
+| Tavily search | `WEB_SEARCH_TIMEOUT_SECONDS` | 10 s |
+| OTLP export | `OTEL_EXPORT_TIMEOUT_SECONDS` | 5 s |
+| Grafana query for `/ops` | `GRAFANA_QUERY_TIMEOUT_SECONDS` | 5 s |
+| Ingestion embedding and upsert | `INGESTION_TIMEOUT_SECONDS` | 60 s |
+| Browser request from `/check` | `REQUEST_TIMEOUT_MS` in `frontend/src/lib/eligibility.ts` | 60 s |
+
+The Gemini and Tavily clients retry once, and only when the connection itself fails. That
+request never reached the provider, so a retry cannot bill twice or repeat a search. Read
+timeouts, HTTP error statuses, and ChromaDB failures are not retried. The browser client
+retries only when the request never got a response.
+
 ## Ingest the knowledge base
 
 The eligibility agent retrieves program rules from ChromaDB. One command rebuilds

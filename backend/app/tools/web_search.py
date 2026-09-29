@@ -51,7 +51,10 @@ class WebSearchClient:
 
             try:
                 async with httpx.AsyncClient(
-                    timeout=self._settings.web_search_timeout_seconds
+                    timeout=self._settings.web_search_timeout_seconds,
+                    # Retries only a failed connect, which never reached Tavily, so it can't
+                    # repeat a billed search; the agent run timeout still bounds the total.
+                    transport=httpx.AsyncHTTPTransport(retries=1),
                 ) as client:
                     response = await client.post(
                         _TAVILY_SEARCH_URL,

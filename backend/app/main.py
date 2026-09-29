@@ -32,6 +32,8 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],
     allow_credentials=False,
+    # Browsers hide non-safelisted response headers cross-origin; /check reads this one.
+    expose_headers=["Retry-After"],
 )
 # Registered last so it is outermost and also sees requests CORS rejects.
 app.add_middleware(CorrelationIdMiddleware)
