@@ -14,6 +14,8 @@ from app.logging import REQUEST_ID_HEADER
 _logger = logging.getLogger(__name__)
 
 ENGINE_UNAVAILABLE = "engine_unavailable"
+# A second 503: the model provider rate-limited us, as opposed to an outage.
+ENGINE_BUSY = "engine_busy"
 UNAUTHORIZED = "unauthorized"
 OPS_NOT_CONFIGURED = "ops_not_configured"
 RATE_LIMITED = "rate_limited"
@@ -31,6 +33,7 @@ _MESSAGES = {
     "not_found": "The requested path does not exist.",
     "method_not_allowed": "That method is not allowed on this path.",
     ENGINE_UNAVAILABLE: "The eligibility engine is not available.",
+    ENGINE_BUSY: "The eligibility engine is busy. Please try again shortly.",
     UNAUTHORIZED: "Missing or invalid ops token.",
     OPS_NOT_CONFIGURED: "The operations view is not configured.",
     RATE_LIMITED: "Too many eligibility checks. Please try again later.",

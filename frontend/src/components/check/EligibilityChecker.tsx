@@ -40,6 +40,12 @@ function describeError(error: unknown): { message: string; fields?: string[] } {
         message: "Couldn't reach the eligibility service. Check your connection and try again.",
       };
     }
+    if (error.detail?.code === "engine_busy") {
+      // The model provider is rate limiting us: not an outage, so say when to come back.
+      return {
+        message: `The eligibility engine is busy right now. Please try again ${describeWait(error.retryAfterSeconds)}.`,
+      };
+    }
     if (error.detail?.code === "engine_unavailable") {
       return { message: "The eligibility engine is temporarily unavailable. Please try again shortly." };
     }

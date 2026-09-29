@@ -74,3 +74,39 @@ test("a student checks eligibility and reads a cited verdict", async ({ page }) 
   await expect(page.getByRole("button", { name: "Check eligibility" })).toBeEnabled();
   expect(requests).toHaveLength(1);
 });
+
+test("a busy engine tells the student when to try again", async ({ page }) => {
+  const requests: Request[] = [];
+  await page.route("**/eligibility", async (route) => {
+    requests.push(route.request());
+    await route.fulfill({
+      status: 503,
+      // Mirrors the backend's CORS response: without the expose header, the browser hides
+      // Retry-After from the page and the message loses its wait time.
+      headers: {
+        "Access-Control-Allow-Origin": "http://localhost:3100",
+        "Access-Control-Expose-Headers": "Retry-After",
+        "Retry-After": "20",
+      },
+      json: {
+        error: {
+          code: "engine_busy",
+          message: "The eligibility engine is busy. Please try again shortly.",
+          fields: [],
+        },
+      },
+    });
+  });
+
+  await page.goto("/check");
+  await page.getByLabel("Describe your situation").fill(DESCRIPTION);
+  await page.getByRole("button", { name: "Check eligibility" }).click();
+
+  await expect(page.getByRole("alert").filter({ hasText: /\S/ })).toHaveText(
+    "The eligibility engine is busy right now. Please try again in about a minute.",
+  );
+  await expect(page.getByRole("button", { name: "Check eligibility" })).toBeEnabled();
+  await expect(page.getByText("Eligible", { exact: true })).toHaveCount(0);
+  // A 503 the server answered is never auto-retried; only transport failures are.
+  expect(requests).toHaveLength(1);
+});

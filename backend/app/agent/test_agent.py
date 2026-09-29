@@ -1,9 +1,11 @@
 import asyncio
 import logging
+import time
 from collections.abc import Callable
 
 import pytest
 from fastapi.testclient import TestClient
+from pydantic_ai.exceptions import ModelHTTPError
 from pydantic_ai.messages import ModelMessage, ModelRequest, ModelResponse, ToolCallPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 
@@ -15,8 +17,10 @@ from app.agent.agent import (
     VALIDATING_ELIGIBILITY,
     EligibilityAgent,
     EligibilityEngineError,
+    EngineBusyError,
     get_agent,
 )
+from app.agent.test_provider_errors import gemini_429
 from app.api import eligibility
 from app.api.models import EligibilityRequest
 from app.api.rate_limit import RateLimiter, get_rate_limiter
@@ -243,3 +247,128 @@ def test_the_full_pipeline_through_the_api(build_agent, make_settings, monkeypat
         PREPARING_CITED_ANSWER,
     ]
     assert tools[0].queries == ["NJ STARS class rank"]
+
+
+_PER_MINUTE = "GenerateRequestsPerMinutePerProjectPerModel"
+_PER_DAY = "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+
+
+def rate_limited_first(
+    body: dict[str, object], failures: int, then: FunctionModel
+) -> tuple[FunctionModel, list[int]]:
+    """A model whose first `failures` requests get a Gemini 429, after which `then` answers."""
+    calls: list[int] = []
+
+    def respond(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+        calls.append(len(calls) + 1)
+        if len(calls) <= failures:
+            raise ModelHTTPError(status_code=429, model_name="gemini-test", body=body)
+        return then.function(messages, info)
+
+    return FunctionModel(respond), calls
+
+
+def test_a_short_provider_delay_is_retried_once_and_answers(build_agent):
+    answer, _ = scripted()
+    model, calls = rate_limited_first(gemini_429(_PER_MINUTE, retry_delay="0.05s"), 1, answer)
+
+    result, tool_calls = _check(build_agent(model))
+
+    assert result.supporting_clause == _CLAUSE
+    assert len(calls) == 2
+    assert tool_calls == 0
+
+
+def test_the_answering_attempt_alone_sets_the_trace_and_tool_count(build_agent, tools):
+    body = gemini_429(_PER_MINUTE, retry_delay="0.05s")
+    turns: list[int] = []
+
+    def respond(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+        turns.append(len(turns))
+        if len(turns) == 1:
+            return ModelResponse(parts=[ToolCallPart("retrieve_program_rules", {"query": "q"})])
+        if len(turns) == 2:
+            raise ModelHTTPError(status_code=429, model_name="gemini-test", body=body)
+        return ModelResponse(parts=[ToolCallPart(info.output_tools[0].name, _ANSWER)])
+
+    result, tool_calls = _check(build_agent(FunctionModel(respond)))
+
+    # The first attempt searched, then hit the limit; the retry answered without a tool.
+    assert tools[0].queries == ["q"]
+    assert result.tool_trace == [VALIDATING_ELIGIBILITY, PREPARING_CITED_ANSWER]
+    assert tool_calls == 0
+
+
+def test_a_second_rate_limit_after_the_retry_is_busy(build_agent):
+    answer, _ = scripted()
+    model, calls = rate_limited_first(gemini_429(_PER_MINUTE, retry_delay="0.05s"), 2, answer)
+
+    with pytest.raises(EngineBusyError) as caught:
+        _check(build_agent(model))
+
+    assert len(calls) == 2
+    assert caught.value.quota_type == "per_minute"
+    assert caught.value.retry_after_seconds == 0.05
+
+
+@pytest.mark.parametrize(
+    ("body", "quota_type", "retry_after"),
+    [
+        (gemini_429(_PER_DAY, retry_delay="0.05s"), "daily", 0.05),
+        # 40 s plus the 20 s model-call window does not fit in the 45 s run budget.
+        (gemini_429(_PER_MINUTE, retry_delay="40s"), "per_minute", 40.0),
+        (gemini_429(_PER_MINUTE), "per_minute", None),
+        ({"error": "not the documented shape"}, "unknown", None),
+    ],
+)
+def test_no_retry_when_the_limit_cannot_clear_in_time(build_agent, body, quota_type, retry_after):
+    answer, _ = scripted()
+    model, calls = rate_limited_first(body, 1, answer)
+
+    started = time.perf_counter()
+    with pytest.raises(EngineBusyError) as caught:
+        _check(build_agent(model))
+
+    assert len(calls) == 1
+    assert time.perf_counter() - started < 5
+    assert caught.value.quota_type == quota_type
+    assert caught.value.retry_after_seconds == retry_after
+
+
+def test_busy_is_still_an_engine_error_for_existing_callers(build_agent):
+    answer, _ = scripted()
+    model, _ = rate_limited_first(gemini_429(_PER_DAY), 1, answer)
+
+    with pytest.raises(EligibilityEngineError):
+        _check(build_agent(model))
+
+
+def test_the_rate_limit_log_carries_the_quota_type_and_never_the_provider_text(
+    build_agent, caplog
+):
+    answer, _ = scripted()
+    model, _ = rate_limited_first(gemini_429(_PER_MINUTE, retry_delay="0.05s"), 2, answer)
+
+    with caplog.at_level(logging.INFO, logger="app"), pytest.raises(EngineBusyError) as caught:
+        _check(build_agent(model))
+
+    messages = [r.getMessage() for r in caplog.records]
+    assert "agent provider rate limited, retrying" in messages
+    record = next(r for r in caplog.records if r.getMessage() == "agent provider rate limited")
+    assert record.quota_type == "per_minute"
+    assert record.error_type == "ModelHTTPError"
+    for r in caplog.records:
+        assert "Student prompt text" not in r.getMessage()
+        assert "Student prompt text" not in str(vars(r).get("quota_type"))
+    assert "Student prompt text" not in str(caught.value)
+
+
+def test_other_provider_errors_are_still_a_generic_failure(build_agent):
+    body = {"error": {"code": 500, "status": "INTERNAL"}}
+
+    def fail(_messages: list[ModelMessage], _info: AgentInfo) -> ModelResponse:
+        raise ModelHTTPError(status_code=500, model_name="gemini-test", body=body)
+
+    with pytest.raises(EligibilityEngineError, match="Agent run failed") as caught:
+        _check(build_agent(FunctionModel(fail)))
+    assert not isinstance(caught.value, EngineBusyError)
