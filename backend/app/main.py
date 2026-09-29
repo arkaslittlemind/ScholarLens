@@ -4,14 +4,7 @@ Run locally:
     uvicorn app.main:app --reload
 """
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-
-from app.api.eligibility import router as eligibility_router
-from app.api.errors import register_error_handlers
-from app.api.middleware import CorrelationIdMiddleware
-from app.api.ops import router as ops_router
-from app.api.routes import router
+from app.application import create_app
 from app.config import get_settings
 from app.logging import configure_logging
 from app.status_metrics import register_status_gauges
@@ -20,29 +13,7 @@ from app.telemetry import configure_telemetry
 settings = get_settings()
 configure_logging(settings.log_level)
 
-app = FastAPI(
-    title="ScholarLens API",
-    version="0.1.0",
-    description="Backend for the ScholarLens scholarship-eligibility assistant.",
-)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[settings.frontend_origin],
-    allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type"],
-    allow_credentials=False,
-    # Browsers hide non-safelisted response headers cross-origin; /check reads this one.
-    expose_headers=["Retry-After"],
-)
-# Registered last so it is outermost and also sees requests CORS rejects.
-app.add_middleware(CorrelationIdMiddleware)
+app = create_app(settings)
 
 configure_telemetry(settings, app)
 register_status_gauges(settings)
-
-register_error_handlers(app)
-
-app.include_router(router)
-app.include_router(eligibility_router)
-app.include_router(ops_router)

@@ -45,6 +45,10 @@ ruff check .
 Unit tests sit next to the module they cover (`app/**/test_*.py`). They build `Settings`
 through the `make_settings` fixture in `app/conftest.py`, which ignores `.env`, and stub
 ChromaDB and Tavily at their thin clients, so they run without keys or network.
+API tests build the app with `create_app(settings)` from `app/application.py` rather than
+importing `app.main`. Agent tests drive the real `EligibilityAgent` with Pydantic AI's scripted
+`FunctionModel`, and `app/conftest.py` sets `ALLOW_MODEL_REQUESTS = False`, so no test can call
+Gemini.
 
 ## Rate limits, timeouts, and retries
 
