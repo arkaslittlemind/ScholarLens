@@ -94,6 +94,19 @@ request never reached the provider, so a retry cannot bill twice or repeat a sea
 timeouts, HTTP error statuses, and ChromaDB failures are not retried. The browser client
 retries only when the request never got a response.
 
+### Provider rate limits
+
+A Gemini quota or rate-limit response (HTTP 429, `RESOURCE_EXHAUSTED`) is not an outage. The
+agent reads the quota type (`per_minute`, `daily`, or `unknown`) and Gemini's suggested
+`retryDelay` from the error body, and retries the run once only when the quota is not daily, a
+delay was given, and that delay plus `LLM_TIMEOUT_SECONDS` still fits in what is left of
+`AGENT_RUN_TIMEOUT_SECONDS` (with the defaults, delays up to about 25 s). Otherwise
+`POST /eligibility` returns 503 with code `engine_busy`, plus `Retry-After` in whole seconds
+whenever Gemini gave a delay, and `/check` shows a "busy, try again" message. Logs and spans
+carry only the quota type (`quota_type`, `app.provider.quota_type`), never the provider's
+response text. Rate limits on the embedding call inside retrieval still return
+`engine_unavailable`.
+
 ## Dependencies
 
 `pyproject.toml` declares the dependencies as version ranges. `requirements.txt` is the lock:

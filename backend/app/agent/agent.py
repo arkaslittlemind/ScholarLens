@@ -11,12 +11,15 @@ from functools import lru_cache
 os.environ.setdefault("PYDANTIC_AI_NO_BANNER", "1")
 
 import httpx2
-from pydantic_ai import Agent, InstrumentationSettings, RunContext
+from opentelemetry.trace import Span
+from pydantic_ai import Agent, AgentRunResult, InstrumentationSettings, RunContext
 from pydantic_ai.capabilities import Instrumentation
+from pydantic_ai.exceptions import ModelHTTPError
 from pydantic_ai.models.google import GoogleModel
 from pydantic_ai.providers.google import GoogleProvider
 
 from app.agent.models import EligibilityResult
+from app.agent.provider_errors import ProviderRateLimit, QuotaType, classify_rate_limit
 from app.api.models import EligibilityRequest
 from app.config import Settings, get_settings, secret_value
 from app.retrieval.client import DocumentRetriever, RetrievalUnavailableError
@@ -45,6 +48,16 @@ _SYSTEM_PROMPT = (
 
 class EligibilityEngineError(Exception):
     """Raised when the agent cannot produce a result: a tool, model, or timeout failure."""
+
+
+class EngineBusyError(EligibilityEngineError):
+    """The model provider rate-limited the run and no retry fit within the time budget."""
+
+    def __init__(self, quota_type: QuotaType, retry_after_seconds: float | None) -> None:
+        # A fixed message: the provider's own text can echo the prompt.
+        super().__init__("Model provider rate limited the run")
+        self.quota_type = quota_type
+        self.retry_after_seconds = retry_after_seconds
 
 
 def _log_failure(message: str, exc: Exception) -> None:
@@ -133,6 +146,7 @@ class EligibilityAgent:
         self._agent = _build_agent(settings)
         self._model_name = _model_name(settings)
         self._run_timeout_seconds = settings.agent_run_timeout_seconds
+        self._llm_timeout_seconds = settings.llm_timeout_seconds
 
     async def check_eligibility(self, request: EligibilityRequest) -> EligibilityResult:
         result, _ = await self.check_eligibility_measured(request)
@@ -141,20 +155,24 @@ class EligibilityAgent:
     async def check_eligibility_measured(
         self, request: EligibilityRequest
     ) -> tuple[EligibilityResult, int]:
-        """Like `check_eligibility`, plus how many tool calls the run made."""
-        deps = _Deps(retriever=self._retriever, web_search=self._web_search)
+        """Like `check_eligibility`, plus how many tool calls the answering attempt made."""
         started = time.perf_counter()
+        deadline = started + self._run_timeout_seconds
 
         def record(outcome: str) -> None:
             agent_duration.record(time.perf_counter() - started, {"app.agent.outcome": outcome})
 
         try:
             with traced_span("scholarlens.agent.run") as span:
-                run_result = await asyncio.wait_for(
-                    self._agent.run(_build_prompt(request), deps=deps),
+                # One timeout over every attempt and any wait, so a retry never extends the run.
+                run_result, deps = await asyncio.wait_for(
+                    self._run_with_retry(_build_prompt(request), deadline, span),
                     timeout=self._run_timeout_seconds,
                 )
                 span.set_attribute("app.agent.tool_calls", deps.tool_calls)
+        except EngineBusyError:
+            record("rate_limited")
+            raise
         except TimeoutError as exc:
             record("timeout")
             _log_failure("agent run timed out", exc)
@@ -173,6 +191,37 @@ class EligibilityAgent:
         output = run_result.output
         output.tool_trace = [*deps.trace, VALIDATING_ELIGIBILITY, PREPARING_CITED_ANSWER]
         return output, deps.tool_calls
+
+    def _can_retry(self, limit: ProviderRateLimit, deadline: float) -> bool:
+        # A daily quota won't clear in time, and the retried run needs a full model-call window
+        # after the wait, or it would only turn a clear "busy" into a timeout.
+        if limit.quota_type == "daily" or limit.retry_after_seconds is None:
+            return False
+        remaining = deadline - time.perf_counter()
+        return limit.retry_after_seconds + self._llm_timeout_seconds <= remaining
+
+    async def _run_with_retry(
+        self, prompt: str, deadline: float, span: Span
+    ) -> tuple[AgentRunResult[EligibilityResult], _Deps]:
+        retried = False
+        while True:
+            # Fresh deps, so the trace and tool count describe only the attempt that answers.
+            deps = _Deps(retriever=self._retriever, web_search=self._web_search)
+            try:
+                return await self._agent.run(prompt, deps=deps), deps
+            except ModelHTTPError as exc:
+                limit = classify_rate_limit(exc)
+                if limit is None:
+                    raise
+                span.set_attribute("app.provider.quota_type", limit.quota_type)
+                log_extra = {"error_type": type(exc).__name__, "quota_type": limit.quota_type}
+                if not retried and self._can_retry(limit, deadline):
+                    retried = True
+                    _logger.info("agent provider rate limited, retrying", extra=log_extra)
+                    await asyncio.sleep(limit.retry_after_seconds)
+                    continue
+                _logger.warning("agent provider rate limited", extra=log_extra)
+                raise EngineBusyError(limit.quota_type, limit.retry_after_seconds) from exc
 
 
 @lru_cache

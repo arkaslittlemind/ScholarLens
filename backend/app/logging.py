@@ -22,6 +22,7 @@ _ALLOWED_EXTRAS = {
     "error_type",
     "method",
     "path",
+    "quota_type",
     "stack",
     "status_code",
 }
