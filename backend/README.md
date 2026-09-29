@@ -87,6 +87,10 @@ Python (`python:3.11.16-slim`). The Docker image installs from the lock, so ever
 same audited set. Local development keeps using `pip install -e ".[dev]"`, which resolves the
 ranges for your own Python version.
 
+One build-time tool sits outside the lock: installing the project itself (`pip install -e .`
+in the Dockerfile) fetches the latest `hatchling` build backend in an isolated build step. It
+builds the package and is not present when the app runs.
+
 After changing a dependency in `pyproject.toml`, regenerate the pins with the command in the
 header of `requirements.txt`, then rebuild the image. Check the result with:
 

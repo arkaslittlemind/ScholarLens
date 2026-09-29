@@ -72,21 +72,15 @@ async def fetch_traffic(settings: Settings, window_seconds: int, step_seconds: i
     not_configured = Traffic(
         status="not_configured", window_seconds=window_seconds, step_seconds=step_seconds
     )
-    if not (
-        settings.grafana_prometheus_url
-        and settings.grafana_prometheus_user
-        and secret_value(settings.grafana_prometheus_token)
-    ):
+    token = secret_value(settings.grafana_prometheus_token)
+    if not (settings.grafana_prometheus_url and settings.grafana_prometheus_user and token):
         return not_configured
 
     end = int(time.time())
     start = end - window_seconds
     try:
         async with httpx.AsyncClient(
-            auth=(
-                settings.grafana_prometheus_user,
-                secret_value(settings.grafana_prometheus_token),
-            ),
+            auth=(settings.grafana_prometheus_user, token),
             timeout=settings.grafana_query_timeout_seconds,
         ) as client:
             # httpx's timeout applies per phase, so a slowly streamed body could outlast it;

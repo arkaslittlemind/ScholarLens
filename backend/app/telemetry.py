@@ -1,10 +1,12 @@
 """OpenTelemetry setup: OTLP export of traces and metrics, FastAPI request spans, app metrics."""
 
-from collections.abc import Iterator
+import re
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 
 from fastapi import FastAPI
 from opentelemetry import metrics, trace
+from opentelemetry.attributes import BoundedAttributes
 from opentelemetry.context import Context
 from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
@@ -15,7 +17,9 @@ from opentelemetry.sdk.metrics.view import ExplicitBucketHistogramAggregation, V
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import Event, ReadableSpan, SpanProcessor, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.sdk.util import BoundedList
 from opentelemetry.trace import Span, Status, StatusCode
+from opentelemetry.util.types import Attributes
 
 from app.config import Settings
 
@@ -98,30 +102,48 @@ _VISITOR_ATTRIBUTES = frozenset(
 _EXCEPTION_TEXT = frozenset({"exception.message", "exception.stacktrace"})
 
 
+def _without(attributes: Attributes, removed: frozenset[str], dropped: int) -> BoundedAttributes:
+    # A bounded mapping, not a dict, so the export still reports what the SDK's limits dropped.
+    kept = BoundedAttributes(
+        attributes={k: v for k, v in (attributes or {}).items() if k not in removed}
+    )
+    kept.dropped = dropped
+    return kept
+
+
+def _bounded(items: Sequence[object], dropped: int) -> BoundedList:
+    kept = BoundedList.from_seq(None, items)
+    kept.dropped = dropped
+    return kept
+
+
 def _scrubbed(span: ReadableSpan) -> ReadableSpan:
     status = span.status
     if status.description:
-        # The SDK describes an exception as "Type: message"; keep only the type.
-        status = Status(status.status_code, status.description.split(": ", 1)[0])
+        # The SDK describes an exception as "Type: message". Keep a bare type name only; any
+        # other text may be a message.
+        head = status.description.split(": ", 1)[0]
+        status = Status(
+            status.status_code, head if re.fullmatch(r"[A-Za-z_][\w.]*", head) else None
+        )
     return ReadableSpan(
         name=span.name,
         context=span.context,
         parent=span.parent,
         resource=span.resource,
-        attributes={
-            key: value
-            for key, value in (span.attributes or {}).items()
-            if key not in _VISITOR_ATTRIBUTES
-        },
-        events=[
-            Event(
-                event.name,
-                {k: v for k, v in (event.attributes or {}).items() if k not in _EXCEPTION_TEXT},
-                event.timestamp,
-            )
-            for event in span.events
-        ],
-        links=span.links,
+        attributes=_without(span.attributes, _VISITOR_ATTRIBUTES, span.dropped_attributes),
+        events=_bounded(
+            [
+                Event(
+                    event.name,
+                    _without(event.attributes, _EXCEPTION_TEXT, event.dropped_attributes),
+                    event.timestamp,
+                )
+                for event in span.events
+            ],
+            span.dropped_events,
+        ),
+        links=_bounded(span.links, span.dropped_links),
         kind=span.kind,
         status=status,
         start_time=span.start_time,
@@ -131,8 +153,7 @@ def _scrubbed(span: ReadableSpan) -> ReadableSpan:
 
 
 class ScrubbingSpanProcessor(SpanProcessor):
-    """Hands the wrapped processor a copy of each ended span without visitor identifiers or
-    exception text, so nothing downstream of the app ever receives them."""
+    """Passes on each ended span without visitor identifiers or exception text."""
 
     def __init__(self, inner: SpanProcessor) -> None:
         self._inner = inner
