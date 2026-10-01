@@ -14,9 +14,10 @@ _correlation_id: ContextVar[str | None] = ContextVar("correlation_id", default=N
 # Attributes every LogRecord has; anything else on a record came from `extra=`.
 _RESERVED = set(logging.makeLogRecord({}).__dict__) | {"message", "asctime", "taskName"}
 
-# The only `extra=` fields written out. An unknown field is dropped by name, so a future call
-# passing a request body or provider response cannot put its contents in the logs.
-_ALLOWED_EXTRAS = {
+# The only `extra=` fields written out, to stdout and to the OTLP log export alike. An unknown
+# field is dropped by name, so a future call passing a request body or provider response cannot
+# put its contents in the logs.
+ALLOWED_EXTRAS = {
     "correlation_id",
     "duration_ms",
     "error_type",
@@ -52,8 +53,8 @@ class JsonFormatter(logging.Formatter):
             "correlation_id": get_correlation_id(),
         }
         extras = {k: v for k, v in record.__dict__.items() if k not in _RESERVED}
-        entry.update({k: v for k, v in extras.items() if k in _ALLOWED_EXTRAS})
-        dropped = sorted(k for k in extras if k not in _ALLOWED_EXTRAS)
+        entry.update({k: v for k, v in extras.items() if k in ALLOWED_EXTRAS})
+        dropped = sorted(k for k in extras if k not in ALLOWED_EXTRAS)
         if dropped:
             entry["dropped_fields"] = dropped
         if record.exc_info and record.exc_info[0] is not None:
