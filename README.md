@@ -65,7 +65,7 @@ on that service's volume. The frontend runs on Vercel. Both serve HTTPS. Keep
 every secret in the platform's env vars, never in the repo.
 
 **1. Backend on Railway.** Create a project from this GitHub repo with one
-service, then set it up:
+service deploying from `main`, then set it up:
 
 - Settings: root directory `backend`, config file `/backend/railway.toml`. The
   config path is absolute because Railway does not resolve it from the root
@@ -73,9 +73,13 @@ service, then set it up:
   restart on failure.
 - Keep 1 replica. The rate limits live in process memory and embedded Chroma
   allows one process.
-- Add a volume mounted at `/data`. Do not mount it over `/app/data`, which
-  holds the bundled corpus.
+- Add a volume mounted at `/data`. Volumes are created from the project canvas
+  (Ctrl/Cmd+K, or right-click the canvas), not from the service settings. Do
+  not mount it over `/app/data`, which holds the bundled corpus.
 - Generate a public domain.
+- Keep Under Attack Mode off (service Settings, Edge). When it is on, the edge
+  answers every non-browser request, including `/health`, with a plain-text
+  `rate limited` 429 that never reaches the app.
 - Variables: `GOOGLE_API_KEY`, `TAVILY_API_KEY`, `OPS_API_TOKEN`,
   `FRONTEND_ORIGIN` (set in step 3), `CHROMA_PERSIST_PATH=/data/chroma`,
   `INGESTION_STATUS_PATH=/data/ingestion-status.json`,
@@ -89,7 +93,9 @@ service, then set it up:
 visitors. If the variable is unset, every visitor shares one limit.
 
 **2. Ingest the corpus once.** Run ingestion inside the running service. It
-reads the bundled corpus from `/app/data/programs`.
+reads the bundled corpus from `/app/data/programs`. `railway ssh` needs an SSH
+key registered with Railway; the CLI offers to register your local key on first
+use.
 
 ```bash
 railway ssh -s <backend-service> -- sh -c "cd /app && python -m app.ingestion"
@@ -101,7 +107,9 @@ the rebuilt collection. Repeat both whenever `backend/data/programs/` changes.
 **3. Frontend on Vercel.** Import the repo with root directory `frontend` and
 set these variables:
 
-- `NEXT_PUBLIC_API_URL`: the Railway `https://` origin. It is inlined at build
+- `NEXT_PUBLIC_API_URL`: the full Railway origin including the scheme, such as
+  `https://<service>.up.railway.app`. Without `https://` the browser treats it
+  as a relative path and every check 404s on Vercel. It is inlined at build
   time, so a change needs a redeploy.
 - `OPS_USERNAME`, `OPS_PASSWORD`, `OPS_API_TOKEN`: the token must equal the
   backend's.
