@@ -1,6 +1,6 @@
-# Merged over otel-collector-config.yaml by docker-compose.grafana.yml. Traces keep
-# printing to the collector log and are also sent to Grafana Cloud Tempo; metrics stay on
-# the local Prometheus endpoint and are also sent to Grafana Cloud's Prometheus (Mimir).
+# Merged over otel-collector-config.yaml by docker-compose.grafana.yml. Traces and logs keep
+# printing to the collector log and are also sent to Grafana Cloud (Tempo and Loki); metrics
+# stay on the local Prometheus endpoint and are also sent to Grafana Cloud's Prometheus (Mimir).
 extensions:
   basicauth/grafana:
     client_auth:
@@ -20,3 +20,5 @@ service:
       exporters: [debug, otlp_http/grafana]
     metrics:
       exporters: [prometheus, otlp_http/grafana]
+    logs:
+      exporters: [debug, otlp_http/grafana]

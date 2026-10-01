@@ -1,5 +1,6 @@
-"""OpenTelemetry setup: OTLP export of traces and metrics, FastAPI request spans, app metrics."""
+"""OpenTelemetry setup: OTLP export of traces, metrics and logs, request spans, app metrics."""
 
+import logging
 import re
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
@@ -8,9 +9,17 @@ from fastapi import FastAPI
 from opentelemetry import metrics, trace
 from opentelemetry.attributes import BoundedAttributes
 from opentelemetry.context import Context
-from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
+from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.sdk._logs import (
+    LoggerProvider,
+    LoggingHandler,
+    LogRecordProcessor,
+    ReadWriteLogRecord,
+)
+from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.sdk.metrics.view import ExplicitBucketHistogramAggregation, View
@@ -22,6 +31,7 @@ from opentelemetry.trace import Span, Status, StatusCode
 from opentelemetry.util.types import Attributes
 
 from app.config import Settings
+from app.logging import ALLOWED_EXTRAS, get_correlation_id
 
 SERVICE_NAME = "scholarlens-api"
 
@@ -171,9 +181,53 @@ class ScrubbingSpanProcessor(SpanProcessor):
         return self._inner.force_flush(timeout_millis)
 
 
+# The OTLP log record carries the same fields the stdout JSON line does, plus the code location
+# and the exception type. The handler also adds the exception message and full stacktrace,
+# either of which can echo the student's input, so those are never exported.
+_LOG_ATTRIBUTES = ALLOWED_EXTRAS | {"exception.type"}
+
+
+class ScrubbingLogRecordProcessor(LogRecordProcessor):
+    """Passes on each log record with only allowlisted attributes and the correlation ID."""
+
+    def __init__(self, inner: LogRecordProcessor) -> None:
+        self._inner = inner
+
+    def on_emit(self, log_record: ReadWriteLogRecord) -> None:
+        record = log_record.log_record
+        original = record.attributes or {}
+        attributes = {
+            k: v for k, v in original.items() if k in _LOG_ATTRIBUTES or k.startswith("code.")
+        }
+        # Emitted synchronously from the logging call, so the request's context is still current.
+        # An explicit extra wins, as it does in the stdout JSON line.
+        if (correlation_id := get_correlation_id()) is not None:
+            attributes.setdefault("correlation_id", correlation_id)
+        kept = BoundedAttributes(attributes=attributes)
+        kept.dropped = getattr(original, "dropped", 0)
+        record.attributes = kept
+        self._inner.on_emit(log_record)
+
+    def shutdown(self) -> None:
+        self._inner.shutdown()
+
+    def force_flush(self, timeout_millis: int = 30000) -> bool:
+        return self._inner.force_flush(timeout_millis)
+
+
+def otlp_signal_url(base: str, signal: str) -> str:
+    """The OTLP/HTTP URL for one signal, under the configured base endpoint."""
+    return f"{base.rstrip('/')}/v1/{signal}"
+
+
 def configure_telemetry(settings: Settings, app: FastAPI) -> None:
-    """Export spans and metrics when a collector endpoint is set; otherwise stay no-op."""
-    if not settings.otel_exporter_otlp_endpoint:
+    """Export spans, metrics and logs when an OTLP endpoint is set; otherwise stay no-op.
+
+    The endpoint is an OTLP/HTTP base URL. Auth headers, when the receiver needs them, come from
+    the standard OTEL_EXPORTER_OTLP_HEADERS variable, which the exporters read themselves.
+    """
+    base = settings.otel_exporter_otlp_endpoint
+    if not base:
         return
 
     resource = Resource.create({"service.name": SERVICE_NAME, "service.version": app.version})
@@ -182,7 +236,7 @@ def configure_telemetry(settings: Settings, app: FastAPI) -> None:
         ScrubbingSpanProcessor(
             BatchSpanProcessor(
                 OTLPSpanExporter(
-                    endpoint=settings.otel_exporter_otlp_endpoint,
+                    endpoint=otlp_signal_url(base, "traces"),
                     timeout=settings.otel_export_timeout_seconds,
                 )
             )
@@ -196,13 +250,28 @@ def configure_telemetry(settings: Settings, app: FastAPI) -> None:
             metric_readers=[
                 PeriodicExportingMetricReader(
                     OTLPMetricExporter(
-                        endpoint=settings.otel_exporter_otlp_endpoint,
+                        endpoint=otlp_signal_url(base, "metrics"),
                         timeout=settings.otel_export_timeout_seconds,
                     )
                 )
             ],
         )
     )
+    logger_provider = LoggerProvider(resource=resource)
+    logger_provider.add_log_record_processor(
+        ScrubbingLogRecordProcessor(
+            BatchLogRecordProcessor(
+                OTLPLogExporter(
+                    endpoint=otlp_signal_url(base, "logs"),
+                    timeout=settings.otel_export_timeout_seconds,
+                )
+            )
+        )
+    )
+    # The app's own logger tree only: library loggers can log URLs and payloads, and the SDK's
+    # export warnings must not feed back into the exporter. The SDK marks this handler deprecated
+    # in favor of a separate instrumentation package; it still works in the pinned version.
+    logging.getLogger("app").addHandler(LoggingHandler(logger_provider=logger_provider))
     # After the meter provider, so the instrumentor records request metrics against it.
     # Health probes run every few seconds and would drown out real traffic.
     FastAPIInstrumentor.instrument_app(

@@ -119,6 +119,31 @@ exactly, such as `https://scholarlens.vercel.app`, with no trailing slash.
 Railway stages variable changes, so deploy them for the backend to pick up the
 new origin. Vercel preview deployments are not allowed by CORS.
 
+**4. Production telemetry (Grafana Cloud).** The backend sends traces, metrics,
+and logs straight to Grafana Cloud's OTLP gateway, with no collector in
+production. In Grafana Cloud, open your stack, then the OpenTelemetry tile, and
+generate a token; the tile shows the values below. Set them on the Railway
+service:
+
+- `OTEL_EXPORTER_OTLP_ENDPOINT`: the gateway URL ending in `/otlp`, such as
+  `https://otlp-gateway-prod-us-east-0.grafana.net/otlp`. The app adds
+  `/v1/traces`, `/v1/metrics`, and `/v1/logs`.
+- `OTEL_EXPORTER_OTLP_HEADERS`: `Authorization=Basic%20<base64 of instanceID:token>`.
+  Use `%20`, not a space, after `Basic`. It is a secret, so keep it in Railway
+  only. To build it yourself:
+  `python -c "import base64,getpass; i=input('Instance ID: '); t=getpass.getpass('Token: '); print('Authorization=Basic%20' + base64.b64encode(f'{i}:{t}'.encode()).decode())"`
+- `OTEL_RESOURCE_ATTRIBUTES=deployment.environment=production`, which tells
+  production data apart in Grafana.
+- Optional: `OTEL_METRIC_EXPORT_INTERVAL`, the metric export interval in
+  milliseconds (60000 when unset).
+- Optional: `GRAFANA_PROMETHEUS_URL`, `GRAFANA_PROMETHEUS_USER`, and
+  `GRAFANA_PROMETHEUS_TOKEN` for the `/ops` trend charts (see Operations view
+  above). These are a separate read-only login.
+
+Spans, metrics, and logs are scrubbed the same way as locally. If Grafana
+Cloud is unreachable or the token is wrong, requests are unaffected; the
+backend only logs OTel's "Failed to export" warnings to Railway's log view.
+
 ### Docker (local dev)
 ```bash
 docker compose -f infra/docker-compose.yml up
@@ -137,6 +162,17 @@ Metrics go to the same collector, which serves them in Prometheus format at
 `OTEL_METRIC_EXPORT_INTERVAL=5000` (milliseconds) on the backend for faster
 local checks. Metric labels only ever take fixed values, never student input.
 
+The backend's own log lines also go to the collector, which prints them next to
+the spans. Each one carries the same allowlisted fields and correlation ID as the
+stdout JSON line, plus the code location and the trace ID of its request. An
+exception is recorded by type only, never its message or stacktrace; the stdout
+line also keeps the traceback frames, which the export leaves out.
+
+Compose points the backend at the collector's OTLP/HTTP receiver
+(`http://otel-collector:4318`). For a backend you run on the host, set
+`OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318`. An older `:4317` (gRPC)
+value no longer works.
+
 | Metric (Prometheus name) | What it measures |
 | --- | --- |
 | `http_server_duration_milliseconds` | Request count, latency, and status code per route (`/health` excluded) |
@@ -152,9 +188,11 @@ local checks. Metric labels only ever take fixed values, never student input.
 The ingestion and evaluation gauges are read from `data/ingestion-status.json`
 and `data/evaluation-runs.jsonl`; a gauge is absent until its file exists.
 
-To also send traces to Grafana Cloud Tempo and metrics to Grafana Cloud's
-Prometheus, copy `infra/.env.example` to `infra/.env`, fill in your stack's OTLP
-credentials, and add the override:
+To also send a local backend's traces to Grafana Cloud Tempo, its metrics to
+Grafana Cloud's Prometheus, and its logs to Loki, copy `infra/.env.example` to
+`infra/.env`, fill in your stack's OTLP credentials, and add the override.
+Production sends its own telemetry directly (Deploy, step 4).
+
 ```bash
 docker compose -f infra/docker-compose.yml -f infra/docker-compose.grafana.yml up
 ```
@@ -173,7 +211,9 @@ Two Grafana dashboards live in `infra/grafana/dashboards/`:
 To import one, open Grafana Cloud, go to Dashboards > New > Import, and upload
 the file. Pick your stack's Prometheus data source in the "Data source" drop-down
 at the top of the dashboard. Importing a file again replaces the existing copy.
-The panels only fill while the backend runs with the Grafana override above.
+The panels fill from production (Deploy, step 4), or while a local backend runs
+with the Grafana override above. Both report as `job="scholarlens-api"`, so
+running the local override at the same time mixes its data into the panels.
 
 A few things to know when reading them:
 
