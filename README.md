@@ -58,6 +58,59 @@ To enable it:
 The shared password has no rate limiting or lockout yet (feature 18), so use a
 long one.
 
+### Deploy
+
+The backend runs on Railway as one always-on service, and ChromaDB runs embedded
+on that service's volume. The frontend runs on Vercel. Both serve HTTPS. Keep
+every secret in the platform's env vars, never in the repo.
+
+**1. Backend on Railway.** Create a project from this GitHub repo with one
+service, then set it up:
+
+- Settings: root directory `backend`, config file `/backend/railway.toml`. The
+  config path is absolute because Railway does not resolve it from the root
+  directory. That file sets the Dockerfile build, the `/health` check, and
+  restart on failure.
+- Keep 1 replica. The rate limits live in process memory and embedded Chroma
+  allows one process.
+- Add a volume mounted at `/data`. Do not mount it over `/app/data`, which
+  holds the bundled corpus.
+- Generate a public domain.
+- Variables: `GOOGLE_API_KEY`, `TAVILY_API_KEY`, `OPS_API_TOKEN`,
+  `FRONTEND_ORIGIN` (set in step 3), `CHROMA_PERSIST_PATH=/data/chroma`,
+  `INGESTION_STATUS_PATH=/data/ingestion-status.json`,
+  `EVALUATION_RUNS_PATH=/data/evaluation-runs.jsonl`, and
+  `FORWARDED_ALLOW_IPS=*`. Optional: the `GRAFANA_PROMETHEUS_*` values for
+  `/ops` trends.
+
+`FORWARDED_ALLOW_IPS` is read by uvicorn itself. Railway's edge replaces any
+`X-Forwarded-For` the client sends and puts the real client IP first. With
+`*`, uvicorn takes that first entry, so the per-IP rate limits apply to real
+visitors. If the variable is unset, every visitor shares one limit.
+
+**2. Ingest the corpus once.** Run ingestion inside the running service. It
+reads the bundled corpus from `/app/data/programs`.
+
+```bash
+railway ssh -s <backend-service> -- sh -c "cd /app && python -m app.ingestion"
+```
+
+Then restart the service (latest deployment's menu, Restart) so the API reopens
+the rebuilt collection. Repeat both whenever `backend/data/programs/` changes.
+
+**3. Frontend on Vercel.** Import the repo with root directory `frontend` and
+set these variables:
+
+- `NEXT_PUBLIC_API_URL`: the Railway `https://` origin. It is inlined at build
+  time, so a change needs a redeploy.
+- `OPS_USERNAME`, `OPS_PASSWORD`, `OPS_API_TOKEN`: the token must equal the
+  backend's.
+
+Then set the backend's `FRONTEND_ORIGIN` to the Vercel production origin
+exactly, such as `https://scholarlens.vercel.app`, with no trailing slash.
+Railway stages variable changes, so deploy them for the backend to pick up the
+new origin. Vercel preview deployments are not allowed by CORS.
+
 ### Docker (local dev)
 ```bash
 docker compose -f infra/docker-compose.yml up

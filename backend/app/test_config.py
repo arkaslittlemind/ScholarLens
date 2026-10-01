@@ -54,3 +54,7 @@ def test_unset_secret_reads_as_empty(make_settings):
 def test_rate_limits_must_be_positive(make_settings, field):
     with pytest.raises(ValidationError):
         make_settings(**{field: 0})
+
+
+def test_chroma_persist_path_defaults_to_the_chroma_server(make_settings):
+    assert make_settings().chroma_persist_path is None

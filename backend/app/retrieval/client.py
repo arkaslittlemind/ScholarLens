@@ -18,6 +18,12 @@ from app.telemetry import retrieval_duration, traced_span
 
 
 def get_chroma_client(settings: Settings) -> ClientAPI:
+    if settings.chroma_persist_path:
+        # Embedded mode would otherwise send Chroma's product telemetry from the API process.
+        return chromadb.PersistentClient(
+            path=settings.chroma_persist_path,
+            settings=chromadb.config.Settings(anonymized_telemetry=False),
+        )
     return chromadb.HttpClient(host=settings.chroma_host, port=settings.chroma_port)
 
 
