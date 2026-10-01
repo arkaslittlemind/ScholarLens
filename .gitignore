@@ -26,5 +26,8 @@ venv/
 blueprint/
 CLAUDE.md
 
+
+*.pub
+/scholarlensv1
 # Personal learning notes, not project documentation
 # design-docs/
