@@ -2,6 +2,7 @@ import asyncio
 import time
 
 import pytest
+from chromadb.api.client import SharedSystemClient
 
 from app.retrieval import client as retrieval
 from app.retrieval.client import DocumentRetriever, RetrievalUnavailableError
@@ -85,3 +86,16 @@ def test_a_slow_query_times_out_as_unavailable(retriever_for):
 def test_a_client_failure_is_unavailable(retriever_for):
     with pytest.raises(RetrievalUnavailableError, match="failed"):
         asyncio.run(retriever_for(_FakeCollection(error=True)).retrieve("anything"))
+
+
+def test_persist_path_selects_an_embedded_store_that_survives_a_new_client(make_settings, tmp_path):
+    settings = make_settings(chroma_persist_path=str(tmp_path / "chroma"))
+
+    retrieval.get_chroma_client(settings).get_or_create_collection("programs").add(
+        ids=["a", "b"], documents=["one", "two"], embeddings=[[0.1, 0.2], [0.3, 0.4]]
+    )
+    # Chroma shares one in-memory system per path within a process; drop it so the
+    # second client really reopens the store from disk.
+    SharedSystemClient.clear_system_cache()
+
+    assert retrieval.get_chroma_client(settings).get_collection("programs").count() == 2

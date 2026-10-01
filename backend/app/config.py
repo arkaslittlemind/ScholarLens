@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     chroma_host: str = "localhost"
     chroma_port: int = 8001
     chroma_collection_name: str = "scholarship_programs"
+    # Set in production to run Chroma embedded on the service's volume instead of as a server.
+    chroma_persist_path: str | None = None
     agent_model: str = "google:gemini-3.8-flash"
     embedding_model: str = "gemini-embedding-001"
     retrieval_top_k: int = 5

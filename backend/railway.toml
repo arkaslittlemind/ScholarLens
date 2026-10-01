@@ -1,0 +1,10 @@
+# Railway config-as-code for the backend service. Railway does not resolve this path from the
+# service root directory, so the service settings must point at /backend/railway.toml.
+[build]
+builder = "DOCKERFILE"
+
+[deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 60
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
