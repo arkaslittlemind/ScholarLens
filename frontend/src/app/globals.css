@@ -31,7 +31,9 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: var(--color-ink);
   --input: var(--color-ink);
-  --ring: var(--color-mint-signal);
+  /* Ink, not mint: mint on cream is about 1.7:1, below the 3:1 a focus
+     indicator needs (WCAG 1.4.11). */
+  --ring: var(--color-ink);
 }
 
 @theme inline {
@@ -88,5 +90,11 @@ body {
   }
   html {
     @apply font-sans;
+  }
+  /* Links and other controls without their own focus ring. Components that
+     draw a ring set outline-none, which overrides this. */
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
   }
 }

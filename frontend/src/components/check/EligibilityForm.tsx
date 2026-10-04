@@ -28,6 +28,10 @@ const MAJOR_MAX = 200;
 
 type FieldErrors = Partial<Record<keyof EligibilityRequest, string>>;
 
+// Visual order of the fields, whose element ids match these names, so a failed
+// submit can focus the first one that needs fixing.
+const FIELD_ORDER: (keyof EligibilityRequest)[] = ["description", "income", "state", "gpa", "major"];
+
 interface EligibilityFormProps {
   onSubmit: (request: EligibilityRequest) => void;
   disabled?: boolean;
@@ -103,6 +107,10 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
     const outcome = validate();
     if ("errors" in outcome) {
       setErrors(outcome.errors);
+      const firstInvalid = FIELD_ORDER.find((field) => outcome.errors[field]);
+      if (firstInvalid) {
+        event.currentTarget.querySelector<HTMLElement>(`#${firstInvalid}`)?.focus();
+      }
       return;
     }
     setErrors({});
@@ -139,7 +147,7 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
           aria-describedby={displayError("description") ? "description-error" : undefined}
         />
         {displayError("description") && (
-          <p id="description-error" className="text-sm text-graphite">
+          <p id="description-error" className="text-sm text-ink">
             {displayError("description")}
           </p>
         )}
@@ -159,7 +167,7 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
             aria-describedby={displayError("income") ? "income-error" : undefined}
           />
           {displayError("income") && (
-            <p id="income-error" className="text-sm text-graphite">
+            <p id="income-error" className="text-sm text-ink">
               {displayError("income")}
             </p>
           )}
@@ -177,7 +185,7 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
             aria-describedby={displayError("state") ? "state-error" : undefined}
           />
           {displayError("state") && (
-            <p id="state-error" className="text-sm text-graphite">
+            <p id="state-error" className="text-sm text-ink">
               {displayError("state")}
             </p>
           )}
@@ -197,7 +205,7 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
             aria-describedby={displayError("gpa") ? "gpa-error" : undefined}
           />
           {displayError("gpa") && (
-            <p id="gpa-error" className="text-sm text-graphite">
+            <p id="gpa-error" className="text-sm text-ink">
               {displayError("gpa")}
             </p>
           )}
@@ -215,7 +223,7 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
             aria-describedby={displayError("major") ? "major-error" : undefined}
           />
           {displayError("major") && (
-            <p id="major-error" className="text-sm text-graphite">
+            <p id="major-error" className="text-sm text-ink">
               {displayError("major")}
             </p>
           )}
