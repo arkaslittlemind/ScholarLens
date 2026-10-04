@@ -61,9 +61,12 @@ test("a student checks eligibility and reads a cited verdict", async ({ page }) 
   await expect(page.getByText(CITED_RESULT.explanation)).toBeVisible();
   await expect(page.locator("blockquote")).toHaveText(`“${CITED_RESULT.supporting_clause}”`);
   await expect(page.getByRole("heading", { level: 2, name: "Federal Pell Grant" })).toBeVisible();
+  // The heading already names the program and the rule's caption the document,
+  // so the Source section adds only the link.
+  await expect(page.locator("figcaption")).toHaveText("Eligibility summary");
   const source = page.getByRole("region", { name: "Source" });
-  await expect(source.getByText("Federal Pell Grant", { exact: true })).toBeVisible();
-  await expect(source.getByText("Eligibility summary", { exact: true })).toBeVisible();
+  await expect(source.getByText("Federal Pell Grant", { exact: true })).toHaveCount(0);
+  await expect(source.getByText("Eligibility summary", { exact: true })).toHaveCount(0);
   await expect(
     source.getByRole("link", { name: "Open source on studentaid.gov (opens in a new tab)" }),
   ).toHaveAttribute("href", CITED_RESULT.source!.url);

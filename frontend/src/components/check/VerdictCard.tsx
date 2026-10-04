@@ -4,7 +4,7 @@ import { displayLabel, type EligibilityResult, type EligibilityStatus, type Sour
 // Renders arbitrary model/web-search output (explanation, supporting_clause) as
 // plain React text children only - never dangerouslySetInnerHTML.
 
-// Fills come from the existing palette only (feature 10's no-new-colors rule).
+// Colors come from the existing palette only (feature 10's no-new-colors rule).
 // The icon and label always carry the meaning too, so color is never the only cue.
 const STATUS_META: Record<
   EligibilityStatus,
@@ -13,17 +13,18 @@ const STATUS_META: Record<
   eligible: {
     label: "Eligible",
     icon: CheckCircle2,
-    badgeClassName: "border-mint-signal bg-mint-signal text-ink",
+    badgeClassName: "border border-mint-signal bg-mint-signal text-ink",
   },
   partial: {
     label: "Partial match",
     icon: CircleDot,
-    badgeClassName: "border-sunshine-highlight bg-sunshine-highlight text-ink",
+    // Outlined, not filled: a solid yellow pill read as a second submit button.
+    badgeClassName: "border-2 border-sunshine-highlight bg-cream-paper text-ink",
   },
   not_eligible: {
     label: "Not eligible",
     icon: XCircle,
-    badgeClassName: "border-ink bg-cream-paper text-ink",
+    badgeClassName: "border border-ink bg-cream-paper text-ink",
   },
 };
 
@@ -78,9 +79,12 @@ function VerdictRule({ clause, source }: VerdictRuleProps) {
 
 interface VerdictSourceProps {
   source: Source | null;
+  // The heading always names the program, and a quoted rule's caption names the
+  // document, so the document is repeated here only when there is no rule.
+  showDocument: boolean;
 }
 
-function VerdictSource({ source }: VerdictSourceProps) {
+function VerdictSource({ source, showDocument }: VerdictSourceProps) {
   if (!source) {
     return <p className="text-sm text-graphite">No source document was cited for this result.</p>;
   }
@@ -88,8 +92,7 @@ function VerdictSource({ source }: VerdictSourceProps) {
   return (
     <section aria-labelledby="verdict-source" className="flex flex-col gap-1 text-sm wrap-anywhere">
       <SectionHeading id="verdict-source">Source</SectionHeading>
-      <p className="text-ink">{source.program}</p>
-      <p className="text-graphite">{source.document}</p>
+      {showDocument && <p className="text-graphite">{source.document}</p>}
       {httpUrl ? (
         // The raw string, not httpUrl.href: the check above already proved it is
         // http(s), and href normalization would change what the backend sent.
@@ -142,7 +145,7 @@ export function VerdictCard({ result }: VerdictCardProps) {
           {result.source ? result.source.program : "Your result"}
         </h2>
         <div
-          className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm font-medium ${meta.badgeClassName}`}
+          className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium ${meta.badgeClassName}`}
         >
           <Icon aria-hidden="true" className="size-4" />
           {meta.label}
@@ -153,7 +156,7 @@ export function VerdictCard({ result }: VerdictCardProps) {
 
       <VerdictRule clause={result.supporting_clause} source={result.source} />
 
-      <VerdictSource source={result.source} />
+      <VerdictSource source={result.source} showDocument={!result.supporting_clause} />
 
       {result.missing_info.length > 0 && (
         <div className="rounded-md border border-ink p-4">

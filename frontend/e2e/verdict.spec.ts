@@ -73,6 +73,26 @@ test("a cited result names its program, rule, source host, and steps", async ({ 
   await expect(page.getByRole("status")).toHaveCount(0);
 });
 
+test("with no quoted rule, the Source section names the document", async ({ page }) => {
+  await checkWith(page, {
+    status: "partial",
+    explanation: "The rules depend on your enrollment status.",
+    supporting_clause: null,
+    source: {
+      program: "Federal Pell Grant",
+      document: "Eligibility summary",
+      url: "https://studentaid.gov/understand-aid/types/grants/pell",
+    },
+    missing_info: ["Your enrollment status"],
+    tool_trace: ["searching program rules"],
+  });
+
+  const source = page.getByRole("region", { name: "Source" });
+  await expect(source.getByText("Eligibility summary", { exact: true })).toBeVisible();
+  await expect(source.getByText("Federal Pell Grant", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Eligibility summary", { exact: true })).toHaveCount(1);
+});
+
 test("a non-http source URL stays inert text", async ({ page }) => {
   const url = "ftp://files.example.org/pell.pdf";
   await checkWith(page, {
