@@ -3,7 +3,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { AgentActivitySteps } from "@/components/check/AgentActivitySteps";
 import { EligibilityForm } from "@/components/check/EligibilityForm";
-import { VerdictCard } from "@/components/check/VerdictCard";
+import { statusLabel, VerdictCard } from "@/components/check/VerdictCard";
 import {
   checkEligibility,
   EligibilityClientError,
@@ -92,6 +92,12 @@ export function EligibilityChecker() {
       {mutation.isPending && <AgentActivitySteps />}
 
       {mutation.isSuccess && <VerdictCard result={mutation.data} />}
+
+      {/* Always mounted, so screen readers announce the text when it changes.
+          Not role="status": the activity list already uses that role. */}
+      <p aria-live="polite" data-testid="result-announcement" className="sr-only">
+        {mutation.isSuccess ? `Result ready: ${statusLabel(mutation.data.status)}.` : ""}
+      </p>
 
       {errorInfo && (
         <p role="alert" className="rounded-md border border-ink p-4 text-base text-ink">

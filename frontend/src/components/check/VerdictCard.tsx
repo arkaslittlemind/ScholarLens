@@ -25,6 +25,10 @@ const STATUS_META: Record<
   },
 };
 
+export function statusLabel(status: EligibilityStatus): string {
+  return STATUS_META[status].label;
+}
+
 // F-13 (blueprint/context/findings.md): source.url is untrusted web/retrieval
 // content with no backend scheme validation. Only ever render it as a navigable
 // link when it's actually http(s); otherwise show it as inert text.
@@ -58,13 +62,13 @@ export function VerdictCard({ result }: VerdictCardProps) {
       <p className="text-lg text-ink">{result.explanation}</p>
 
       {result.supporting_clause && (
-        <blockquote className="rounded-md border border-ink bg-cream-paper p-4 text-base text-graphite italic">
+        <blockquote className="rounded-md border border-ink bg-cream-paper p-4 text-base text-graphite italic wrap-anywhere">
           &ldquo;{result.supporting_clause}&rdquo;
         </blockquote>
       )}
 
       {result.source && (
-        <p className="text-sm text-graphite">
+        <p className="text-sm text-graphite wrap-anywhere">
           Source: {result.source.program} - {result.source.document}
           {linkableUrl ? (
             <>

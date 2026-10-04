@@ -59,7 +59,7 @@ export function AgentActivitySteps({ completedSteps, intervalMs = STEP_INTERVAL_
             {isDone ? (
               <CheckCircle2 aria-hidden="true" className="size-4 shrink-0 text-ink" />
             ) : isActive ? (
-              <Loader2 aria-hidden="true" className="size-4 shrink-0 animate-spin text-ink" />
+              <Loader2 aria-hidden="true" className="size-4 shrink-0 text-ink motion-safe:animate-spin" />
             ) : (
               <Circle aria-hidden="true" className="size-4 shrink-0 text-graphite" />
             )}
