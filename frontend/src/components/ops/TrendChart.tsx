@@ -1,6 +1,15 @@
 "use client";
 
-import { Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  type DotItemDotProps,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import type { Point } from "@/lib/ops";
 import { formatNumber, formatPercent, formatSeconds, NO_DATA } from "@/lib/ops-format";
 
@@ -78,6 +87,18 @@ function toRows(series: TrendSeries[]): Row[] {
   return [...rows.values()].sort((a, b) => a.t - b.t);
 }
 
+// Lines otherwise draw no dots, so a value with a gap on both sides (a ratio is 0/0, and so
+// empty, in every step without requests) would have no segment and stay invisible.
+function isolatedDotRenderer(rows: Row[], name: string, stroke: string) {
+  const hasValue = (row: Row | undefined) => typeof row?.[name] === "number";
+  return function IsolatedDot({ index, cx, cy }: DotItemDotProps) {
+    const isolated =
+      hasValue(rows[index]) && !hasValue(rows[index - 1]) && !hasValue(rows[index + 1]);
+    if (!isolated || cx === undefined || cy === undefined) return null;
+    return <circle cx={cx} cy={cy} r={3} fill={stroke} />;
+  };
+}
+
 export function TrendChart({ title, unit, format, series }: TrendChartProps) {
   const rows = toRows(series);
   const summary =
@@ -138,7 +159,7 @@ export function TrendChart({ title, unit, format, series }: TrendChartProps) {
                     stroke={stroke}
                     strokeDasharray={dash}
                     strokeWidth={2}
-                    dot={false}
+                    dot={isolatedDotRenderer(rows, name, stroke)}
                     isAnimationActive={false}
                   />
                 );
