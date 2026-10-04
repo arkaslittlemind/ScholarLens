@@ -22,8 +22,13 @@ export interface EligibilityResult {
   supporting_clause: string | null;
   source: Source | null;
   missing_info: string[];
-  // Present on the wire but not rendered by this feature - see feature 11.
   tool_trace: string[];
+}
+
+// Trace labels arrive lowercase (backend/app/agent/agent.py); shown sentence-cased.
+// Lives here, not in a 'use client' component, so server and client code can share it.
+export function displayLabel(step: string): string {
+  return step.charAt(0).toUpperCase() + step.slice(1);
 }
 
 // Mirrors backend/app/api/errors.py's ErrorDetail / ErrorResponse.

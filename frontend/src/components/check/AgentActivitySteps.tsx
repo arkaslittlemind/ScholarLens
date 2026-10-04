@@ -2,6 +2,7 @@
 
 import { CheckCircle2, Circle, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { displayLabel } from "@/lib/eligibility";
 
 // Mirrors backend/app/agent/agent.py's trace constants verbatim: that file's comment
 // marks these as user-facing labels this feature renders as-is, never paraphrased.
@@ -18,10 +19,6 @@ const GUARANTEED_STEPS = [SEARCHING_PROGRAM_RULES, VALIDATING_ELIGIBILITY, PREPA
 
 // Exported so a future test can control timing instead of depending on wall-clock delays.
 export const STEP_INTERVAL_MS = 1400;
-
-function displayLabel(step: string): string {
-  return step.charAt(0).toUpperCase() + step.slice(1);
-}
 
 interface AgentActivityStepsProps {
   // The real backend tool_trace, once known. When provided, this replaces the simulated
