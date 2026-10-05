@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { Dialog } from "radix-ui";
 import { useEffect, useRef, useState } from "react";
-import { EASE_OUT } from "@/components/motion/Reveal";
+import { EASE_OUT } from "@/components/motion/easing";
 import { Button } from "@/components/ui/button";
 
 interface NavLink {

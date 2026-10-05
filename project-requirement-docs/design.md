@@ -90,8 +90,8 @@ Library: `motion` (`motion/react`). `MotionConfig reducedMotion="user"` in `prov
 | Pattern | Where | Values |
 |---------|-------|--------|
 | `Reveal` | Below-the-fold section entrances | opacity plus translateY(16px), 600ms, ease `[0.23, 1, 0.32, 1]`, once, -80px margin |
-| `MarkerUnderline` | Under the hero headline | SVG pathLength draw, 650ms, ease `[0.22, 1, 0.36, 1]` |
-| Marker sweep | Quoted rule in the preview and verdict | `background-size` 0% to 100%, 800 to 900ms ease-in-out |
+| `MarkerUnderline` | Under the hero headline | SVG pathLength draw, 650ms, `--ease-out-strong` |
+| Marker sweep | Quoted rule in the preview and verdict | `background-size` 0% to 100%, 800 to 900ms on --ease-in-out-strong (cubic-bezier(0.77, 0, 0.175, 1)) |
 | Hero preview | Landing | CSS only (server-rendered): card `animate-preview-in` 800ms at 200ms, content `animate-rise-in` from 550ms in 80ms steps, annotations at 1000/1080ms, `animate-marker-sweep` 900ms at 1250ms on `--ease-in-out-strong` |
 | `DrawLine` | How-it-works connector | scaleX 0 to 1, 1.1s |
 | Program rail | Landing | CSS marquee, 40s linear, pauses on hover, static wrap under reduced motion |

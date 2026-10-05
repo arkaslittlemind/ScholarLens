@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef } from "react";
 import { AgentActivitySteps } from "@/components/check/AgentActivitySteps";
 import { EligibilityForm } from "@/components/check/EligibilityForm";
-import { EASE_OUT } from "@/components/motion/Reveal";
+import { EASE_OUT } from "@/components/motion/easing";
 import { statusLabel, VerdictCard } from "@/components/check/VerdictCard";
 import {
   checkEligibility,

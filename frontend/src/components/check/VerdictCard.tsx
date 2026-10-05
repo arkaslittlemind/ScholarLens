@@ -2,7 +2,7 @@
 
 import { ArrowUpRight, CheckCircle2, CircleDot, Info, XCircle } from "lucide-react";
 import { motion, type Variants } from "motion/react";
-import { EASE_OUT } from "@/components/motion/Reveal";
+import { EASE_IN_OUT, EASE_OUT } from "@/components/motion/easing";
 import { displayLabel, type EligibilityResult, type EligibilityStatus, type Source } from "@/lib/eligibility";
 
 // Renders arbitrary model/web-search output (explanation, supporting_clause) as
@@ -111,7 +111,7 @@ function VerdictRule({ clause, source }: VerdictRuleProps) {
           className="box-decoration-clone bg-linear-to-r from-rust-tint to-rust-tint bg-no-repeat"
           initial={{ backgroundSize: "0% 100%" }}
           animate={{ backgroundSize: "100% 100%" }}
-          transition={{ duration: 0.8, ease: [0.65, 0, 0.35, 1], delay: 0.5 }}
+          transition={{ duration: 0.8, ease: EASE_IN_OUT, delay: 0.5 }}
         >
           {clause}
         </motion.span>
