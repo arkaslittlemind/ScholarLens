@@ -22,9 +22,9 @@ const COPY: Record<OpsUnavailableProps["kind"], { title: string; body: string }>
 export function OpsUnavailable({ kind }: OpsUnavailableProps) {
   const { title, body } = COPY[kind];
   return (
-    <div role="alert" className="flex flex-col gap-2 rounded-3xl border border-ink p-8">
+    <div role="alert" className="flex flex-col gap-2 rounded-3xl border border-hairline p-8">
       <h2 className="text-xl font-medium">{title}</h2>
-      <p className="text-graphite">{body}</p>
+      <p className="text-ink-secondary">{body}</p>
     </div>
   );
 }

@@ -1,0 +1,212 @@
+import { ArrowRight, BookOpenCheck, CheckCircle2, CircleDot, Globe, ShieldCheck, XCircle } from "lucide-react";
+import type { Metadata } from "next";
+import Link from "next/link";
+import type { ReactNode } from "react";
+import { SiteFooter } from "@/components/layout/SiteFooter";
+import { SiteHeader } from "@/components/layout/SiteHeader";
+import { Reveal } from "@/components/motion/Reveal";
+import { Button } from "@/components/ui/button";
+import { COVERED_PROGRAMS } from "@/lib/programs";
+
+export const metadata: Metadata = {
+  title: "Methodology · ScholarLens",
+  description: "How ScholarLens reads program rules, decides where to look, and cites every answer.",
+};
+
+const SECTIONS = [
+  { id: "knowledge-base", label: "The knowledge base" },
+  { id: "looking-further", label: "Looking further" },
+  { id: "no-rule-no-yes", label: "No rule, no yes" },
+  { id: "what-you-get", label: "What you get back" },
+  { id: "limits", label: "What it doesn't do" },
+];
+
+const VERDICTS = [
+  {
+    icon: CheckCircle2,
+    label: "Eligible",
+    className: "bg-sage-tint text-sage-text",
+    body: "You meet the rule that was quoted.",
+  },
+  {
+    icon: CircleDot,
+    label: "Partial match",
+    className: "bg-rust-tint text-rust-text",
+    body: "You meet some rules, or the answer depends on something you didn't say.",
+  },
+  {
+    icon: XCircle,
+    label: "Not eligible",
+    className: "border border-input text-ink",
+    body: "A quoted rule rules you out.",
+  },
+];
+
+const ANATOMY = [
+  { term: "Verdict", body: "Eligible, partial match, or not eligible." },
+  { term: "Explanation", body: "One plain-language paragraph on why." },
+  { term: "The rule", body: "The exact clause the answer rests on, quoted word for word." },
+  { term: "Source", body: "The program, the document, and a link to the original." },
+  { term: "What's missing", body: "Anything you didn't mention that could change the result." },
+  { term: "How it was found", body: "The steps the agent actually took for your question." },
+];
+
+const LIMITS = [
+  "It checks published eligibility rules, not your chances of an award. Funding, deadlines, and each program's own review still apply.",
+  "It doesn't keep what you type. There are no accounts and no saved profiles.",
+  "Rules change between award years. Always confirm with the program before you apply.",
+];
+
+function Section({ id, number, title, children }: { id: string; number: number; title: string; children: ReactNode }) {
+  return (
+    <section id={id} className="scroll-mt-24 border-t border-hairline pt-10">
+      <Reveal className="flex flex-col gap-5">
+        <p className="font-display text-lg text-rust-text">0{number}</p>
+        <h2 className="font-display text-[32px] leading-tight text-ink sm:text-[40px]">{title}</h2>
+        <div className="flex flex-col gap-5 text-[17px] leading-relaxed text-ink-secondary">{children}</div>
+      </Reveal>
+    </section>
+  );
+}
+
+export default function Methodology() {
+  const scopes = [...new Set(COVERED_PROGRAMS.map((program) => program.scope))];
+
+  return (
+    <div className="flex min-h-screen flex-col bg-paper text-ink">
+      <SiteHeader />
+
+      <main className="flex-1">
+        <section className="border-b border-hairline bg-tint">
+          <div className="mx-auto flex max-w-280 flex-col gap-4 px-4 py-16 sm:px-6 sm:py-24">
+            <Reveal>
+              <p className="type-eyebrow text-rust-text">Methodology</p>
+            </Reveal>
+            <Reveal delay={0.06}>
+              <h1 className="font-display type-h1 max-w-200 text-ink">How ScholarLens reaches an answer.</h1>
+            </Reveal>
+            <Reveal delay={0.12}>
+              <p className="max-w-150 text-lg leading-relaxed text-ink-secondary sm:text-xl">
+                An AI agent reads the official rules for you. Here is where it looks, what it is not
+                allowed to do, and what comes back.
+              </p>
+            </Reveal>
+          </div>
+        </section>
+
+        <div className="mx-auto grid max-w-280 gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-20 lg:py-24">
+          <nav aria-label="On this page" className="hidden lg:sticky lg:top-28 lg:block lg:self-start">
+            <p className="type-eyebrow text-ink-secondary">On this page</p>
+            <ol className="mt-4 flex flex-col gap-1 border-l border-hairline">
+              {SECTIONS.map((section) => (
+                <li key={section.id}>
+                  <a
+                    href={`#${section.id}`}
+                    className="-ml-px block border-l border-transparent py-1.5 pl-4 text-sm font-medium text-ink-secondary transition-colors duration-150 hover:border-ink hover:text-ink"
+                  >
+                    {section.label}
+                  </a>
+                </li>
+              ))}
+            </ol>
+          </nav>
+
+          <div className="flex max-w-180 flex-col gap-16">
+            <Section id="knowledge-base" number={1} title="It reads the knowledge base first.">
+              <p>
+                Every question starts with a search of a curated knowledge base: the published
+                eligibility rules for {COVERED_PROGRAMS.length} federal and state programs, split
+                into passages the agent can retrieve and quote.
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {scopes.map((scope) => (
+                  <div key={scope} className="rounded-xl border border-hairline p-4">
+                    <p className="flex items-center gap-2 text-sm font-semibold text-ink">
+                      <BookOpenCheck aria-hidden="true" className="size-4 text-sage-text" />
+                      {scope}
+                    </p>
+                    <ul className="mt-2 flex flex-col gap-1 text-[15px]">
+                      {COVERED_PROGRAMS.filter((program) => program.scope === scope).map((program) => (
+                        <li key={program.name}>{program.name}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </Section>
+
+            <Section id="looking-further" number={2} title="It looks further only when it needs to.">
+              <p>
+                If the knowledge base doesn&apos;t cover your question, say a program outside that list,
+                the agent searches the web for official program information. When that happens,
+                &ldquo;Checking official sources&rdquo; shows up in the steps on your result, so you
+                always know where an answer came from.
+              </p>
+              <div className="flex items-center gap-3 rounded-xl bg-tint p-4 text-[15px]">
+                <Globe aria-hidden="true" className="size-5 shrink-0 text-ink" />
+                <span>
+                  The agent decides this per question. Most questions about covered programs never
+                  leave the knowledge base.
+                </span>
+              </div>
+            </Section>
+
+            <Section id="no-rule-no-yes" number={3} title="No quoted rule, no positive answer.">
+              <p>
+                The agent is not allowed to call you eligible, or even a partial match, without quoting
+                the clause it relied on and naming its source. If a rule depends on something you
+                didn&apos;t mention, it lists that instead of guessing.
+              </p>
+              <ul className="flex flex-col gap-3">
+                {VERDICTS.map((verdict) => (
+                  <li key={verdict.label} className="flex flex-col gap-2 rounded-xl border border-hairline p-4 sm:flex-row sm:items-center sm:gap-4">
+                    <span className={`inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] font-semibold ${verdict.className}`}>
+                      <verdict.icon aria-hidden="true" className="size-4" />
+                      {verdict.label}
+                    </span>
+                    <span className="text-[15px]">{verdict.body}</span>
+                  </li>
+                ))}
+              </ul>
+            </Section>
+
+            <Section id="what-you-get" number={4} title="What you get back.">
+              <dl className="grid gap-px overflow-hidden rounded-xl border border-hairline bg-hairline sm:grid-cols-2">
+                {ANATOMY.map((item) => (
+                  <div key={item.term} className="flex flex-col gap-1 bg-paper p-5">
+                    <dt className="text-sm font-semibold text-ink">{item.term}</dt>
+                    <dd className="text-[15px]">{item.body}</dd>
+                  </div>
+                ))}
+              </dl>
+            </Section>
+
+            <Section id="limits" number={5} title="What it doesn't do.">
+              <ul className="flex flex-col gap-4">
+                {LIMITS.map((limit) => (
+                  <li key={limit} className="flex gap-3">
+                    <ShieldCheck aria-hidden="true" className="mt-1 size-5 shrink-0 text-sage-text" />
+                    {limit}
+                  </li>
+                ))}
+              </ul>
+            </Section>
+
+            <Reveal className="flex flex-col items-start gap-5 rounded-2xl bg-brown p-8 text-paper sm:p-10">
+              <h2 className="font-display text-[28px] leading-tight sm:text-[32px]">Ready to try it?</h2>
+              <p className="max-w-110 text-paper/75">Describe your situation and get a cited answer in about a minute.</p>
+              <Button asChild size="lg" className="bg-paper text-brown hover:bg-tint">
+                <Link href="/check">
+                  Check your eligibility
+                  <ArrowRight aria-hidden="true" className="transition-transform duration-150 group-hover/button:translate-x-0.5" />
+                </Link>
+              </Button>
+            </Reveal>
+          </div>
+        </div>
+      </main>
+
+      <SiteFooter />
+    </div>
+  );
+}

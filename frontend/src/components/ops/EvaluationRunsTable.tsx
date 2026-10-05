@@ -14,10 +14,10 @@ function failureSummary(counts: Record<string, number>): string {
 export function EvaluationRunsTable({ runs }: EvaluationRunsTableProps) {
   if (runs.length === 0) return null;
   return (
-    <div className="overflow-x-auto rounded-3xl border border-ink">
+    <div className="overflow-x-auto rounded-3xl border border-hairline">
       <table className="w-full min-w-[720px] text-left text-sm">
         <caption className="sr-only">Recent evaluation runs, newest first</caption>
-        <thead className="border-b border-ink">
+        <thead className="border-b border-hairline">
           <tr>
             <th scope="col" className="px-4 py-3 font-medium">Run at</th>
             <th scope="col" className="px-4 py-3 font-medium">Eligibility</th>
@@ -30,14 +30,14 @@ export function EvaluationRunsTable({ runs }: EvaluationRunsTableProps) {
         </thead>
         <tbody>
           {runs.map((run) => (
-            <tr key={run.run_id} className="border-b border-ink/20 last:border-0">
+            <tr key={run.run_id} className="border-b border-hairline/20 last:border-0">
               <td className="px-4 py-3 whitespace-nowrap">{formatTimestamp(run.run_at)}</td>
               <td className="px-4 py-3">{formatPercent(run.eligibility_accuracy)}</td>
               <td className="px-4 py-3">{formatPercent(run.citation_accuracy)}</td>
               <td className="px-4 py-3">{formatPercent(run.hallucination_rate)}</td>
               <td className="px-4 py-3">{formatSeconds(run.latency_ms)}</td>
               <td className="px-4 py-3">{formatNumber(run.tool_call_count, 1)}</td>
-              <td className="px-4 py-3 text-graphite">{failureSummary(run.failure_counts)}</td>
+              <td className="px-4 py-3 text-ink-secondary">{failureSummary(run.failure_counts)}</td>
             </tr>
           ))}
         </tbody>

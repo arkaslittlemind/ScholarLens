@@ -1,8 +1,12 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
+import { AlertCircle } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useRef } from "react";
 import { AgentActivitySteps } from "@/components/check/AgentActivitySteps";
 import { EligibilityForm } from "@/components/check/EligibilityForm";
+import { EASE_OUT } from "@/components/motion/Reveal";
 import { statusLabel, VerdictCard } from "@/components/check/VerdictCard";
 import {
   checkEligibility,
@@ -74,6 +78,19 @@ export function EligibilityChecker() {
     retryDelay: (failureCount) => (failureCount + 1) * 1000,
   });
 
+  const resultRef = useRef<HTMLDivElement>(null);
+
+  // On a phone the result renders below the fold; bring it up without moving focus,
+  // since the live region below already announces it. A result that already starts
+  // in the upper part of the screen is left where it is.
+  useEffect(() => {
+    const result = resultRef.current;
+    if (!mutation.isSuccess || !result) return;
+    if (result.getBoundingClientRect().top < window.innerHeight * 0.6) return;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    result.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+  }, [mutation.isSuccess]);
+
   function handleSubmit(request: EligibilityRequest) {
     mutation.reset();
     mutation.mutate(request);
@@ -82,16 +99,30 @@ export function EligibilityChecker() {
   const errorInfo = mutation.isError ? describeError(mutation.error) : undefined;
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-6">
       <EligibilityForm
         onSubmit={handleSubmit}
         disabled={mutation.isPending}
         serverFieldErrors={errorInfo?.fields}
       />
 
-      {mutation.isPending && <AgentActivitySteps />}
-
-      {mutation.isSuccess && <VerdictCard result={mutation.data} />}
+      <div ref={resultRef} className="scroll-mt-24">
+        {/* "wait" lets the activity card leave before the verdict arrives, so the
+            two never stack and jump the layout. Exit is quicker than enter. */}
+        <AnimatePresence mode="wait" initial={false}>
+          {mutation.isPending && (
+            <motion.div
+              key="activity"
+              initial={{ opacity: 0, transform: "translateY(8px)" }}
+              animate={{ opacity: 1, transform: "translateY(0px)", transition: { duration: 0.3, ease: EASE_OUT } }}
+              exit={{ opacity: 0, transition: { duration: 0.15, ease: "easeOut" } }}
+            >
+              <AgentActivitySteps />
+            </motion.div>
+          )}
+          {mutation.isSuccess && <VerdictCard key="verdict" result={mutation.data} />}
+        </AnimatePresence>
+      </div>
 
       {/* Always mounted, so screen readers announce the text when it changes.
           Not role="status": the activity list already uses that role. */}
@@ -100,9 +131,12 @@ export function EligibilityChecker() {
       </p>
 
       {errorInfo && (
-        <p role="alert" className="rounded-md border border-ink p-4 text-base text-ink">
-          {errorInfo.message}
-        </p>
+        <div className="flex gap-3 rounded-xl border border-rust/40 bg-rust-tint/60 p-4">
+          <AlertCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-rust-text" />
+          <p role="alert" className="text-[15px] font-medium text-ink">
+            {errorInfo.message}
+          </p>
+        </div>
       )}
     </div>
   );

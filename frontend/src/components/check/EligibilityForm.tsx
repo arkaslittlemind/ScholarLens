@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { ArrowRight, Loader2, Sparkles } from "lucide-react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,6 +33,29 @@ type FieldErrors = Partial<Record<keyof EligibilityRequest, string>>;
 // submit can focus the first one that needs fixing.
 const FIELD_ORDER: (keyof EligibilityRequest)[] = ["description", "income", "state", "gpa", "major"];
 
+interface FieldProps {
+  id: keyof EligibilityRequest;
+  label: string;
+  error: string | undefined;
+  children: ReactNode;
+}
+
+function Field({ id, label, error, children }: FieldProps) {
+  return (
+    <div className="flex flex-col gap-2">
+      <Label htmlFor={id} className="text-sm font-semibold text-ink">
+        {label}
+      </Label>
+      {children}
+      {error && (
+        <p id={`${id}-error`} className="text-sm font-medium text-destructive">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
 interface EligibilityFormProps {
   onSubmit: (request: EligibilityRequest) => void;
   disabled?: boolean;
@@ -53,6 +77,15 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
     if (errors[field]) return errors[field];
     if (serverFieldErrors?.includes(field)) return "The server flagged this field. Please check it.";
     return undefined;
+  }
+
+  // Shared ARIA wiring so every input points at its own error message.
+  function errorProps(field: keyof EligibilityRequest) {
+    const error = displayError(field);
+    return {
+      "aria-invalid": Boolean(error),
+      "aria-describedby": error ? `${field}-error` : undefined,
+    };
   }
 
   function validate(): { request: EligibilityRequest } | { errors: FieldErrors } {
@@ -118,15 +151,23 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
-      <div className="flex flex-wrap gap-2">
+    <form
+      onSubmit={handleSubmit}
+      noValidate
+      className="flex flex-col gap-7 rounded-2xl border border-hairline bg-paper p-5 shadow-card sm:p-8"
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="mr-1 flex items-center gap-1.5 text-[13px] font-semibold text-ink-secondary">
+          <Sparkles aria-hidden="true" className="size-3.5 text-rust" />
+          Try an example
+        </span>
         {EXAMPLE_QUERIES.map((example) => (
           <button
             key={example.label}
             type="button"
             disabled={disabled}
             onClick={() => setDescription(example.description)}
-            className="rounded-full border border-ink px-3 py-1 text-sm font-medium disabled:opacity-50"
+            className="rounded-full border border-hairline bg-tint px-3 py-1.5 text-[13px] font-semibold text-ink transition-[background-color,border-color,transform] duration-150 ease-out hover:border-input hover:bg-paper active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50"
           >
             {example.label}
           </button>
@@ -134,105 +175,100 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="description">Describe your situation</Label>
-        <Textarea
-          id="description"
-          value={description}
-          onChange={(event) => setDescription(event.target.value)}
-          disabled={disabled}
-          maxLength={DESCRIPTION_MAX}
-          rows={5}
-          placeholder="I'm a first-year undergraduate, U.S. citizen, household income..."
-          aria-invalid={Boolean(displayError("description"))}
-          aria-describedby={displayError("description") ? "description-error" : undefined}
-        />
-        {displayError("description") && (
-          <p id="description-error" className="text-sm text-ink">
-            {displayError("description")}
-          </p>
-        )}
+        <Field id="description" label="Describe your situation" error={displayError("description")}>
+          <Textarea
+            id="description"
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            disabled={disabled}
+            maxLength={DESCRIPTION_MAX}
+            rows={5}
+            placeholder="I'm a first-year undergraduate, U.S. citizen, household income..."
+            {...errorProps("description")}
+          />
+        </Field>
+        <p aria-hidden="true" className="self-end text-xs text-ink-secondary tabular-nums">
+          {description.length} / {DESCRIPTION_MAX}
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="income">Household income (optional)</Label>
-          <Input
-            id="income"
-            type="number"
-            min={0}
-            value={income}
-            onChange={(event) => setIncome(event.target.value)}
-            disabled={disabled}
-            aria-invalid={Boolean(displayError("income"))}
-            aria-describedby={displayError("income") ? "income-error" : undefined}
-          />
-          {displayError("income") && (
-            <p id="income-error" className="text-sm text-ink">
-              {displayError("income")}
-            </p>
-          )}
-        </div>
+      <fieldset className="flex flex-col gap-4">
+        <legend className="mb-4 flex w-full items-center gap-3 text-[13px] font-semibold text-ink-secondary">
+          Optional details that sharpen the answer
+          <span aria-hidden="true" className="h-px flex-1 bg-hairline" />
+        </legend>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field id="income" label="Household income (optional)" error={displayError("income")}>
+            <Input
+              id="income"
+              type="number"
+              min={0}
+              inputMode="numeric"
+              placeholder="40000"
+              value={income}
+              onChange={(event) => setIncome(event.target.value)}
+              disabled={disabled}
+              {...errorProps("income")}
+            />
+          </Field>
 
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="state">State (optional)</Label>
-          <Input
-            id="state"
-            value={state}
-            onChange={(event) => setState(event.target.value)}
-            disabled={disabled}
-            maxLength={STATE_MAX}
-            aria-invalid={Boolean(displayError("state"))}
-            aria-describedby={displayError("state") ? "state-error" : undefined}
-          />
-          {displayError("state") && (
-            <p id="state-error" className="text-sm text-ink">
-              {displayError("state")}
-            </p>
-          )}
-        </div>
+          <Field id="state" label="State (optional)" error={displayError("state")}>
+            <Input
+              id="state"
+              placeholder="New Jersey"
+              value={state}
+              onChange={(event) => setState(event.target.value)}
+              disabled={disabled}
+              maxLength={STATE_MAX}
+              {...errorProps("state")}
+            />
+          </Field>
 
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="gpa">GPA (optional)</Label>
-          <Input
-            id="gpa"
-            type="number"
-            min={0}
-            step="0.01"
-            value={gpa}
-            onChange={(event) => setGpa(event.target.value)}
-            disabled={disabled}
-            aria-invalid={Boolean(displayError("gpa"))}
-            aria-describedby={displayError("gpa") ? "gpa-error" : undefined}
-          />
-          {displayError("gpa") && (
-            <p id="gpa-error" className="text-sm text-ink">
-              {displayError("gpa")}
-            </p>
-          )}
-        </div>
+          <Field id="gpa" label="GPA (optional)" error={displayError("gpa")}>
+            <Input
+              id="gpa"
+              type="number"
+              min={0}
+              step="0.01"
+              inputMode="decimal"
+              placeholder="3.6"
+              value={gpa}
+              onChange={(event) => setGpa(event.target.value)}
+              disabled={disabled}
+              {...errorProps("gpa")}
+            />
+          </Field>
 
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="major">Major (optional)</Label>
-          <Input
-            id="major"
-            value={major}
-            onChange={(event) => setMajor(event.target.value)}
-            disabled={disabled}
-            maxLength={MAJOR_MAX}
-            aria-invalid={Boolean(displayError("major"))}
-            aria-describedby={displayError("major") ? "major-error" : undefined}
-          />
-          {displayError("major") && (
-            <p id="major-error" className="text-sm text-ink">
-              {displayError("major")}
-            </p>
-          )}
+          <Field id="major" label="Major (optional)" error={displayError("major")}>
+            <Input
+              id="major"
+              placeholder="Education"
+              value={major}
+              onChange={(event) => setMajor(event.target.value)}
+              disabled={disabled}
+              maxLength={MAJOR_MAX}
+              {...errorProps("major")}
+            />
+          </Field>
         </div>
+      </fieldset>
+
+      <div className="flex flex-col gap-3 border-t border-hairline pt-6 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-[13px] text-ink-secondary">Usually under a minute. Nothing is stored.</p>
+        <Button type="submit" size="lg" disabled={disabled} className="w-full disabled:opacity-80 sm:w-auto">
+          {disabled ? (
+            <>
+              <Loader2 aria-hidden="true" className="motion-safe:animate-spin" />
+              Checking eligibility...
+            </>
+          ) : (
+            <>
+              Check eligibility
+              <ArrowRight aria-hidden="true" className="transition-transform duration-150 group-hover/button:translate-x-0.5" />
+            </>
+          )}
+        </Button>
       </div>
-
-      <Button type="submit" disabled={disabled} className="self-start">
-        {disabled ? "Checking eligibility..." : "Check eligibility"}
-      </Button>
     </form>
   );
 }

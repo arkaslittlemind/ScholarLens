@@ -27,12 +27,12 @@ interface TrendChartProps {
   series: TrendSeries[];
 }
 
-// Ink first, then graphite, then dashed variants: the palette has no third neutral.
+// Ink first, then secondary ink, then dashed variants: the palette has no third neutral.
 const STROKES = [
   { stroke: "var(--color-ink)", dash: undefined },
-  { stroke: "var(--color-graphite)", dash: undefined },
+  { stroke: "var(--color-ink-secondary)", dash: undefined },
   { stroke: "var(--color-ink)", dash: "4 4" },
-  { stroke: "var(--color-graphite)", dash: "4 4" },
+  { stroke: "var(--color-ink-secondary)", dash: "4 4" },
 ];
 
 function formatValue(value: number | null, format: TrendFormat): string {
@@ -112,17 +112,17 @@ export function TrendChart({ title, unit, format, series }: TrendChartProps) {
           .join(", ");
 
   return (
-    <figure className="flex min-w-0 flex-col gap-3 rounded-3xl border border-ink p-5">
+    <figure className="flex min-w-0 flex-col gap-3 rounded-3xl border border-hairline p-5">
       <figcaption className="flex flex-col gap-1">
         <span className="font-medium">
-          {title} <span className="text-sm text-graphite">({unit})</span>
+          {title} <span className="text-sm text-ink-secondary">({unit})</span>
         </span>
-        <span className="text-sm break-words text-graphite">Latest: {summary}</span>
+        <span className="text-sm break-words text-ink-secondary">Latest: {summary}</span>
       </figcaption>
       {/* The Latest line carries the numbers for screen readers; the drawing adds nothing to read. */}
       <div aria-hidden className="h-56 w-full">
         {rows.length === 0 ? (
-          <p className="flex h-full items-center justify-center text-sm text-graphite">
+          <p className="flex h-full items-center justify-center text-sm text-ink-secondary">
             No data in this window
           </p>
         ) : (
@@ -133,12 +133,12 @@ export function TrendChart({ title, unit, format, series }: TrendChartProps) {
                 type="number"
                 domain={["dataMin", "dataMax"]}
                 tickFormatter={formatTime}
-                stroke="var(--color-graphite)"
+                stroke="var(--color-ink-secondary)"
                 fontSize={12}
               />
               <YAxis
                 tickFormatter={(value: number) => formatTick(value, format)}
-                stroke="var(--color-graphite)"
+                stroke="var(--color-ink-secondary)"
                 fontSize={12}
                 width={48}
               />

@@ -29,7 +29,7 @@ export default async function Ops() {
   const now = new Date();
 
   return (
-    <div className="min-h-screen bg-cream-paper text-ink">
+    <div className="min-h-screen bg-paper text-ink">
       <OpsHeader generatedAt={result.kind === "ok" ? result.summary.generated_at : undefined} />
       <main className="mx-auto flex max-w-[1200px] flex-col gap-16 px-6 pb-24">
         <h1 className="text-3xl font-medium">Operations</h1>

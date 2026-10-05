@@ -42,28 +42,54 @@ export function AgentActivitySteps({ completedSteps, intervalMs = STEP_INTERVAL_
   const steps = completedSteps ?? GUARANTEED_STEPS;
 
   return (
-    <div
-      role="status"
-      // False so each tick announces only the step that changed, not the whole list again.
-      aria-atomic="false"
-      className="flex flex-col gap-3 rounded-3xl border border-ink bg-cream-paper p-6"
-    >
-      {steps.map((step, index) => {
-        const isDone = completedSteps !== undefined || index < activeIndex;
-        const isActive = completedSteps === undefined && index === activeIndex;
-        return (
-          <div key={step} className="flex items-center gap-3 text-base">
-            {isDone ? (
-              <CheckCircle2 aria-hidden="true" className="size-4 shrink-0 text-ink" />
-            ) : isActive ? (
-              <Loader2 aria-hidden="true" className="size-4 shrink-0 text-ink motion-safe:animate-spin" />
-            ) : (
-              <Circle aria-hidden="true" className="size-4 shrink-0 text-graphite" />
-            )}
-            <span className={isDone || isActive ? "text-ink" : "text-graphite"}>{displayLabel(step)}</span>
-          </div>
-        );
-      })}
+    <div className="rounded-2xl border border-hairline bg-paper p-6 shadow-card sm:p-8">
+      <p className="font-display text-xl text-ink">Reading the rules for you</p>
+      <p className="mt-1 text-sm text-ink-secondary">This usually takes under a minute.</p>
+      <div
+        role="status"
+        // False so each tick announces only the step that changed, not the whole list again.
+        aria-atomic="false"
+        className="mt-6 flex flex-col"
+      >
+        {steps.map((step, index) => {
+          const isDone = completedSteps !== undefined || index < activeIndex;
+          const isActive = completedSteps === undefined && index === activeIndex;
+          const isLast = index === steps.length - 1;
+          return (
+            <div key={step} className="flex gap-3">
+              <div className="flex flex-col items-center">
+                <span
+                  className={`flex size-6 items-center justify-center rounded-full transition-colors duration-300 ${
+                    isDone ? "bg-sage-tint text-sage-text" : isActive ? "bg-rust-tint text-rust-text" : "bg-tint text-ink-secondary/50"
+                  }`}
+                >
+                  {isDone ? (
+                    <CheckCircle2 aria-hidden="true" className="size-4" />
+                  ) : isActive ? (
+                    <Loader2 aria-hidden="true" className="size-4 motion-safe:animate-spin" />
+                  ) : (
+                    <Circle aria-hidden="true" className="size-3" />
+                  )}
+                </span>
+                {!isLast && (
+                  <span aria-hidden="true" className="my-1 w-px flex-1 bg-hairline">
+                    <span
+                      className={`block h-full w-full origin-top bg-sage transition-transform duration-500 ease-out ${isDone ? "scale-y-100" : "scale-y-0"}`}
+                    />
+                  </span>
+                )}
+              </div>
+              <span
+                className={`text-[15px] leading-6 transition-colors duration-300 ${isLast ? "" : "pb-5"} ${
+                  isDone || isActive ? "font-medium text-ink" : "text-ink-secondary"
+                }`}
+              >
+                {displayLabel(step)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
