@@ -88,6 +88,11 @@ Library: `motion` (`motion/react`). `MotionConfig reducedMotion="user"` in `prov
 | Program rail | Landing | CSS marquee, 40s linear, pauses on hover, static wrap under reduced motion |
 | Activity to verdict | `/check` | AnimatePresence `mode="wait"`; enter 300ms, exit 120ms; verdict items 300ms, stagger 40ms |
 | Press feedback | Buttons, chips | `active:scale-[0.97]`, 150ms |
+| Submit label | `/check` button | Idle and pending labels share one grid cell (width never jumps); crossfade with `blur(2px)`, in 150ms, out 100ms; no blur under reduced motion |
+| Disabled fade | Inputs, chips, buttons | `opacity` and `background-color` 200ms ease when the form locks during a check |
+| Error entrance | Alert, field errors | `@starting-style` (`starting:` variant): opacity plus translateY(-4px), 200ms alert, 150ms field; translate dropped under reduced motion |
+| Verdict badge | Eligible, Partial | `scale(0.96)` to `scale(1)` spring (`duration: 0.4, bounce: 0.15`), origin left; Not eligible keeps the plain rise |
+| Example fill | Description field | `rust-tint` layer with `mix-blend-multiply` fades out over 600ms on each chip click |
 
 Rules:
 - Animate only `transform` and `opacity`, and use full `transform` strings in Motion so it stays on the compositor. The marker sweep's `background-size` is the one exception: it plays once per result.
@@ -95,6 +100,7 @@ Rules:
 - Above-the-fold entrances use the CSS `animate-rise-in` utility (staggered with `[animation-delay:60ms]` steps), never Motion, so nothing waits on hydration. The `/check` tool page has no entrance motion at all.
 - Tailwind v4 `scale-*` and `translate-*` set standalone `scale` and `translate` properties. Transition them by name: `transition-press` for pressables, `transition-[translate]` for lifts. A `transform` transition never animates them.
 - Hover motion uses the `hover-fine` variant, which requires `(hover: hover) and (pointer: fine)`.
+- Focus rings appear instantly (`focus-visible:transition-none`): focus usually comes from Tab, and keyboard actions are never animated.
 - Never animate keyboard-driven or repeated actions such as typing or field focus.
 - Exits are faster than enters.
 - Tailwind v4's `hover:` already only applies on hover-capable devices, so hover lifts are safe on touch.

@@ -49,6 +49,20 @@ const rise: Variants = {
   shown: { opacity: 1, transform: "translateY(0px)", transition: { duration: 0.3, ease: EASE_OUT } },
 };
 
+// The badge on a positive verdict settles with a slight spring: the one word the
+// student waited for. Bad news keeps the plain cascade; emphasis there would sting.
+const settle: Variants = {
+  hidden: { opacity: 0, transform: "translateY(8px) scale(0.96)" },
+  shown: {
+    opacity: 1,
+    transform: "translateY(0px) scale(1)",
+    transition: {
+      transform: { type: "spring", duration: 0.4, bounce: 0.15 },
+      opacity: { duration: 0.3, ease: EASE_OUT },
+    },
+  },
+};
+
 // F-13 (blueprint/context/findings.md): source.url is untrusted web/retrieval
 // content with no backend scheme validation. Only ever render it as a navigable
 // link when it's actually http(s); otherwise show it as inert text.
@@ -187,8 +201,8 @@ export function VerdictCard({ result }: VerdictCardProps) {
     >
       <div className={`flex flex-col items-start gap-3 border-b border-hairline px-6 py-6 sm:px-8 ${meta.headerClassName}`}>
         <motion.div
-          variants={rise}
-          className={`motion-reduce:transform-none! inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] font-semibold ${meta.badgeClassName}`}
+          variants={result.status === "not_eligible" ? rise : settle}
+          className={`motion-reduce:transform-none! inline-flex origin-left items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] font-semibold ${meta.badgeClassName}`}
         >
           <Icon aria-hidden="true" className="size-4" />
           {meta.label}
