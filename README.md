@@ -257,7 +257,8 @@ so if a rule shows "No Data", set its "Alert state if no data" to Normal.
 Errors are counted rather than taken as a ratio, because at low traffic one
 failed request out of three would trip any ratio. The missing-metrics alert
 watches the ingestion gauge, which the backend exports every interval while
-`data/ingestion-status.json` exists, even with no traffic. The quality alerts
+the ingestion status file exists (`INGESTION_STATUS_PATH`, `/data/ingestion-status.json`
+on the production volume), even with no traffic. The quality alerts
 keep firing until a passing evaluation run replaces the failing one. Like the
 rate panels, the count alerts miss the first failure of a new kind after a
 backend start.

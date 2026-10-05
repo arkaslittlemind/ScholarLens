@@ -1,7 +1,3 @@
-# Production alert rules in Prometheus rule format, imported into Grafana Cloud as
-# Grafana-managed rules (see README, Alerts and operations). Every rule pins
-# deployment_environment="production" so local exports never page.
-#
 # Errors are counted rather than taken as a ratio: traffic is low, so one failed
 # request out of three would trip any ratio threshold.
 groups:
