@@ -32,7 +32,9 @@ class Settings(BaseSettings):
     agent_model: str = "google:gemini-3.8-flash"
     embedding_model: str = "gemini-embedding-001"
     retrieval_top_k: int = 5
-    llm_timeout_seconds: float = Field(default=20.0, gt=0)
+    # Gemini enforces this as the request deadline (504 DEADLINE_EXCEEDED); 20 s cut off answers
+    # that needed about 21 s.
+    llm_timeout_seconds: float = Field(default=30.0, gt=0)
     chroma_timeout_seconds: float = Field(default=5.0, gt=0)
     web_search_timeout_seconds: float = Field(default=10.0, gt=0)
     agent_run_timeout_seconds: float = Field(default=45.0, gt=0)

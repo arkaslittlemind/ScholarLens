@@ -80,7 +80,7 @@ Every external call has a timeout (each must be above 0):
 
 | Call | Variable | Default |
 | --- | --- | --- |
-| One Gemini HTTP request | `LLM_TIMEOUT_SECONDS` | 20 s |
+| One Gemini HTTP request | `LLM_TIMEOUT_SECONDS` | 30 s |
 | A whole agent run | `AGENT_RUN_TIMEOUT_SECONDS` | 45 s |
 | ChromaDB query | `CHROMA_TIMEOUT_SECONDS` | 5 s |
 | Tavily search | `WEB_SEARCH_TIMEOUT_SECONDS` | 10 s |
@@ -100,7 +100,7 @@ A Gemini quota or rate-limit response (HTTP 429, `RESOURCE_EXHAUSTED`) is not an
 agent reads the quota type (`per_minute`, `daily`, or `unknown`) and Gemini's suggested
 `retryDelay` from the error body, and retries the run once only when the quota is not daily, a
 delay was given, and that delay plus `LLM_TIMEOUT_SECONDS` still fits in what is left of
-`AGENT_RUN_TIMEOUT_SECONDS` (with the defaults, delays up to about 25 s). Otherwise
+`AGENT_RUN_TIMEOUT_SECONDS` (with the defaults, delays up to about 15 s). Otherwise
 `POST /eligibility` returns 503 with code `engine_busy`, plus `Retry-After` in whole seconds
 whenever Gemini gave a delay, and `/check` shows a "busy, try again" message. Logs and spans
 carry only the quota type (`quota_type`, `app.provider.quota_type`), never the provider's
