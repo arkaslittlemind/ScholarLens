@@ -23,7 +23,7 @@ export function SiteFooter() {
             <Link
               key={link.href}
               href={link.href}
-              className="rounded-sm text-sm font-semibold text-ink-secondary transition-colors duration-150 hover:text-ink"
+              className="rounded-sm text-sm font-semibold text-ink-secondary transition-colors duration-150 hover:text-ink pointer-coarse:inline-flex pointer-coarse:min-h-11 pointer-coarse:items-center"
             >
               {link.label}
             </Link>

@@ -32,7 +32,7 @@ export function Faq() {
       {FAQS.map((item) => (
         <Accordion.Item key={item.q} value={item.q} className="border-b border-hairline">
           <Accordion.Header>
-            <Accordion.Trigger className="group flex w-full items-center justify-between gap-6 rounded-sm py-6 text-left font-display text-xl text-ink sm:text-[22px]">
+            <Accordion.Trigger className="group flex w-full items-center justify-between gap-6 rounded-sm py-6 text-left font-display text-xl text-ink sm:text-title-sm">
               {item.q}
               <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-hairline text-ink-secondary transition-[background-color,border-color,color] duration-150 group-hover:border-ink-secondary group-hover:text-ink group-data-[state=open]:border-brown group-data-[state=open]:bg-brown group-data-[state=open]:text-paper">
                 <Plus
@@ -43,7 +43,7 @@ export function Faq() {
             </Accordion.Trigger>
           </Accordion.Header>
           <Accordion.Content className="overflow-hidden data-[state=closed]:animate-[accordion-up_160ms_var(--ease-out-strong)] data-[state=open]:animate-[accordion-down_220ms_var(--ease-out-strong)] motion-reduce:animate-none">
-            <p className="max-w-170 pb-6 text-[17px] leading-relaxed text-ink-secondary">{item.a}</p>
+            <p className="max-w-170 pb-6 text-body-lg leading-relaxed text-ink-secondary">{item.a}</p>
           </Accordion.Content>
         </Accordion.Item>
       ))}

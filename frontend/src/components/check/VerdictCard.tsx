@@ -202,12 +202,12 @@ export function VerdictCard({ result }: VerdictCardProps) {
       <div className={`flex flex-col items-start gap-3 border-b border-hairline px-6 py-6 sm:px-8 ${meta.headerClassName}`}>
         <motion.div
           variants={result.status === "not_eligible" ? rise : settle}
-          className={`motion-reduce:transform-none! inline-flex origin-left items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] font-semibold ${meta.badgeClassName}`}
+          className={`motion-reduce:transform-none! inline-flex origin-left items-center gap-1.5 rounded-full px-2.5 py-1 text-caption font-semibold ${meta.badgeClassName}`}
         >
           <Icon aria-hidden="true" className="size-4" />
           {meta.label}
         </motion.div>
-        <motion.h2 variants={rise} className="motion-reduce:transform-none! font-display text-[28px] leading-tight text-ink wrap-anywhere sm:text-[32px]">
+        <motion.h2 variants={rise} className="motion-reduce:transform-none! font-display text-title leading-tight text-ink wrap-anywhere sm:text-title-lg">
           {result.source ? result.source.program : "Your result"}
         </motion.h2>
       </div>
@@ -241,7 +241,7 @@ export function VerdictCard({ result }: VerdictCardProps) {
         </motion.div>
       </div>
 
-      <motion.p variants={rise} className="motion-reduce:transform-none! border-t border-hairline bg-tint/60 px-6 py-4 text-[13px] text-ink-secondary sm:px-8">
+      <motion.p variants={rise} className="motion-reduce:transform-none! border-t border-hairline bg-tint/60 px-6 py-4 text-caption text-ink-secondary sm:px-8">
         ScholarLens checks eligibility rules, not your chances of an award. Confirm details with the
         program before applying.
       </motion.p>

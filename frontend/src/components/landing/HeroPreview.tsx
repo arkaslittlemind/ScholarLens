@@ -28,7 +28,7 @@ function Annotation({ children, className }: { children: string; className: stri
     <motion.p
       variants={rise}
       // Sits outside the card, so only at widths with room in the margin.
-      className={`motion-reduce:transform-none! absolute hidden font-display text-[17px] whitespace-pre-line text-rust-text italic xl:block ${className}`}
+      className={`motion-reduce:transform-none! absolute hidden font-display text-body-lg whitespace-pre-line text-rust-text italic xl:block ${className}`}
     >
       {children}
     </motion.p>
@@ -63,7 +63,7 @@ export function HeroPreview() {
       >
         <div className="hidden flex-col gap-4 border-r border-hairline bg-tint/60 p-6 md:flex">
           <p className="type-eyebrow text-ink-secondary">Your situation</p>
-          <p className="rounded-lg border border-hairline bg-paper p-4 text-[15px] leading-relaxed text-ink">
+          <p className="rounded-lg border border-hairline bg-paper p-4 text-body-sm leading-relaxed text-ink">
             I&apos;m a U.S. citizen starting my first year as an undergraduate. I filed the FAFSA. Am
             I eligible for the Pell Grant?
           </p>
@@ -79,7 +79,7 @@ export function HeroPreview() {
           </div>
           <div className="mt-auto flex flex-col gap-2 pt-4">
             {TRACE.map((step) => (
-              <span key={step} className="flex items-center gap-2 text-[13px] text-ink-secondary">
+              <span key={step} className="flex items-center gap-2 text-caption text-ink-secondary">
                 <CheckCircle2 aria-hidden="true" className="size-3.5 text-sage-text" />
                 {step}
               </span>
@@ -89,25 +89,25 @@ export function HeroPreview() {
 
         <motion.div variants={stack} className="flex flex-col gap-5 p-6 sm:p-8">
           <motion.div variants={rise} className="motion-reduce:transform-none! flex items-center justify-between gap-3">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-sage-tint px-2.5 py-1 text-[13px] font-semibold text-sage-text">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-sage-tint px-2.5 py-1 text-caption font-semibold text-sage-text">
               <CheckCircle2 aria-hidden="true" className="size-3.5" />
               Eligible
             </span>
             <span className="text-xs font-medium text-ink-secondary">Example result</span>
           </motion.div>
 
-          <motion.p variants={rise} className="motion-reduce:transform-none! font-display text-[28px] leading-tight text-ink sm:text-[32px]">
+          <motion.p variants={rise} className="motion-reduce:transform-none! font-display text-title leading-tight text-ink sm:text-title-lg">
             Federal Pell Grant
           </motion.p>
 
-          <motion.p variants={rise} className="motion-reduce:transform-none! text-[15px] leading-relaxed text-ink-secondary">
+          <motion.p variants={rise} className="motion-reduce:transform-none! text-body-sm leading-relaxed text-ink-secondary">
             You&apos;re a first-time undergraduate without a prior degree, which meets the program&apos;s
             enrollment rule.
           </motion.p>
 
           <motion.div variants={rise} className="motion-reduce:transform-none! border-l-2 border-rust pl-4">
-            <p className="text-[13px] font-semibold text-ink">The rule</p>
-            <p className="mt-1.5 font-display text-[17px] leading-snug text-ink">
+            <p className="text-caption font-semibold text-ink">The rule</p>
+            <p className="mt-1.5 font-display text-body-lg leading-snug text-ink">
               &ldquo;
               {/* The marker sweep: a gradient whose width grows behind the text. */}
               <motion.span
@@ -120,7 +120,7 @@ export function HeroPreview() {
               </motion.span>
               &rdquo;
             </p>
-            <p className="mt-2 text-[13px] text-ink-secondary">Eligibility summary</p>
+            <p className="mt-2 text-caption text-ink-secondary">Eligibility summary</p>
           </motion.div>
 
           <motion.span

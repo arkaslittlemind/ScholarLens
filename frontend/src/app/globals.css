@@ -76,6 +76,16 @@
   --color-card: var(--card);
   --color-foreground: var(--foreground);
   --color-background: var(--background);
+  /* In rem, so type follows the reader's browser text-size setting. Size only:
+     line height stays with each element. */
+  --text-caption: 0.8125rem;
+  --text-body-sm: 0.9375rem;
+  --text-body-lg: 1.0625rem;
+  --text-title-sm: 1.375rem;
+  --text-title: 1.75rem;
+  --text-title-lg: 2rem;
+  --text-display-sm: 2.5rem;
+  --text-display-xl: 5rem;
   --radius-sm: 8px;
   --radius-md: 10px;
   --radius-lg: 12px;
@@ -87,12 +97,14 @@
   --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
-/* Display type: Fraunces at its soft setting stands in for a warm book serif. */
+/* Display type: Fraunces at its soft setting stands in for a warm book serif.
+   Tracking tightens with size instead of one value for all: 0 at 17px and
+   below, about -0.02em at 32px, -0.03em at 72px (em is the element's own size). */
 @utility font-display {
   font-family: var(--font-fraunces);
   font-variation-settings: "SOFT" 100, "WONK" 0;
   font-weight: 450;
-  letter-spacing: -0.02em;
+  letter-spacing: min(0em, calc(0.68px - 0.04em));
 }
 
 @utility type-h1 {
@@ -123,6 +135,9 @@
 @utility animate-marquee {
   animation: marquee 40s linear infinite;
 }
+
+/* For people who ask the OS for less transparency: translucent chrome goes solid. */
+@custom-variant reduce-transparency (@media (prefers-reduced-transparency: reduce));
 
 /* Hover motion only for a real mouse. Tailwind's hover: checks (hover: hover)
    alone, which hybrid touch devices also report, leaving lifts stuck after a tap. */
@@ -190,9 +205,23 @@
   html {
     @apply font-sans;
     scroll-behavior: smooth;
+    /* Every pressable draws its own press feedback; the browser's grey tap
+       flash on mobile would land on top of it. */
+    -webkit-tap-highlight-color: transparent;
   }
   body {
     @apply bg-background text-foreground;
+  }
+  /* Headings break into even lines; paragraphs avoid a lone last word. */
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+  p,
+  li,
+  blockquote {
+    text-wrap: pretty;
   }
   ::selection {
     background: var(--color-rust-tint);
