@@ -196,6 +196,8 @@ export function VerdictCard({ result }: VerdictCardProps) {
     <motion.div
       initial="hidden"
       animate="shown"
+      // Leaving on a new check: a quick fade instead of the tall card vanishing in one frame.
+      exit={{ opacity: 0, transition: { duration: 0.12, ease: EASE_OUT } }}
       variants={stack}
       className="overflow-hidden rounded-2xl border border-hairline bg-paper shadow-card"
     >
