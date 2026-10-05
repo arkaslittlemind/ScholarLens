@@ -1,8 +1,4 @@
-"use client";
-
 import { ArrowUpRight, CheckCircle2 } from "lucide-react";
-import { motion, type Variants } from "motion/react";
-import { EASE_OUT } from "@/components/motion/Reveal";
 
 // An illustrative result built from the real Pell Grant corpus document, so
 // the preview never shows a rule ScholarLens could not actually quote.
@@ -13,54 +9,34 @@ const PROFILE = ["New Jersey", "GPA 3.6", "$40,000 income", "First-year"];
 
 const TRACE = ["Searching program rules", "Validating eligibility", "Preparing cited answer"];
 
-const stack: Variants = {
-  hidden: {},
-  shown: { transition: { staggerChildren: 0.08, delayChildren: 0.55 } },
-};
-
-const rise: Variants = {
-  hidden: { opacity: 0, transform: "translateY(10px)" },
-  shown: { opacity: 1, transform: "translateY(0px)", transition: { duration: 0.5, ease: EASE_OUT } },
-};
-
 function Annotation({ children, className }: { children: string; className: string }) {
   return (
-    <motion.p
-      variants={rise}
+    <p
       // Sits outside the card, so only at widths with room in the margin.
-      className={`motion-reduce:transform-none! absolute hidden font-display text-body-lg whitespace-pre-line text-rust-text italic xl:block ${className}`}
+      className={`absolute hidden animate-rise-in font-display text-body-lg whitespace-pre-line text-rust-text italic xl:block ${className}`}
     >
       {children}
-    </motion.p>
+    </p>
   );
 }
 
+// The entrance is CSS, not Motion: it is in the server HTML, so the preview never
+// waits on hydration. Delays stagger the content 80ms apart once the card lands.
 export function HeroPreview() {
   return (
-    <motion.div
+    <div
       role="img"
       aria-label="Example result: Federal Pell Grant, eligible, quoting the enrollment rule from the official eligibility summary."
-      initial="hidden"
-      animate="shown"
-      variants={stack}
       className="relative mx-auto w-full max-w-240"
     >
-      <Annotation className="top-[38%] -left-2 -translate-x-full text-right">
+      <Annotation className="top-[38%] -left-2 -translate-x-full text-right [animation-delay:1000ms]">
         {"the exact rule,\nquoted"}
       </Annotation>
-      <Annotation className="top-[70%] -right-2 translate-x-full">linked to the source</Annotation>
+      <Annotation className="top-[70%] -right-2 translate-x-full [animation-delay:1080ms]">
+        linked to the source
+      </Annotation>
 
-      <motion.div
-        variants={{
-          hidden: { opacity: 0, transform: "translateY(24px) scale(0.98)" },
-          shown: {
-            opacity: 1,
-            transform: "translateY(0px) scale(1)",
-            transition: { duration: 0.8, ease: EASE_OUT, delay: 0.2 },
-          },
-        }}
-        className="motion-reduce:transform-none! grid overflow-hidden rounded-2xl border border-hairline bg-paper text-left shadow-lift md:grid-cols-[0.85fr_1.15fr]"
-      >
+      <div className="grid animate-preview-in overflow-hidden rounded-2xl border border-hairline bg-paper text-left shadow-lift [animation-delay:200ms] md:grid-cols-[0.85fr_1.15fr]">
         <div className="hidden flex-col gap-4 border-r border-hairline bg-tint/60 p-6 md:flex">
           <p className="type-eyebrow text-ink-secondary">Your situation</p>
           <p className="rounded-lg border border-hairline bg-paper p-4 text-body-sm leading-relaxed text-ink">
@@ -87,51 +63,43 @@ export function HeroPreview() {
           </div>
         </div>
 
-        <motion.div variants={stack} className="flex flex-col gap-5 p-6 sm:p-8">
-          <motion.div variants={rise} className="motion-reduce:transform-none! flex items-center justify-between gap-3">
+        <div className="flex flex-col gap-5 p-6 sm:p-8">
+          <div className="flex animate-rise-in items-center justify-between gap-3 [animation-delay:550ms]">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-sage-tint px-2.5 py-1 text-caption font-semibold text-sage-text">
               <CheckCircle2 aria-hidden="true" className="size-3.5" />
               Eligible
             </span>
             <span className="text-xs font-medium text-ink-secondary">Example result</span>
-          </motion.div>
+          </div>
 
-          <motion.p variants={rise} className="motion-reduce:transform-none! font-display text-title leading-tight text-ink sm:text-title-lg">
+          <p className="animate-rise-in font-display text-title leading-tight text-ink [animation-delay:630ms] sm:text-title-lg">
             Federal Pell Grant
-          </motion.p>
+          </p>
 
-          <motion.p variants={rise} className="motion-reduce:transform-none! text-body-sm leading-relaxed text-ink-secondary">
+          <p className="animate-rise-in text-body-sm leading-relaxed text-ink-secondary [animation-delay:710ms]">
             You&apos;re a first-time undergraduate without a prior degree, which meets the program&apos;s
             enrollment rule.
-          </motion.p>
+          </p>
 
-          <motion.div variants={rise} className="motion-reduce:transform-none! border-l-2 border-rust pl-4">
+          <div className="animate-rise-in border-l-2 border-rust pl-4 [animation-delay:790ms]">
             <p className="text-caption font-semibold text-ink">The rule</p>
             <p className="mt-1.5 font-display text-body-lg leading-snug text-ink">
               &ldquo;
               {/* The marker sweep: a gradient whose width grows behind the text. */}
-              <motion.span
-                className="box-decoration-clone bg-linear-to-r from-rust-tint to-rust-tint bg-no-repeat"
-                initial={{ backgroundSize: "0% 100%" }}
-                animate={{ backgroundSize: "100% 100%" }}
-                transition={{ duration: 0.9, ease: [0.65, 0, 0.35, 1], delay: 1.25 }}
-              >
+              <span className="animate-marker-sweep box-decoration-clone bg-linear-to-r from-rust-tint to-rust-tint bg-no-repeat [animation-delay:1250ms]">
                 {CLAUSE}
-              </motion.span>
+              </span>
               &rdquo;
             </p>
             <p className="mt-2 text-caption text-ink-secondary">Eligibility summary</p>
-          </motion.div>
+          </div>
 
-          <motion.span
-            variants={rise}
-            className="motion-reduce:transform-none! inline-flex w-fit items-center gap-1 text-sm font-semibold text-ink underline decoration-hairline underline-offset-4"
-          >
+          <span className="inline-flex w-fit animate-rise-in items-center gap-1 text-sm font-semibold text-ink underline decoration-hairline underline-offset-4 [animation-delay:870ms]">
             Open source on studentaid.gov
             <ArrowUpRight aria-hidden="true" className="size-4" />
-          </motion.span>
-        </motion.div>
-      </motion.div>
-    </motion.div>
+          </span>
+        </div>
+      </div>
+    </div>
   );
 }
