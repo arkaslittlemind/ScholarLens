@@ -33,6 +33,14 @@ type FieldErrors = Partial<Record<keyof EligibilityRequest, string>>;
 // submit can focus the first one that needs fixing.
 const FIELD_ORDER: (keyof EligibilityRequest)[] = ["description", "income", "state", "gpa", "major"];
 
+// The submit button's idle and pending labels crossfade. A 2px blur bridges the two
+// so the swap reads as one change; the outgoing label leaves faster than the new one arrives.
+function labelLayerClass(active: boolean): string {
+  return `col-start-1 row-start-1 inline-flex items-center justify-center gap-2 transition-[opacity,filter] ease-out-strong motion-reduce:filter-none! ${
+    active ? "opacity-100 blur-[0px] duration-150" : "opacity-0 blur-[2px] duration-100"
+  }`;
+}
+
 interface FieldProps {
   id: keyof EligibilityRequest;
   label: string;
@@ -48,7 +56,10 @@ function Field({ id, label, error, children }: FieldProps) {
       </Label>
       {children}
       {error && (
-        <p id={`${id}-error`} className="text-sm font-medium text-destructive">
+        <p
+          id={`${id}-error`}
+          className="text-sm font-medium text-destructive transition-[opacity,translate] duration-150 ease-out-strong starting:-translate-y-1 starting:opacity-0 motion-reduce:translate-none!"
+        >
           {error}
         </p>
       )}
@@ -72,6 +83,8 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
   const [gpa, setGpa] = useState("");
   const [major, setMajor] = useState("");
   const [errors, setErrors] = useState<FieldErrors>({});
+  // Counts example fills; each new value remounts the flash layer over the field.
+  const [fillCount, setFillCount] = useState(0);
 
   function displayError(field: keyof EligibilityRequest): string | undefined {
     if (errors[field]) return errors[field];
@@ -166,7 +179,10 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
             key={example.label}
             type="button"
             disabled={disabled}
-            onClick={() => setDescription(example.description)}
+            onClick={() => {
+              setDescription(example.description);
+              setFillCount((count) => count + 1);
+            }}
             className="rounded-full border border-hairline bg-tint px-3 py-1.5 text-[13px] font-semibold text-ink transition-press hover:border-input hover:bg-paper active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50"
           >
             {example.label}
@@ -176,16 +192,25 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
 
       <div className="flex flex-col gap-2">
         <Field id="description" label="Describe your situation" error={displayError("description")}>
-          <Textarea
-            id="description"
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-            disabled={disabled}
-            maxLength={DESCRIPTION_MAX}
-            rows={5}
-            placeholder="I'm a first-year undergraduate, U.S. citizen, household income..."
-            {...errorProps("description")}
-          />
+          <div className="relative">
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              disabled={disabled}
+              maxLength={DESCRIPTION_MAX}
+              rows={5}
+              placeholder="I'm a first-year undergraduate, U.S. citizen, household income..."
+              {...errorProps("description")}
+            />
+            {fillCount > 0 && (
+              <span
+                key={fillCount}
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 animate-fill-flash rounded-md bg-rust-tint mix-blend-multiply"
+              />
+            )}
+          </div>
         </Field>
         <p aria-hidden="true" className="self-end text-xs text-ink-secondary tabular-nums">
           {description.length} / {DESCRIPTION_MAX}
@@ -256,17 +281,18 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
       <div className="flex flex-col gap-3 border-t border-hairline pt-6 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-[13px] text-ink-secondary">Usually under a minute. Nothing is stored.</p>
         <Button type="submit" size="lg" disabled={disabled} className="w-full disabled:opacity-80 sm:w-auto">
-          {disabled ? (
-            <>
-              <Loader2 aria-hidden="true" className="motion-safe:animate-spin" />
-              Checking eligibility...
-            </>
-          ) : (
-            <>
+          {/* Both labels share one grid cell, so the button is always as wide as the
+              longer one and never jumps; only the active label is in the accessible name. */}
+          <span className="grid">
+            <span aria-hidden={disabled} className={labelLayerClass(!disabled)}>
               Check eligibility
               <ArrowRight aria-hidden="true" className="transition-transform duration-150 group-hover/button:translate-x-0.5" />
-            </>
-          )}
+            </span>
+            <span aria-hidden={!disabled} className={labelLayerClass(disabled)}>
+              <Loader2 aria-hidden="true" className={disabled ? "motion-safe:animate-spin" : undefined} />
+              Checking eligibility...
+            </span>
+          </span>
         </Button>
       </div>
     </form>

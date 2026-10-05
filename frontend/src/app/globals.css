@@ -134,7 +134,8 @@
   }
 }
 
-/* Pressables: the press scale gets the strong ease-out, colors a plain ease.
+/* Pressables: the press scale gets the strong ease-out, colors and the
+   disabled fade a plain ease.
    Tailwind v4's scale-* utilities set the standalone `scale` property, so it is
    listed by name; a `transform` transition would never animate the press. */
 @utility transition-press {
@@ -142,7 +143,21 @@
     scale 150ms var(--ease-out-strong),
     background-color 150ms ease,
     border-color 150ms ease,
-    color 150ms ease;
+    color 150ms ease,
+    opacity 200ms ease;
+}
+
+/* Example fill: a tint over the description field fades out, pointing the eye
+   from the chip to the text it just wrote. A keyframe on purpose: each click is
+   a new fill (the layer remounts), so restarting from full tint is correct. */
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@utility animate-fill-flash {
+  animation: fade-out 600ms ease forwards;
 }
 
 /* Above-the-fold entrance. CSS, not Motion: it is in the server HTML, so the
