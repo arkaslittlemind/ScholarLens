@@ -315,7 +315,7 @@ def test_a_second_rate_limit_after_the_retry_is_busy(build_agent):
     ("body", "quota_type", "retry_after"),
     [
         (gemini_429(_PER_DAY, retry_delay="0.05s"), "daily", 0.05),
-        # 40 s plus the 20 s model-call window does not fit in the 45 s run budget.
+        # 40 s plus the 30 s model-call window does not fit in the 45 s run budget.
         (gemini_429(_PER_MINUTE, retry_delay="40s"), "per_minute", 40.0),
         (gemini_429(_PER_MINUTE), "per_minute", None),
         ({"error": "not the documented shape"}, "unknown", None),
