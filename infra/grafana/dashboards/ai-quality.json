@@ -26,6 +26,38 @@
         "refresh": 1,
         "regex": "",
         "options": []
+      },
+      {
+        "name": "env",
+        "label": "Environment",
+        "type": "custom",
+        "query": "production,local",
+        "current": {
+          "selected": true,
+          "text": "production",
+          "value": "production"
+        },
+        "options": [
+          {
+            "selected": false,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": true,
+            "text": "production",
+            "value": "production"
+          },
+          {
+            "selected": false,
+            "text": "local",
+            "value": "local"
+          }
+        ],
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": false,
+        "hide": 0
       }
     ]
   },
@@ -67,7 +99,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(scholarlens_evaluation_eligibility_accuracy_ratio{job=\"scholarlens-api\"})",
+          "expr": "max(scholarlens_evaluation_eligibility_accuracy_ratio{job=\"scholarlens-api\",deployment_environment=~\"$env\"})",
           "legendFormat": "eligibility",
           "refId": "A"
         }
@@ -131,7 +163,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(scholarlens_evaluation_citation_accuracy_ratio{job=\"scholarlens-api\"})",
+          "expr": "max(scholarlens_evaluation_citation_accuracy_ratio{job=\"scholarlens-api\",deployment_environment=~\"$env\"})",
           "legendFormat": "citation",
           "refId": "A"
         }
@@ -195,7 +227,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(scholarlens_evaluation_hallucination_rate_ratio{job=\"scholarlens-api\"})",
+          "expr": "max(scholarlens_evaluation_hallucination_rate_ratio{job=\"scholarlens-api\",deployment_environment=~\"$env\"})",
           "legendFormat": "hallucination",
           "refId": "A"
         }
@@ -259,7 +291,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(scholarlens_evaluation_consistency_score_ratio{job=\"scholarlens-api\"})",
+          "expr": "max(scholarlens_evaluation_consistency_score_ratio{job=\"scholarlens-api\",deployment_environment=~\"$env\"})",
           "legendFormat": "consistency",
           "refId": "A"
         }
@@ -319,7 +351,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(scholarlens_evaluation_latency_milliseconds{job=\"scholarlens-api\"})",
+          "expr": "max(scholarlens_evaluation_latency_milliseconds{job=\"scholarlens-api\",deployment_environment=~\"$env\"})",
           "legendFormat": "latency",
           "refId": "A"
         }
@@ -378,7 +410,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(scholarlens_evaluation_tool_calls{job=\"scholarlens-api\"})",
+          "expr": "max(scholarlens_evaluation_tool_calls{job=\"scholarlens-api\",deployment_environment=~\"$env\"})",
           "legendFormat": "tool calls",
           "refId": "A"
         }
@@ -438,7 +470,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "time() - max(scholarlens_evaluation_last_run_timestamp_seconds{job=\"scholarlens-api\"})",
+          "expr": "time() - max(scholarlens_evaluation_last_run_timestamp_seconds{job=\"scholarlens-api\",deployment_environment=~\"$env\"})",
           "legendFormat": "age",
           "refId": "A"
         }
@@ -510,7 +542,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(scholarlens_evaluation_eligibility_accuracy_ratio{job=\"scholarlens-api\"})",
+          "expr": "max(scholarlens_evaluation_eligibility_accuracy_ratio{job=\"scholarlens-api\",deployment_environment=~\"$env\"})",
           "legendFormat": "eligibility accuracy",
           "refId": "A"
         }
@@ -579,7 +611,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(scholarlens_evaluation_citation_accuracy_ratio{job=\"scholarlens-api\"})",
+          "expr": "max(scholarlens_evaluation_citation_accuracy_ratio{job=\"scholarlens-api\",deployment_environment=~\"$env\"})",
           "legendFormat": "citation accuracy",
           "refId": "A"
         }
@@ -648,7 +680,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(scholarlens_evaluation_hallucination_rate_ratio{job=\"scholarlens-api\"})",
+          "expr": "max(scholarlens_evaluation_hallucination_rate_ratio{job=\"scholarlens-api\",deployment_environment=~\"$env\"})",
           "legendFormat": "hallucination rate",
           "refId": "A"
         }
@@ -730,7 +762,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (app_tool_name) (rate(scholarlens_tool_calls_total{job=\"scholarlens-api\"}[$__rate_interval])) * 60",
+          "expr": "sum by (app_tool_name) (rate(scholarlens_tool_calls_total{job=\"scholarlens-api\",deployment_environment=~\"$env\"}[$__rate_interval])) * 60",
           "legendFormat": "{{app_tool_name}}",
           "refId": "A"
         }
@@ -784,7 +816,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(increase(scholarlens_tool_calls_total{job=\"scholarlens-api\"}[$__range])) / sum(increase(scholarlens_agent_duration_seconds_count{job=\"scholarlens-api\"}[$__range]))",
+          "expr": "sum(increase(scholarlens_tool_calls_total{job=\"scholarlens-api\",deployment_environment=~\"$env\"}[$__range])) / sum(increase(scholarlens_agent_duration_seconds_count{job=\"scholarlens-api\",deployment_environment=~\"$env\"}[$__range]))",
           "legendFormat": "per run",
           "refId": "A",
           "instant": true,
@@ -846,7 +878,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (gen_ai_request_model) (rate(scholarlens_llm_requests_total{job=\"scholarlens-api\"}[$__rate_interval])) * 60",
+          "expr": "sum by (gen_ai_request_model) (rate(scholarlens_llm_requests_total{job=\"scholarlens-api\",deployment_environment=~\"$env\"}[$__rate_interval])) * 60",
           "legendFormat": "{{gen_ai_request_model}}",
           "refId": "A"
         }
@@ -900,7 +932,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (gen_ai_token_type) (rate(gen_ai_client_token_usage_sum{job=\"scholarlens-api\"}[$__rate_interval])) * 60",
+          "expr": "sum by (gen_ai_token_type) (rate(gen_ai_client_token_usage_sum{job=\"scholarlens-api\",deployment_environment=~\"$env\"}[$__rate_interval])) * 60",
           "legendFormat": "{{gen_ai_token_type}}",
           "refId": "A"
         }
@@ -954,7 +986,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (gen_ai_token_type) (increase(gen_ai_client_token_usage_sum{job=\"scholarlens-api\"}[$__range]))",
+          "expr": "sum by (gen_ai_token_type) (increase(gen_ai_client_token_usage_sum{job=\"scholarlens-api\",deployment_environment=~\"$env\"}[$__range]))",
           "legendFormat": "{{gen_ai_token_type}}",
           "refId": "A",
           "instant": true,
@@ -1016,7 +1048,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (gen_ai_token_type) (increase(gen_ai_client_token_usage_sum{job=\"scholarlens-api\"}[$__range])) / sum by (gen_ai_token_type) (increase(gen_ai_client_token_usage_count{job=\"scholarlens-api\"}[$__range]))",
+          "expr": "sum by (gen_ai_token_type) (increase(gen_ai_client_token_usage_sum{job=\"scholarlens-api\",deployment_environment=~\"$env\"}[$__range])) / sum by (gen_ai_token_type) (increase(gen_ai_client_token_usage_count{job=\"scholarlens-api\",deployment_environment=~\"$env\"}[$__range]))",
           "legendFormat": "{{gen_ai_token_type}}",
           "refId": "A",
           "instant": true,

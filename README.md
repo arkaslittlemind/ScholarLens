@@ -212,8 +212,10 @@ To import one, open Grafana Cloud, go to Dashboards > New > Import, and upload
 the file. Pick your stack's Prometheus data source in the "Data source" drop-down
 at the top of the dashboard. Importing a file again replaces the existing copy.
 The panels fill from production (Deploy, step 4), or while a local backend runs
-with the Grafana override above. Both report as `job="scholarlens-api"`, so
-running the local override at the same time mixes its data into the panels.
+with the Grafana override above. Use the "Environment" drop-down to choose
+which: `production` (the default), `local`, or All. Production sets
+`deployment.environment=production` itself; the Grafana override's collector
+labels everything else `local`.
 
 A few things to know when reading them:
 
@@ -226,3 +228,37 @@ A few things to know when reading them:
 - Prometheus `rate()` cannot see the first sample of a new series, so the first
   request with a new status code or failure outcome after a backend start does
   not show up in rate panels. Later ones do.
+- The dashed line on `/eligibility latency` marks 30 s, where the slow-latency
+  alert below fires on p95.
+
+#### Alerts and operations
+
+`infra/grafana/alerts/scholarlens-alerts.yaml` holds the production alert rules
+in Prometheus rule format. Every rule only looks at
+`deployment_environment="production"`, so local runs never alert.
+
+To load them, open Grafana Cloud, go to Alerting > Alert rules, and use "Import
+to Grafana-managed rules" with the YAML file. If your stack does not offer a
+file import, create each rule by hand with its query, pending period ("for"),
+and severity label from the file. Grafana-managed rules notify the stack's
+default contact point, which emails the stack owner; use "Test" on the contact
+point to check delivery. Every rule returns no data while things are healthy,
+so if a rule shows "No Data", set its "Alert state if no data" to Normal.
+
+| Alert | Fires when | First checks |
+| --- | --- | --- |
+| `ScholarLensMetricsMissing` | No production metrics for 15 minutes | Railway service status, `GET /health`, Railway logs for "Failed to export" |
+| `ScholarLensServerErrors` | 3 or more 5xx responses in 15 minutes | Requests by status code, then the failing trace in Tempo and its Loki lines |
+| `ScholarLensAgentFailures` | 3 or more agent runs end in `timeout`, `tool_unavailable`, or `error` in 15 minutes | Agent runs by outcome, Retrieval and Web search panels, a failing trace |
+| `ScholarLensProviderRateLimited` | Gemini refuses a run with a rate limit or quota error | Gemini quota and billing in Google AI Studio |
+| `ScholarLensSlowEligibility` | p95 `/eligibility` latency above 30 s for 15 minutes | The LLM, retrieval, and web search spans of a slow trace |
+| `ScholarLensEligibilityAccuracyLow`, `ScholarLensCitationAccuracyLow`, `ScholarLensHallucinationRateHigh` | The latest production evaluation run misses its target | The failure categories and failing attempts printed by `python -m app.evaluation`, then rerun it |
+
+Errors are counted rather than taken as a ratio, because at low traffic one
+failed request out of three would trip any ratio. The missing-metrics alert
+watches the ingestion gauge, which the backend exports every interval while
+the ingestion status file exists (`INGESTION_STATUS_PATH`, `/data/ingestion-status.json`
+on the production volume), even with no traffic. The quality alerts
+keep firing until a passing evaluation run replaces the failing one. Like the
+rate panels, the count alerts miss the first failure of a new kind after a
+backend start.
