@@ -15,17 +15,18 @@ expected verdict, program, and rule. This run used the deployed production
 backend on 2026-10-05 (UTC), `gemini-3.8-flash` with `gemini-embedding-001`,
 each profile answered 3 times (75 answers):
 
-| Metric | Result | Target | |
+| Metric | Result | Target | Status |
 | --- | --- | --- | --- |
 | Eligibility accuracy: the verdict matches the label | 93.3% | above 80% | met |
 | Citation accuracy: the quoted rule and program match the knowledge base | 97.0% | above 70% | met |
-| Hallucination rate: a claim of eligibility with no citation, or a quoted rule found nowhere in the knowledge base | 1.4% | below 10% | met |
-| Consistency: the same verdict across the 3 repeats | 92.0% | none | |
+| Hallucination rate: of the answers scored, the share that claim eligibility without a citation or quote a rule found nowhere in the knowledge base | 1.4% | below 10% | met |
+| Consistency: the same verdict across the 3 repeats | 92.0% | no target | not applicable |
 
-Mean latency was 7.6 s per answer with 1.01 tool calls. Of the 6 answers that
-missed: 3 were `calgrant-a-meets-gpa` returning "partial" instead of
-"eligible", 2 were Gemini requests that ran past their deadline and returned no
-answer, and 1 quoted a rule found nowhere in the knowledge base. Rerun it with
+Mean latency was 7.6 s per answer with 1.01 tool calls. 5 of the 75 verdicts
+were wrong: 3 were `calgrant-a-meets-gpa` returning "partial" instead of
+"eligible", and 2 were Gemini requests that ran past their deadline and
+returned no answer. One more answer had the right verdict but quoted a rule
+found nowhere in the knowledge base. Rerun it with
 `python -m app.evaluation` (see Deploy for running it in production).
 
 ![Grafana AI quality dashboard for production showing this run: eligibility accuracy 93%, citation accuracy 97%, hallucination rate 1%, consistency 92%, 7.60 s average latency, and trend charts against the 80%, 70%, and 10% targets](docs/screenshots/ai-quality.png)
@@ -243,7 +244,7 @@ Two Grafana dashboards live in `infra/grafana/dashboards/`:
   targets (eligibility above 80%, citation above 70%, hallucination below 10%),
   tool calls, LLM requests, and token usage.
 
-![Grafana service health dashboard for production over 7 days: request rate and status codes by route, a 0% 5xx ratio, 5.30 s mean /eligibility latency, agent runs by outcome, and ChromaDB retrieval latency, with sparse test traffic](docs/screenshots/service-health.png)
+![Grafana service health dashboard for production over 7 days: request rate and status codes by route, a 0% 5xx ratio, 5.30 s mean /eligibility latency, and agent runs by outcome, with sparse test traffic](docs/screenshots/service-health.png)
 
 The AI quality dashboard for the latest production run is shown under
 Evaluation results at the top of this file.
