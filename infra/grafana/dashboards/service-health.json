@@ -26,6 +26,38 @@
         "refresh": 1,
         "regex": "",
         "options": []
+      },
+      {
+        "name": "env",
+        "label": "Environment",
+        "type": "custom",
+        "query": "production,local",
+        "current": {
+          "selected": true,
+          "text": "production",
+          "value": "production"
+        },
+        "options": [
+          {
+            "selected": false,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": true,
+            "text": "production",
+            "value": "production"
+          },
+          {
+            "selected": false,
+            "text": "local",
+            "value": "local"
+          }
+        ],
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": false,
+        "hide": 0
       }
     ]
   },
@@ -67,7 +99,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(http_server_duration_milliseconds_count{job=\"scholarlens-api\"}[$__rate_interval]))",
+          "expr": "sum(rate(http_server_duration_milliseconds_count{job=\"scholarlens-api\",deployment_environment=~\"$env\"}[$__rate_interval]))",
           "legendFormat": "requests",
           "refId": "A"
         }
@@ -127,7 +159,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "(sum(rate(http_server_duration_milliseconds_count{job=\"scholarlens-api\",http_status_code=~\"5..\"}[$__rate_interval])) or vector(0)) / sum(rate(http_server_duration_milliseconds_count{job=\"scholarlens-api\"}[$__rate_interval]))",
+          "expr": "(sum(rate(http_server_duration_milliseconds_count{job=\"scholarlens-api\",deployment_environment=~\"$env\",http_status_code=~\"5..\"}[$__rate_interval])) or vector(0)) / sum(rate(http_server_duration_milliseconds_count{job=\"scholarlens-api\",deployment_environment=~\"$env\"}[$__rate_interval]))",
           "legendFormat": "5xx ratio",
           "refId": "A"
         }
@@ -194,7 +226,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(http_server_duration_milliseconds_count{job=\"scholarlens-api\",http_status_code=~\"4..\"}[$__rate_interval]))",
+          "expr": "sum(rate(http_server_duration_milliseconds_count{job=\"scholarlens-api\",deployment_environment=~\"$env\",http_status_code=~\"4..\"}[$__rate_interval]))",
           "legendFormat": "4xx",
           "refId": "A"
         }
@@ -254,7 +286,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(increase(http_server_duration_milliseconds_sum{job=\"scholarlens-api\",http_target=\"/eligibility\"}[$__range])) / sum(increase(http_server_duration_milliseconds_count{job=\"scholarlens-api\",http_target=\"/eligibility\"}[$__range]))",
+          "expr": "sum(increase(http_server_duration_milliseconds_sum{job=\"scholarlens-api\",deployment_environment=~\"$env\",http_target=\"/eligibility\"}[$__range])) / sum(increase(http_server_duration_milliseconds_count{job=\"scholarlens-api\",deployment_environment=~\"$env\",http_target=\"/eligibility\"}[$__range]))",
           "legendFormat": "mean",
           "refId": "A",
           "instant": true,
@@ -315,7 +347,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (http_target) (rate(http_server_duration_milliseconds_count{job=\"scholarlens-api\"}[$__rate_interval]))",
+          "expr": "sum by (http_target) (rate(http_server_duration_milliseconds_count{job=\"scholarlens-api\",deployment_environment=~\"$env\"}[$__rate_interval]))",
           "legendFormat": "{{http_target}}",
           "refId": "A"
         }
@@ -369,7 +401,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (http_status_code) (rate(http_server_duration_milliseconds_count{job=\"scholarlens-api\"}[$__rate_interval]))",
+          "expr": "sum by (http_status_code) (rate(http_server_duration_milliseconds_count{job=\"scholarlens-api\",deployment_environment=~\"$env\"}[$__rate_interval]))",
           "legendFormat": "{{http_status_code}}",
           "refId": "A"
         }
@@ -406,7 +438,7 @@
     {
       "type": "timeseries",
       "title": "/eligibility latency",
-      "description": "Mean, p50, p95, and p99 latency of POST /eligibility.",
+      "description": "Mean, p50, p95, and p99 latency of POST /eligibility. The dashed line at 30 s is where the ScholarLensSlowEligibility alert fires on p95.",
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
@@ -423,7 +455,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(http_server_duration_milliseconds_sum{job=\"scholarlens-api\",http_target=\"/eligibility\"}[$__rate_interval])) / sum(rate(http_server_duration_milliseconds_count{job=\"scholarlens-api\",http_target=\"/eligibility\"}[$__rate_interval]))",
+          "expr": "sum(rate(http_server_duration_milliseconds_sum{job=\"scholarlens-api\",deployment_environment=~\"$env\",http_target=\"/eligibility\"}[$__rate_interval])) / sum(rate(http_server_duration_milliseconds_count{job=\"scholarlens-api\",deployment_environment=~\"$env\",http_target=\"/eligibility\"}[$__rate_interval]))",
           "legendFormat": "mean",
           "refId": "D"
         },
@@ -432,7 +464,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "histogram_quantile(0.5, sum by (le) (rate(http_server_duration_milliseconds_bucket{job=\"scholarlens-api\",http_target=\"/eligibility\"}[$__rate_interval])))",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(http_server_duration_milliseconds_bucket{job=\"scholarlens-api\",deployment_environment=~\"$env\",http_target=\"/eligibility\"}[$__rate_interval])))",
           "legendFormat": "p50",
           "refId": "A"
         },
@@ -441,7 +473,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_duration_milliseconds_bucket{job=\"scholarlens-api\",http_target=\"/eligibility\"}[$__rate_interval])))",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_duration_milliseconds_bucket{job=\"scholarlens-api\",deployment_environment=~\"$env\",http_target=\"/eligibility\"}[$__rate_interval])))",
           "legendFormat": "p95",
           "refId": "B"
         },
@@ -450,7 +482,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_duration_milliseconds_bucket{job=\"scholarlens-api\",http_target=\"/eligibility\"}[$__rate_interval])))",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_duration_milliseconds_bucket{job=\"scholarlens-api\",deployment_environment=~\"$env\",http_target=\"/eligibility\"}[$__rate_interval])))",
           "legendFormat": "p99",
           "refId": "C"
         }
@@ -463,10 +495,26 @@
             "lineWidth": 2,
             "fillOpacity": 10,
             "showPoints": "never",
-            "spanNulls": false
+            "spanNulls": false,
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
           },
           "color": {
             "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "transparent",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 30000
+              }
+            ]
           }
         },
         "overrides": []
@@ -504,7 +552,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "(sum(rate(http_server_duration_milliseconds_count{job=\"scholarlens-api\",http_status_code=~\"5..\"}[$__rate_interval])) or vector(0)) / sum(rate(http_server_duration_milliseconds_count{job=\"scholarlens-api\"}[$__rate_interval]))",
+          "expr": "(sum(rate(http_server_duration_milliseconds_count{job=\"scholarlens-api\",deployment_environment=~\"$env\",http_status_code=~\"5..\"}[$__rate_interval])) or vector(0)) / sum(rate(http_server_duration_milliseconds_count{job=\"scholarlens-api\",deployment_environment=~\"$env\"}[$__rate_interval]))",
           "legendFormat": "5xx",
           "refId": "A"
         },
@@ -513,7 +561,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "(sum(rate(http_server_duration_milliseconds_count{job=\"scholarlens-api\",http_status_code=~\"4..\"}[$__rate_interval])) or vector(0)) / sum(rate(http_server_duration_milliseconds_count{job=\"scholarlens-api\"}[$__rate_interval]))",
+          "expr": "(sum(rate(http_server_duration_milliseconds_count{job=\"scholarlens-api\",deployment_environment=~\"$env\",http_status_code=~\"4..\"}[$__rate_interval])) or vector(0)) / sum(rate(http_server_duration_milliseconds_count{job=\"scholarlens-api\",deployment_environment=~\"$env\"}[$__rate_interval]))",
           "legendFormat": "4xx",
           "refId": "B"
         }
@@ -565,7 +613,7 @@
     {
       "type": "timeseries",
       "title": "Agent runs by outcome",
-      "description": "Eligibility agent runs per minute by outcome: success, timeout, tool_unavailable, or error.",
+      "description": "Eligibility agent runs per minute by outcome: success, timeout, tool_unavailable, rate_limited, or error.",
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
@@ -582,7 +630,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (app_agent_outcome) (rate(scholarlens_agent_duration_seconds_count{job=\"scholarlens-api\"}[$__rate_interval])) * 60",
+          "expr": "sum by (app_agent_outcome) (rate(scholarlens_agent_duration_seconds_count{job=\"scholarlens-api\",deployment_environment=~\"$env\"}[$__rate_interval])) * 60",
           "legendFormat": "{{app_agent_outcome}}",
           "refId": "A"
         }
@@ -601,7 +649,83 @@
             "mode": "palette-classic"
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "success"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "timeout"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "tool_unavailable"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "yellow"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rate_limited"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "purple"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "error"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "legend": {
@@ -636,7 +760,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "histogram_quantile(0.5, sum by (le) (rate(scholarlens_agent_duration_seconds_bucket{job=\"scholarlens-api\"}[$__rate_interval])))",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(scholarlens_agent_duration_seconds_bucket{job=\"scholarlens-api\",deployment_environment=~\"$env\"}[$__rate_interval])))",
           "legendFormat": "p50",
           "refId": "A"
         },
@@ -645,7 +769,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(scholarlens_agent_duration_seconds_bucket{job=\"scholarlens-api\"}[$__rate_interval])))",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(scholarlens_agent_duration_seconds_bucket{job=\"scholarlens-api\",deployment_environment=~\"$env\"}[$__rate_interval])))",
           "legendFormat": "p95",
           "refId": "B"
         }
@@ -699,7 +823,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(scholarlens_retrieval_duration_seconds_bucket{job=\"scholarlens-api\"}[$__rate_interval])))",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(scholarlens_retrieval_duration_seconds_bucket{job=\"scholarlens-api\",deployment_environment=~\"$env\"}[$__rate_interval])))",
           "legendFormat": "p95 latency",
           "refId": "A"
         },
@@ -708,7 +832,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "(sum(rate(scholarlens_retrieval_duration_seconds_count{job=\"scholarlens-api\",app_outcome!=\"success\"}[$__rate_interval])) or vector(0)) / sum(rate(scholarlens_retrieval_duration_seconds_count{job=\"scholarlens-api\"}[$__rate_interval]))",
+          "expr": "(sum(rate(scholarlens_retrieval_duration_seconds_count{job=\"scholarlens-api\",deployment_environment=~\"$env\",app_outcome!=\"success\"}[$__rate_interval])) or vector(0)) / sum(rate(scholarlens_retrieval_duration_seconds_count{job=\"scholarlens-api\",deployment_environment=~\"$env\"}[$__rate_interval]))",
           "legendFormat": "failure ratio",
           "refId": "B"
         }
@@ -787,7 +911,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(scholarlens_web_search_duration_seconds_bucket{job=\"scholarlens-api\"}[$__rate_interval])))",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(scholarlens_web_search_duration_seconds_bucket{job=\"scholarlens-api\",deployment_environment=~\"$env\"}[$__rate_interval])))",
           "legendFormat": "p95 latency",
           "refId": "A"
         },
@@ -796,7 +920,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "(sum(rate(scholarlens_web_search_duration_seconds_count{job=\"scholarlens-api\",app_outcome!=\"success\"}[$__rate_interval])) or vector(0)) / sum(rate(scholarlens_web_search_duration_seconds_count{job=\"scholarlens-api\"}[$__rate_interval]))",
+          "expr": "(sum(rate(scholarlens_web_search_duration_seconds_count{job=\"scholarlens-api\",deployment_environment=~\"$env\",app_outcome!=\"success\"}[$__rate_interval])) or vector(0)) / sum(rate(scholarlens_web_search_duration_seconds_count{job=\"scholarlens-api\",deployment_environment=~\"$env\"}[$__rate_interval]))",
           "legendFormat": "failure ratio",
           "refId": "B"
         }

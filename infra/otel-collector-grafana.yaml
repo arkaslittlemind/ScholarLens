@@ -7,6 +7,15 @@ extensions:
       username: ${env:GRAFANA_CLOUD_INSTANCE_ID}
       password: ${env:GRAFANA_CLOUD_API_TOKEN}
 
+processors:
+  # Production sends deployment.environment=production itself; local exports carry no label,
+  # so the dashboards could not tell them apart. insert leaves an already-set value alone.
+  resource/local:
+    attributes:
+      - key: deployment.environment
+        value: local
+        action: insert
+
 exporters:
   otlp_http/grafana:
     endpoint: ${env:GRAFANA_CLOUD_OTLP_ENDPOINT}
@@ -17,8 +26,11 @@ service:
   extensions: [basicauth/grafana]
   pipelines:
     traces:
+      processors: [resource/local, batch]
       exporters: [debug, otlp_http/grafana]
     metrics:
+      processors: [resource/local, batch]
       exporters: [prometheus, otlp_http/grafana]
     logs:
+      processors: [resource/local, batch]
       exporters: [debug, otlp_http/grafana]

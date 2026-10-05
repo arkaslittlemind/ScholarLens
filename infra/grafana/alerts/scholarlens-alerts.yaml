@@ -1,0 +1,89 @@
+# Production alert rules in Prometheus rule format, imported into Grafana Cloud as
+# Grafana-managed rules (see README, Alerts and operations). Every rule pins
+# deployment_environment="production" so local exports never page.
+#
+# Errors are counted rather than taken as a ratio: traffic is low, so one failed
+# request out of three would trip any ratio threshold.
+groups:
+  - name: scholarlens-service
+    interval: 1m
+    rules:
+      # The ingestion gauge is exported every interval while its status file exists,
+      # even with no traffic. HTTP series vanish after a restart until the first request.
+      - alert: ScholarLensMetricsMissing
+        expr: absent_over_time(scholarlens_ingestion_last_run_timestamp_seconds{job="scholarlens-api",deployment_environment="production"}[10m])
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: No production metrics for 15 minutes. The backend is down or its export to Grafana Cloud fails.
+          description: Check the Railway service status, GET /health, and the Railway logs for "Failed to export".
+
+      - alert: ScholarLensServerErrors
+        expr: sum(increase(http_server_duration_milliseconds_count{job="scholarlens-api",deployment_environment="production",http_status_code=~"5.."}[15m])) >= 3
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: Production returned 3 or more 5xx responses in 15 minutes.
+          description: Open the service-health dashboard (Requests by status code), then the failing request's trace in Tempo and its log lines in Loki.
+
+      # Timeouts and dependency failures can still answer with a controlled response,
+      # so they are not always visible as 5xx.
+      - alert: ScholarLensAgentFailures
+        expr: sum(increase(scholarlens_agent_duration_seconds_count{job="scholarlens-api",deployment_environment="production",app_agent_outcome=~"timeout|tool_unavailable|error"}[15m])) >= 3
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: 3 or more eligibility agent runs failed in 15 minutes (timeout, tool_unavailable, or error).
+          description: Check Agent runs by outcome and the Retrieval and Web search panels on service health, then a failing trace in Tempo.
+
+      - alert: ScholarLensProviderRateLimited
+        expr: sum(increase(scholarlens_agent_duration_seconds_count{job="scholarlens-api",deployment_environment="production",app_agent_outcome="rate_limited"}[15m])) >= 1
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: Gemini refused at least one agent run with a rate limit or quota error in 15 minutes.
+          description: Check Gemini quota and billing in Google AI Studio. Students see the "busy, try again shortly" state meanwhile.
+
+      - alert: ScholarLensSlowEligibility
+        expr: histogram_quantile(0.95, sum by (le) (rate(http_server_duration_milliseconds_bucket{job="scholarlens-api",deployment_environment="production",http_target="/eligibility"}[15m]))) > 30000
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: p95 latency of POST /eligibility has been above 30 s for 15 minutes (the agent run timeout is 45 s).
+          description: Compare the LLM, retrieval, and web search spans of a slow trace in Tempo to find the slow dependency.
+
+  - name: scholarlens-ai-quality
+    interval: 5m
+    rules:
+      # The evaluation gauges hold the latest run, so these fire until a passing run replaces it.
+      - alert: ScholarLensEligibilityAccuracyLow
+        expr: max(scholarlens_evaluation_eligibility_accuracy_ratio{job="scholarlens-api",deployment_environment="production"}) < 0.8
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: The latest production evaluation run scored eligibility accuracy below the 80% target.
+          description: Compare with earlier runs in /ops, read the failure categories and failing attempts printed by python -m app.evaluation, fix the cause, and rerun it.
+
+      - alert: ScholarLensCitationAccuracyLow
+        expr: max(scholarlens_evaluation_citation_accuracy_ratio{job="scholarlens-api",deployment_environment="production"}) < 0.7
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: The latest production evaluation run scored citation accuracy below the 70% target.
+          description: Compare with earlier runs in /ops, read the failure categories and failing attempts printed by python -m app.evaluation, fix the cause, and rerun it.
+
+      - alert: ScholarLensHallucinationRateHigh
+        expr: max(scholarlens_evaluation_hallucination_rate_ratio{job="scholarlens-api",deployment_environment="production"}) > 0.1
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: The latest production evaluation run has a hallucination rate above the 10% target.
+          description: Compare with earlier runs in /ops, read the failure categories and failing attempts printed by python -m app.evaluation, fix the cause, and rerun it.
