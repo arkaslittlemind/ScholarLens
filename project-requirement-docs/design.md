@@ -31,7 +31,7 @@ The `-text` shades clear 4.5:1 on their tints and on white. Never set text in pl
 
 | Family | Variable | Use |
 |--------|----------|-----|
-| Fraunces (SOFT 100, weight 450, -0.02em) | `--font-fraunces`, utility `font-display` | Headlines, program names, quoted rules, FAQ questions, numerals |
+| Fraunces (SOFT 100, weight 450, size-aware tracking) | `--font-fraunces`, utility `font-display` | Headlines, program names, quoted rules, FAQ questions, numerals |
 | Instrument Sans | `--font-instrument-sans` (default `font-sans`) | Everything else |
 
 Utilities in `globals.css`:
@@ -43,6 +43,10 @@ Utilities in `globals.css`:
 | `type-eyebrow` | 13px, 600, +0.08em, uppercase | inherited |
 
 Body copy runs 15 to 18px at `leading-relaxed`, in `ink-secondary`.
+
+- **Size tokens, never px.** Off-scale sizes are rem tokens so type follows the reader's browser text-size setting: `text-caption` 13, `text-body-sm` 15, `text-body-lg` 17, `text-title-sm` 22, `text-title` 28, `text-title-lg` 32, `text-display-sm` 40, `text-display-xl` 80 (px at the default 16px root). Inside `cn()` (the `components/ui` files) use an arbitrary rem value such as `text-[0.8125rem]` instead: `cn` mistakes custom `text-*` tokens for colors and drops one.
+- **Tracking scales with size.** `font-display` computes `letter-spacing: min(0em, calc(0.68px - 0.04em))`: 0 at 17px and below, about -0.02em at 32px, -0.03em at 72px. Don't add `tracking-*` to display text.
+- **Line breaks.** Headings use `text-wrap: balance`, paragraphs and list items `text-wrap: pretty` (set in the base layer).
 
 ## Shape and elevation
 
@@ -61,7 +65,11 @@ Body copy runs 15 to 18px at `leading-relaxed`, in `ink-secondary`.
 
 - Container `max-w-280` (1120px), 16px side gutter on phones, 24px from `sm`.
 - Sections breathe: `py-24` to `py-32`. White and tint bands alternate.
-- Header is sticky and blurred, and gains a hairline only after scrolling.
+- Header is sticky and blurred, and gains a hairline only after scrolling. It goes solid under `prefers-reduced-transparency` (`reduce-transparency:` variant).
+- Header is a `1fr auto 1fr` grid with cells pinned to columns, so the nav stays put whether or not the right-hand button shows. The current page's link carries `aria-current="page"` (ink); the header CTA is hidden on `/check`.
+- Below `md` the nav lives in `MobileMenu`: a Radix Dialog panel that drops out of the header (solid paper, scrim below the header, spring in, tween out). Below `sm` the header CTA moves into the menu.
+- Touch targets: anything tappable is at least 44px on coarse pointers (`pointer-coarse:min-h-11` and similar); the desktop layout is unchanged. Inline text links are exempt.
+- Moving content that runs over 5 seconds needs a visible pause control (the program rail has one).
 - Every page must render with no horizontal scroll at 375px (an e2e test enforces this on `/check`).
 
 ## Pages

@@ -66,7 +66,7 @@ function FeatureCard({ icon, title, body, children }: FeatureCardProps) {
             {icon}
             <h3 className="text-lg font-semibold">{title}</h3>
           </div>
-          <p className="text-[15px] leading-relaxed text-ink-secondary">{body}</p>
+          <p className="text-body-sm leading-relaxed text-ink-secondary">{body}</p>
         </div>
       </div>
     </div>
@@ -77,7 +77,7 @@ function CitedVisual() {
   return (
     <div className="w-full max-w-70 rounded-lg border border-hairline bg-paper p-4 shadow-card">
       <p className="text-xs font-semibold text-ink">The rule</p>
-      <p className="mt-1.5 border-l-2 border-rust pl-3 font-display text-[15px] leading-snug text-ink">
+      <p className="mt-1.5 border-l-2 border-rust pl-3 font-display text-body-sm leading-snug text-ink">
         &ldquo;Must be a <mark className="bg-rust-tint text-ink">U.S. citizen or eligible non-citizen</mark>.&rdquo;
       </p>
     </div>
@@ -91,7 +91,7 @@ function PartialVisual() {
         <CircleDot aria-hidden="true" className="size-3.5" />
         Partial match
       </span>
-      <div className="rounded-md border border-dashed border-input p-2.5 text-[13px] text-ink-secondary">
+      <div className="rounded-md border border-dashed border-input p-2.5 text-caption text-ink-secondary">
         Could change with: <span className="font-semibold text-ink">your enrollment status</span>
       </div>
     </div>
@@ -103,12 +103,12 @@ function RouteVisual() {
     <div className="flex w-full max-w-70 flex-col gap-2">
       <div className="flex items-center gap-3 rounded-lg border border-hairline bg-paper p-3 shadow-card">
         <BookOpenCheck aria-hidden="true" className="size-4 text-sage-text" />
-        <span className="text-[13px] font-semibold text-ink">Program knowledge base</span>
+        <span className="text-caption font-semibold text-ink">Program knowledge base</span>
         <span className="ml-auto text-xs text-ink-secondary">always first</span>
       </div>
       <div className="flex items-center gap-3 rounded-lg border border-dashed border-input bg-paper/60 p-3">
         <Globe aria-hidden="true" className="size-4 text-ink-secondary" />
-        <span className="text-[13px] font-semibold text-ink-secondary">Official sources</span>
+        <span className="text-caption font-semibold text-ink-secondary">Official sources</span>
         <span className="ml-auto text-xs text-ink-secondary">if needed</span>
       </div>
     </div>
@@ -125,7 +125,7 @@ export default function Home() {
         <section className="relative overflow-hidden">
           <div className="mx-auto flex max-w-280 flex-col items-center px-4 pt-16 pb-12 text-center sm:px-6 sm:pt-24">
             <div className="animate-rise-in">
-              <p className="inline-flex items-center gap-2 rounded-full border border-hairline bg-paper px-3 py-1 text-[13px] font-semibold text-ink-secondary shadow-card">
+              <p className="inline-flex items-center gap-2 rounded-full border border-hairline bg-paper px-3 py-1 text-caption font-semibold text-ink-secondary shadow-card">
                 <span aria-hidden="true" className="size-1.5 rounded-full bg-sage" />
                 Scholarship eligibility, with receipts
               </p>
@@ -195,7 +195,7 @@ export default function Home() {
                   <span className="font-display text-2xl leading-none text-rust-text">0{index + 1}</span>
                   <div className="flex flex-col gap-1.5">
                     <h3 className="text-lg font-semibold text-ink">{problem.title}</h3>
-                    <p className="text-[15px] leading-relaxed text-ink-secondary">{problem.body}</p>
+                    <p className="text-body-sm leading-relaxed text-ink-secondary">{problem.body}</p>
                   </div>
                 </Reveal>
               </li>
@@ -257,7 +257,7 @@ export default function Home() {
                         {index + 1}
                       </span>
                       <h3 className="text-xl font-semibold text-ink">{step.title}</h3>
-                      <p className="max-w-80 text-[15px] leading-relaxed text-ink-secondary">{step.body}</p>
+                      <p className="max-w-80 text-body-sm leading-relaxed text-ink-secondary">{step.body}</p>
                     </Reveal>
                   </li>
                 ))}
@@ -271,7 +271,7 @@ export default function Home() {
           <Reveal className="flex flex-col gap-4">
             <Eyebrow>FAQ</Eyebrow>
             <h2 className="font-display type-h2">Questions, answered.</h2>
-            <p className="text-[15px] leading-relaxed text-ink-secondary">
+            <p className="text-body-sm leading-relaxed text-ink-secondary">
               Want the detail on sources and limits?{" "}
               <Link href="/methodology" className="rounded-sm font-semibold text-ink underline decoration-input underline-offset-4 transition-colors hover:decoration-ink">
                 Read the methodology

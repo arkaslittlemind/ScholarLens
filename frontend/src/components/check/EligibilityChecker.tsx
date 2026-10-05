@@ -135,7 +135,7 @@ export function EligibilityChecker() {
         // Enters from @starting-style, so a message that appears is bridged without JS.
         <div className="flex gap-3 rounded-xl border border-rust/40 bg-rust-tint/60 p-4 transition-[opacity,translate] duration-200 ease-out-strong starting:-translate-y-1 starting:opacity-0 motion-reduce:translate-none!">
           <AlertCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-rust-text" />
-          <p role="alert" className="text-[15px] font-medium text-ink">
+          <p role="alert" className="text-body-sm font-medium text-ink">
             {errorInfo.message}
           </p>
         </div>

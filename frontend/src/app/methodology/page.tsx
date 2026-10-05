@@ -62,8 +62,8 @@ function Section({ id, number, title, children }: { id: string; number: number; 
     <section id={id} className="scroll-mt-24 border-t border-hairline pt-10">
       <Reveal className="flex flex-col gap-5">
         <p className="font-display text-lg text-rust-text">0{number}</p>
-        <h2 className="font-display text-[32px] leading-tight text-ink sm:text-[40px]">{title}</h2>
-        <div className="flex flex-col gap-5 text-[17px] leading-relaxed text-ink-secondary">{children}</div>
+        <h2 className="font-display text-title-lg leading-tight text-ink sm:text-display-sm">{title}</h2>
+        <div className="flex flex-col gap-5 text-body-lg leading-relaxed text-ink-secondary">{children}</div>
       </Reveal>
     </section>
   );
@@ -98,7 +98,7 @@ export default function Methodology() {
                 <li key={section.id}>
                   <a
                     href={`#${section.id}`}
-                    className="-ml-px block border-l border-transparent py-1.5 pl-4 text-sm font-medium text-ink-secondary transition-colors duration-150 hover:border-ink hover:text-ink"
+                    className="-ml-px block border-l border-transparent py-1.5 pl-4 pointer-coarse:py-3 text-sm font-medium text-ink-secondary transition-colors duration-150 hover:border-ink hover:text-ink"
                   >
                     {section.label}
                   </a>
@@ -121,7 +121,7 @@ export default function Methodology() {
                       <BookOpenCheck aria-hidden="true" className="size-4 text-sage-text" />
                       {scope}
                     </p>
-                    <ul className="mt-2 flex flex-col gap-1 text-[15px]">
+                    <ul className="mt-2 flex flex-col gap-1 text-body-sm">
                       {COVERED_PROGRAMS.filter((program) => program.scope === scope).map((program) => (
                         <li key={program.name}>{program.name}</li>
                       ))}
@@ -138,7 +138,7 @@ export default function Methodology() {
                 &ldquo;Checking official sources&rdquo; shows up in the steps on your result, so you
                 always know where an answer came from.
               </p>
-              <div className="flex items-center gap-3 rounded-xl bg-tint p-4 text-[15px]">
+              <div className="flex items-center gap-3 rounded-xl bg-tint p-4 text-body-sm">
                 <Globe aria-hidden="true" className="size-5 shrink-0 text-ink" />
                 <span>
                   The agent decides this per question. Most questions about covered programs never
@@ -156,11 +156,11 @@ export default function Methodology() {
               <ul className="flex flex-col gap-3">
                 {VERDICTS.map((verdict) => (
                   <li key={verdict.label} className="flex flex-col gap-2 rounded-xl border border-hairline p-4 sm:flex-row sm:items-center sm:gap-4">
-                    <span className={`inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] font-semibold ${verdict.className}`}>
+                    <span className={`inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-caption font-semibold ${verdict.className}`}>
                       <verdict.icon aria-hidden="true" className="size-4" />
                       {verdict.label}
                     </span>
-                    <span className="text-[15px]">{verdict.body}</span>
+                    <span className="text-body-sm">{verdict.body}</span>
                   </li>
                 ))}
               </ul>
@@ -171,7 +171,7 @@ export default function Methodology() {
                 {ANATOMY.map((item) => (
                   <div key={item.term} className="flex flex-col gap-1 bg-paper p-5">
                     <dt className="text-sm font-semibold text-ink">{item.term}</dt>
-                    <dd className="text-[15px]">{item.body}</dd>
+                    <dd className="text-body-sm">{item.body}</dd>
                   </div>
                 ))}
               </dl>
@@ -189,7 +189,7 @@ export default function Methodology() {
             </Section>
 
             <Reveal className="flex flex-col items-start gap-5 rounded-2xl bg-brown p-8 text-paper sm:p-10">
-              <h2 className="font-display text-[28px] leading-tight sm:text-[32px]">Ready to try it?</h2>
+              <h2 className="font-display text-title leading-tight sm:text-title-lg">Ready to try it?</h2>
               <p className="max-w-110 text-paper/75">Describe your situation and get a cited answer in about a minute.</p>
               <Button asChild size="lg" className="bg-paper text-brown hover:bg-tint">
                 <Link href="/check">

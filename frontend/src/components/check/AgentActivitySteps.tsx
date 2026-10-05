@@ -80,7 +80,7 @@ export function AgentActivitySteps({ completedSteps, intervalMs = STEP_INTERVAL_
                 )}
               </div>
               <span
-                className={`text-[15px] leading-6 transition-colors duration-300 ${isLast ? "" : "pb-5"} ${
+                className={`text-body-sm leading-6 transition-colors duration-300 ${isLast ? "" : "pb-5"} ${
                   isDone || isActive ? "font-medium text-ink" : "text-ink-secondary"
                 }`}
               >

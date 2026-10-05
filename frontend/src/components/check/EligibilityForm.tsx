@@ -33,6 +33,31 @@ type FieldErrors = Partial<Record<keyof EligibilityRequest, string>>;
 // submit can focus the first one that needs fixing.
 const FIELD_ORDER: (keyof EligibilityRequest)[] = ["description", "income", "state", "gpa", "major"];
 
+function isNonNegativeNumber(value: string): boolean {
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0;
+}
+
+// One rule per field, shared by submit-time validation and the live re-check of a
+// field that is already showing an error.
+function fieldError(field: keyof EligibilityRequest, value: string): string | undefined {
+  const trimmed = value.trim();
+  switch (field) {
+    case "description":
+      return trimmed.length < 1 || trimmed.length > DESCRIPTION_MAX
+        ? `Describe your situation in 1-${DESCRIPTION_MAX} characters.`
+        : undefined;
+    case "income":
+      return trimmed !== "" && !isNonNegativeNumber(value) ? "Income must be zero or a positive number." : undefined;
+    case "gpa":
+      return trimmed !== "" && !isNonNegativeNumber(value) ? "GPA must be zero or a positive number." : undefined;
+    case "state":
+      return trimmed.length > STATE_MAX ? `State must be ${STATE_MAX} characters or fewer.` : undefined;
+    case "major":
+      return trimmed.length > MAJOR_MAX ? `Major must be ${MAJOR_MAX} characters or fewer.` : undefined;
+  }
+}
+
 // The submit button's idle and pending labels crossfade. A 2px blur bridges the two
 // so the swap reads as one change; the outgoing label leaves faster than the new one arrives.
 function labelLayerClass(active: boolean): string {
@@ -83,13 +108,37 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
   const [gpa, setGpa] = useState("");
   const [major, setMajor] = useState("");
   const [errors, setErrors] = useState<FieldErrors>({});
+  // Server-flagged fields the student has edited since; their stale flag is hidden.
+  const [dismissedServerFields, setDismissedServerFields] = useState<ReadonlySet<keyof EligibilityRequest>>(
+    () => new Set(),
+  );
   // Counts example fills; each new value remounts the flash layer over the field.
   const [fillCount, setFillCount] = useState(0);
 
   function displayError(field: keyof EligibilityRequest): string | undefined {
     if (errors[field]) return errors[field];
-    if (serverFieldErrors?.includes(field)) return "The server flagged this field. Please check it.";
+    if (serverFieldErrors?.includes(field) && !dismissedServerFields.has(field)) {
+      return "The server flagged this field. Please check it.";
+    }
     return undefined;
+  }
+
+  // A field already showing an error re-checks as the student types, so the message
+  // goes away the moment it's fixed. Untouched fields still wait for submit.
+  function handleChange(field: keyof EligibilityRequest, value: string, setValue: (value: string) => void) {
+    setValue(value);
+    if (errors[field]) {
+      const nextError = fieldError(field, value);
+      setErrors((previous) => {
+        const next = { ...previous };
+        if (nextError) next[field] = nextError;
+        else delete next[field];
+        return next;
+      });
+    }
+    if (serverFieldErrors?.includes(field) && !dismissedServerFields.has(field)) {
+      setDismissedServerFields((previous) => new Set(previous).add(field));
+    }
   }
 
   // Shared ARIA wiring so every input points at its own error message.
@@ -102,35 +151,11 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
   }
 
   function validate(): { request: EligibilityRequest } | { errors: FieldErrors } {
+    const values: Record<keyof EligibilityRequest, string> = { description, income, state, gpa, major };
     const nextErrors: FieldErrors = {};
-    const trimmedDescription = description.trim();
-
-    if (trimmedDescription.length < 1 || trimmedDescription.length > DESCRIPTION_MAX) {
-      nextErrors.description = `Describe your situation in 1-${DESCRIPTION_MAX} characters.`;
-    }
-
-    let incomeValue: number | undefined;
-    if (income.trim() !== "") {
-      incomeValue = Number(income);
-      if (!Number.isFinite(incomeValue) || incomeValue < 0) {
-        nextErrors.income = "Income must be zero or a positive number.";
-      }
-    }
-
-    let gpaValue: number | undefined;
-    if (gpa.trim() !== "") {
-      gpaValue = Number(gpa);
-      if (!Number.isFinite(gpaValue) || gpaValue < 0) {
-        nextErrors.gpa = "GPA must be zero or a positive number.";
-      }
-    }
-
-    if (state.trim().length > STATE_MAX) {
-      nextErrors.state = `State must be ${STATE_MAX} characters or fewer.`;
-    }
-
-    if (major.trim().length > MAJOR_MAX) {
-      nextErrors.major = `Major must be ${MAJOR_MAX} characters or fewer.`;
+    for (const field of FIELD_ORDER) {
+      const error = fieldError(field, values[field]);
+      if (error) nextErrors[field] = error;
     }
 
     if (Object.keys(nextErrors).length > 0) {
@@ -139,10 +164,10 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
 
     return {
       request: {
-        description: trimmedDescription,
-        income: incomeValue,
+        description: description.trim(),
+        income: income.trim() === "" ? undefined : Number(income),
         state: state.trim() || undefined,
-        gpa: gpaValue,
+        gpa: gpa.trim() === "" ? undefined : Number(gpa),
         major: major.trim() || undefined,
       },
     };
@@ -160,6 +185,7 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
       return;
     }
     setErrors({});
+    setDismissedServerFields(new Set());
     onSubmit(outcome.request);
   }
 
@@ -170,7 +196,7 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
       className="flex flex-col gap-7 rounded-2xl border border-hairline bg-paper p-5 shadow-card sm:p-8"
     >
       <div className="flex flex-wrap items-center gap-2">
-        <span className="mr-1 flex items-center gap-1.5 text-[13px] font-semibold text-ink-secondary">
+        <span className="mr-1 flex items-center gap-1.5 text-caption font-semibold text-ink-secondary">
           <Sparkles aria-hidden="true" className="size-3.5 text-rust" />
           Try an example
         </span>
@@ -180,10 +206,10 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
             type="button"
             disabled={disabled}
             onClick={() => {
-              setDescription(example.description);
+              handleChange("description", example.description, setDescription);
               setFillCount((count) => count + 1);
             }}
-            className="rounded-full border border-hairline bg-tint px-3 py-1.5 text-[13px] font-semibold text-ink transition-press hover:border-input hover:bg-paper active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50"
+            className="rounded-full border border-hairline bg-tint px-3 py-1.5 text-caption pointer-coarse:min-h-11 pointer-coarse:px-4 font-semibold text-ink transition-press hover:border-input hover:bg-paper active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50"
           >
             {example.label}
           </button>
@@ -196,7 +222,7 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
             <Textarea
               id="description"
               value={description}
-              onChange={(event) => setDescription(event.target.value)}
+              onChange={(event) => handleChange("description", event.target.value, setDescription)}
               disabled={disabled}
               maxLength={DESCRIPTION_MAX}
               rows={5}
@@ -218,7 +244,7 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
       </div>
 
       <fieldset className="flex flex-col gap-4">
-        <legend className="mb-4 flex w-full items-center gap-3 text-[13px] font-semibold text-ink-secondary">
+        <legend className="mb-4 flex w-full items-center gap-3 text-caption font-semibold text-ink-secondary">
           Optional details that sharpen the answer
           <span aria-hidden="true" className="h-px flex-1 bg-hairline" />
         </legend>
@@ -231,7 +257,7 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
               inputMode="numeric"
               placeholder="40000"
               value={income}
-              onChange={(event) => setIncome(event.target.value)}
+              onChange={(event) => handleChange("income", event.target.value, setIncome)}
               disabled={disabled}
               {...errorProps("income")}
             />
@@ -242,7 +268,7 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
               id="state"
               placeholder="New Jersey"
               value={state}
-              onChange={(event) => setState(event.target.value)}
+              onChange={(event) => handleChange("state", event.target.value, setState)}
               disabled={disabled}
               maxLength={STATE_MAX}
               {...errorProps("state")}
@@ -258,7 +284,7 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
               inputMode="decimal"
               placeholder="3.6"
               value={gpa}
-              onChange={(event) => setGpa(event.target.value)}
+              onChange={(event) => handleChange("gpa", event.target.value, setGpa)}
               disabled={disabled}
               {...errorProps("gpa")}
             />
@@ -269,7 +295,7 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
               id="major"
               placeholder="Education"
               value={major}
-              onChange={(event) => setMajor(event.target.value)}
+              onChange={(event) => handleChange("major", event.target.value, setMajor)}
               disabled={disabled}
               maxLength={MAJOR_MAX}
               {...errorProps("major")}
@@ -279,7 +305,7 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
       </fieldset>
 
       <div className="flex flex-col gap-3 border-t border-hairline pt-6 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-[13px] text-ink-secondary">Usually under a minute. Nothing is stored.</p>
+        <p className="text-caption text-ink-secondary">Usually under a minute. Nothing is stored.</p>
         <Button type="submit" size="lg" disabled={disabled} className="w-full disabled:opacity-80 sm:w-auto">
           {/* Both labels share one grid cell, so the button is always as wide as the
               longer one and never jumps; only the active label is in the accessible name. */}

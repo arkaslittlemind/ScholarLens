@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, Instrument_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
@@ -21,6 +21,11 @@ export const metadata: Metadata = {
   title: "ScholarLens",
   description:
     "Find scholarships you actually qualify for, with the exact rule behind every match.",
+};
+
+// Mobile browser chrome blends into the white header instead of a default grey bar.
+export const viewport: Viewport = {
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
