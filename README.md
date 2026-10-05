@@ -8,6 +8,28 @@ and so on) and determines which programs they may qualify for, showing the
 exact rule behind each result, so the answer is auditable rather than a
 black box.
 
+## Evaluation results
+
+The agent is scored against 25 hand-labeled student profiles, each with the
+expected verdict, program, and rule. This run used the deployed production
+backend on 2026-10-05 (UTC), `gemini-3.8-flash` with `gemini-embedding-001`,
+each profile answered 3 times (75 answers):
+
+| Metric | Result | Target | |
+| --- | --- | --- | --- |
+| Eligibility accuracy: the verdict matches the label | 93.3% | above 80% | met |
+| Citation accuracy: the quoted rule and program match the knowledge base | 97.0% | above 70% | met |
+| Hallucination rate: a claim of eligibility with no citation, or a quoted rule found nowhere in the knowledge base | 1.4% | below 10% | met |
+| Consistency: the same verdict across the 3 repeats | 92.0% | none | |
+
+Mean latency was 7.6 s per answer with 1.01 tool calls. Of the 6 answers that
+missed: 3 were `calgrant-a-meets-gpa` returning "partial" instead of
+"eligible", 2 were Gemini requests that ran past their deadline and returned no
+answer, and 1 quoted a rule found nowhere in the knowledge base. Rerun it with
+`python -m app.evaluation` (see Deploy for running it in production).
+
+![Grafana AI quality dashboard for production showing this run: eligibility accuracy 93%, citation accuracy 97%, hallucination rate 1%, consistency 92%, 7.60 s average latency, and trend charts against the 80%, 70%, and 10% targets](docs/screenshots/ai-quality.png)
+
 ## Repo layout
 
 ```
@@ -103,6 +125,19 @@ railway ssh -s <backend-service> -- sh -c "cd /app && python -m app.ingestion"
 
 Then restart the service (latest deployment's menu, Restart) so the API reopens
 the rebuilt collection. Repeat both whenever `backend/data/programs/` changes.
+
+To run the evaluation against production, start it in the background inside the
+service so a dropped SSH session does not lose it (the run is recorded only when
+it finishes), then follow the log:
+
+```bash
+railway ssh -s <backend-service> -- sh -c "cd /app && EVALUATION_REPEATS=3 setsid nohup python -m app.evaluation > /data/evaluation.log 2>&1 < /dev/null &"
+railway ssh -s <backend-service> -- tail -n 30 /data/evaluation.log
+```
+
+It appends to `/data/evaluation-runs.jsonl`, which the AI quality dashboard and
+`/ops` read. Do not redeploy or restart the service during a run. Three repeats
+of the 25 profiles make 75 agent runs, all billed to the Gemini key.
 
 **3. Frontend on Vercel.** Import the repo with root directory `frontend` and
 set these variables:
@@ -207,6 +242,11 @@ Two Grafana dashboards live in `infra/grafana/dashboards/`:
 - `ai-quality.json`: the latest evaluation run, evaluation trends against the
   targets (eligibility above 80%, citation above 70%, hallucination below 10%),
   tool calls, LLM requests, and token usage.
+
+![Grafana service health dashboard for production over 7 days: request rate and status codes by route, a 0% 5xx ratio, 5.30 s mean /eligibility latency, agent runs by outcome, and ChromaDB retrieval latency, with sparse test traffic](docs/screenshots/service-health.png)
+
+The AI quality dashboard for the latest production run is shown under
+Evaluation results at the top of this file.
 
 To import one, open Grafana Cloud, go to Dashboards > New > Import, and upload
 the file. Pick your stack's Prometheus data source in the "Data source" drop-down
