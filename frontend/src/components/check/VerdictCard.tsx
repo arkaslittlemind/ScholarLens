@@ -37,14 +37,16 @@ export function statusLabel(status: EligibilityStatus): string {
   return STATUS_META[status].label;
 }
 
+// A UI response, not marketing: each item within the 300ms budget, and the whole
+// cascade done in about half a second after the answer lands.
 const stack: Variants = {
   hidden: {},
-  shown: { transition: { staggerChildren: 0.06, delayChildren: 0.1 } },
+  shown: { transition: { staggerChildren: 0.04 } },
 };
 
 const rise: Variants = {
   hidden: { opacity: 0, transform: "translateY(8px)" },
-  shown: { opacity: 1, transform: "translateY(0px)", transition: { duration: 0.4, ease: EASE_OUT } },
+  shown: { opacity: 1, transform: "translateY(0px)", transition: { duration: 0.3, ease: EASE_OUT } },
 };
 
 // F-13 (blueprint/context/findings.md): source.url is untrusted web/retrieval
@@ -186,27 +188,27 @@ export function VerdictCard({ result }: VerdictCardProps) {
       <div className={`flex flex-col items-start gap-3 border-b border-hairline px-6 py-6 sm:px-8 ${meta.headerClassName}`}>
         <motion.div
           variants={rise}
-          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] font-semibold ${meta.badgeClassName}`}
+          className={`motion-reduce:transform-none! inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] font-semibold ${meta.badgeClassName}`}
         >
           <Icon aria-hidden="true" className="size-4" />
           {meta.label}
         </motion.div>
-        <motion.h2 variants={rise} className="font-display text-[28px] leading-tight text-ink wrap-anywhere sm:text-[32px]">
+        <motion.h2 variants={rise} className="motion-reduce:transform-none! font-display text-[28px] leading-tight text-ink wrap-anywhere sm:text-[32px]">
           {result.source ? result.source.program : "Your result"}
         </motion.h2>
       </div>
 
       <div className="flex flex-col gap-6 px-6 py-6 sm:px-8 sm:py-8">
-        <motion.p variants={rise} className="text-lg leading-relaxed text-ink">
+        <motion.p variants={rise} className="motion-reduce:transform-none! text-lg leading-relaxed text-ink">
           {result.explanation}
         </motion.p>
 
-        <motion.div variants={rise}>
+        <motion.div variants={rise} className="motion-reduce:transform-none!">
           <VerdictRule clause={result.supporting_clause} source={result.source} />
         </motion.div>
 
         {result.missing_info.length > 0 && (
-          <motion.div variants={rise} className="flex gap-3 rounded-xl border border-dashed border-rust/50 p-4">
+          <motion.div variants={rise} className="motion-reduce:transform-none! flex gap-3 rounded-xl border border-dashed border-rust/50 p-4">
             <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-rust-text" />
             <div>
               <p className="text-sm font-semibold text-ink">This result may change with more information:</p>
@@ -219,13 +221,13 @@ export function VerdictCard({ result }: VerdictCardProps) {
           </motion.div>
         )}
 
-        <motion.div variants={rise} className="grid gap-6 sm:grid-cols-2">
+        <motion.div variants={rise} className="motion-reduce:transform-none! grid gap-6 sm:grid-cols-2">
           <VerdictSource source={result.source} showDocument={!result.supporting_clause} />
           <VerdictTrace steps={result.tool_trace} />
         </motion.div>
       </div>
 
-      <motion.p variants={rise} className="border-t border-hairline bg-tint/60 px-6 py-4 text-[13px] text-ink-secondary sm:px-8">
+      <motion.p variants={rise} className="motion-reduce:transform-none! border-t border-hairline bg-tint/60 px-6 py-4 text-[13px] text-ink-secondary sm:px-8">
         ScholarLens checks eligibility rules, not your chances of an award. Confirm details with the
         program before applying.
       </motion.p>

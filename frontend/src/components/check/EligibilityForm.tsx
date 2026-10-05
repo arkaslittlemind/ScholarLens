@@ -167,7 +167,7 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
             type="button"
             disabled={disabled}
             onClick={() => setDescription(example.description)}
-            className="rounded-full border border-hairline bg-tint px-3 py-1.5 text-[13px] font-semibold text-ink transition-[background-color,border-color,transform] duration-150 ease-out hover:border-input hover:bg-paper active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50"
+            className="rounded-full border border-hairline bg-tint px-3 py-1.5 text-[13px] font-semibold text-ink transition-press hover:border-input hover:bg-paper active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50"
           >
             {example.label}
           </button>

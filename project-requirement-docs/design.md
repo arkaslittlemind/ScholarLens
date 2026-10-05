@@ -50,7 +50,7 @@ Body copy runs 15 to 18px at `leading-relaxed`, in `ink-secondary`.
 |---------|--------|
 | Inputs | 10px (`rounded-md`) |
 | Buttons | 8px default, 12px large |
-| Cards, verdict, preview | 16px (`rounded-2xl`) |
+| Cards, verdict, preview | 20px (`rounded-2xl`) |
 | CTA blocks | 24px (`rounded-3xl`) |
 | Chips, badges | full |
 
@@ -81,16 +81,20 @@ Library: `motion` (`motion/react`). `MotionConfig reducedMotion="user"` in `prov
 
 | Pattern | Where | Values |
 |---------|-------|--------|
-| `Reveal` | Section entrances | opacity plus translateY(16px), 600ms, ease `[0.23, 1, 0.32, 1]`, once, -80px margin |
+| `Reveal` | Below-the-fold section entrances | opacity plus translateY(16px), 600ms, ease `[0.23, 1, 0.32, 1]`, once, -80px margin |
 | `MarkerUnderline` | Under the hero headline | SVG pathLength draw, 650ms, ease `[0.22, 1, 0.36, 1]` |
 | Marker sweep | Quoted rule in the preview and verdict | `background-size` 0% to 100%, 800 to 900ms ease-in-out |
 | `DrawLine` | How-it-works connector | scaleX 0 to 1, 1.1s |
 | Program rail | Landing | CSS marquee, 40s linear, pauses on hover, static wrap under reduced motion |
-| Activity to verdict | `/check` | AnimatePresence `mode="wait"`; enter 300ms, exit 150ms; verdict sections stagger 60ms |
+| Activity to verdict | `/check` | AnimatePresence `mode="wait"`; enter 300ms, exit 120ms; verdict items 300ms, stagger 40ms |
 | Press feedback | Buttons, chips | `active:scale-[0.97]`, 150ms |
 
 Rules:
 - Animate only `transform` and `opacity`, and use full `transform` strings in Motion so it stays on the compositor. The marker sweep's `background-size` is the one exception: it plays once per result.
+- Every moving Motion element carries `motion-reduce:transform-none!`. `MotionConfig reducedMotion="user"` only covers `x`/`y`/`scale` shorthands, and `useReducedMotion()` causes a hydration mismatch.
+- Above-the-fold entrances use the CSS `animate-rise-in` utility (staggered with `[animation-delay:60ms]` steps), never Motion, so nothing waits on hydration. The `/check` tool page has no entrance motion at all.
+- Tailwind v4 `scale-*` and `translate-*` set standalone `scale` and `translate` properties. Transition them by name: `transition-press` for pressables, `transition-[translate]` for lifts. A `transform` transition never animates them.
+- Hover motion uses the `hover-fine` variant, which requires `(hover: hover) and (pointer: fine)`.
 - Never animate keyboard-driven or repeated actions such as typing or field focus.
 - Exits are faster than enters.
 - Tailwind v4's `hover:` already only applies on hover-capable devices, so hover lifts are safe on touch.

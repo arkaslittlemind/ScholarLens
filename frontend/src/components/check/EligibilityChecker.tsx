@@ -113,9 +113,10 @@ export function EligibilityChecker() {
           {mutation.isPending && (
             <motion.div
               key="activity"
+              className="motion-reduce:transform-none!"
               initial={{ opacity: 0, transform: "translateY(8px)" }}
               animate={{ opacity: 1, transform: "translateY(0px)", transition: { duration: 0.3, ease: EASE_OUT } }}
-              exit={{ opacity: 0, transition: { duration: 0.15, ease: "easeOut" } }}
+              exit={{ opacity: 0, transition: { duration: 0.12, ease: EASE_OUT } }}
             >
               <AgentActivitySteps />
             </motion.div>

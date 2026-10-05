@@ -17,7 +17,7 @@ interface RevealProps {
 export function Reveal({ children, delay = 0, className }: RevealProps) {
   return (
     <motion.div
-      className={className}
+      className={`motion-reduce:transform-none! ${className ?? ""}`}
       initial={{ opacity: 0, transform: "translateY(16px)" }}
       whileInView={{ opacity: 1, transform: "translateY(0px)" }}
       viewport={{ once: true, margin: "0px 0px -80px 0px" }}

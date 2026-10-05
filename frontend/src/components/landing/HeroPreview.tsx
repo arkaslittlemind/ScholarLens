@@ -28,7 +28,7 @@ function Annotation({ children, className }: { children: string; className: stri
     <motion.p
       variants={rise}
       // Sits outside the card, so only at widths with room in the margin.
-      className={`absolute hidden font-display text-[17px] whitespace-pre-line text-rust-text italic xl:block ${className}`}
+      className={`motion-reduce:transform-none! absolute hidden font-display text-[17px] whitespace-pre-line text-rust-text italic xl:block ${className}`}
     >
       {children}
     </motion.p>
@@ -59,7 +59,7 @@ export function HeroPreview() {
             transition: { duration: 0.8, ease: EASE_OUT, delay: 0.2 },
           },
         }}
-        className="grid overflow-hidden rounded-2xl border border-hairline bg-paper text-left shadow-lift md:grid-cols-[0.85fr_1.15fr]"
+        className="motion-reduce:transform-none! grid overflow-hidden rounded-2xl border border-hairline bg-paper text-left shadow-lift md:grid-cols-[0.85fr_1.15fr]"
       >
         <div className="hidden flex-col gap-4 border-r border-hairline bg-tint/60 p-6 md:flex">
           <p className="type-eyebrow text-ink-secondary">Your situation</p>
@@ -88,7 +88,7 @@ export function HeroPreview() {
         </div>
 
         <motion.div variants={stack} className="flex flex-col gap-5 p-6 sm:p-8">
-          <motion.div variants={rise} className="flex items-center justify-between gap-3">
+          <motion.div variants={rise} className="motion-reduce:transform-none! flex items-center justify-between gap-3">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-sage-tint px-2.5 py-1 text-[13px] font-semibold text-sage-text">
               <CheckCircle2 aria-hidden="true" className="size-3.5" />
               Eligible
@@ -96,16 +96,16 @@ export function HeroPreview() {
             <span className="text-xs font-medium text-ink-secondary">Example result</span>
           </motion.div>
 
-          <motion.p variants={rise} className="font-display text-[28px] leading-tight text-ink sm:text-[32px]">
+          <motion.p variants={rise} className="motion-reduce:transform-none! font-display text-[28px] leading-tight text-ink sm:text-[32px]">
             Federal Pell Grant
           </motion.p>
 
-          <motion.p variants={rise} className="text-[15px] leading-relaxed text-ink-secondary">
+          <motion.p variants={rise} className="motion-reduce:transform-none! text-[15px] leading-relaxed text-ink-secondary">
             You&apos;re a first-time undergraduate without a prior degree, which meets the program&apos;s
             enrollment rule.
           </motion.p>
 
-          <motion.div variants={rise} className="border-l-2 border-rust pl-4">
+          <motion.div variants={rise} className="motion-reduce:transform-none! border-l-2 border-rust pl-4">
             <p className="text-[13px] font-semibold text-ink">The rule</p>
             <p className="mt-1.5 font-display text-[17px] leading-snug text-ink">
               &ldquo;
@@ -125,7 +125,7 @@ export function HeroPreview() {
 
           <motion.span
             variants={rise}
-            className="inline-flex w-fit items-center gap-1 text-sm font-semibold text-ink underline decoration-hairline underline-offset-4"
+            className="motion-reduce:transform-none! inline-flex w-fit items-center gap-1 text-sm font-semibold text-ink underline decoration-hairline underline-offset-4"
           >
             Open source on studentaid.gov
             <ArrowUpRight aria-hidden="true" className="size-4" />
