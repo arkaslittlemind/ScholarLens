@@ -74,7 +74,7 @@ export function AgentActivitySteps({ completedSteps, intervalMs = STEP_INTERVAL_
                 {!isLast && (
                   <span aria-hidden="true" className="my-1 w-px flex-1 bg-hairline">
                     <span
-                      className={`block h-full w-full origin-top bg-sage transition-transform duration-500 ease-out ${isDone ? "scale-y-100" : "scale-y-0"}`}
+                      className={`block h-full w-full origin-top bg-sage transition-transform duration-300 ease-out-strong motion-reduce:transition-none ${isDone ? "scale-y-100" : "scale-y-0"}`}
                     />
                   </span>
                 )}

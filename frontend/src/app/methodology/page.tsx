@@ -79,18 +79,14 @@ export default function Methodology() {
       <main className="flex-1">
         <section className="border-b border-hairline bg-tint">
           <div className="mx-auto flex max-w-280 flex-col gap-4 px-4 py-16 sm:px-6 sm:py-24">
-            <Reveal>
-              <p className="type-eyebrow text-rust-text">Methodology</p>
-            </Reveal>
-            <Reveal delay={0.06}>
-              <h1 className="font-display type-h1 max-w-200 text-ink">How ScholarLens reaches an answer.</h1>
-            </Reveal>
-            <Reveal delay={0.12}>
-              <p className="max-w-150 text-lg leading-relaxed text-ink-secondary sm:text-xl">
-                An AI agent reads the official rules for you. Here is where it looks, what it is not
-                allowed to do, and what comes back.
-              </p>
-            </Reveal>
+            <p className="animate-rise-in type-eyebrow text-rust-text">Methodology</p>
+            <h1 className="font-display type-h1 max-w-200 animate-rise-in text-ink [animation-delay:60ms]">
+              How ScholarLens reaches an answer.
+            </h1>
+            <p className="max-w-150 animate-rise-in text-lg leading-relaxed text-ink-secondary [animation-delay:120ms] sm:text-xl">
+              An AI agent reads the official rules for you. Here is where it looks, what it is not
+              allowed to do, and what comes back.
+            </p>
           </div>
         </section>
 

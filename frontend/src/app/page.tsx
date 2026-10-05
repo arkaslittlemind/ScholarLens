@@ -54,16 +54,20 @@ interface FeatureCardProps {
 
 function FeatureCard({ icon, title, body, children }: FeatureCardProps) {
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-hairline bg-paper shadow-card transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lift">
-      <div className="flex min-h-44 items-center justify-center border-b border-hairline bg-tint/70 p-6">
-        {children}
-      </div>
-      <div className="flex flex-col gap-2 p-6">
-        <div className="flex items-center gap-2 text-ink">
-          {icon}
-          <h3 className="text-lg font-semibold">{title}</h3>
+    // The lift shadow lives on ::after and fades by opacity, so hovering never
+    // repaints a box-shadow. It sits outside the card because overflow-hidden would clip it.
+    <div className="relative isolate h-full transition-[translate] duration-200 ease-out-strong after:pointer-events-none after:absolute after:inset-0 after:-z-10 after:rounded-2xl after:opacity-0 after:shadow-lift after:transition-opacity after:duration-200 after:ease-out-strong hover-fine:-translate-y-0.5 hover-fine:after:opacity-100 motion-reduce:translate-none!">
+      <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-hairline bg-paper shadow-card">
+        <div className="flex min-h-44 items-center justify-center border-b border-hairline bg-tint/70 p-6">
+          {children}
         </div>
-        <p className="text-[15px] leading-relaxed text-ink-secondary">{body}</p>
+        <div className="flex flex-col gap-2 p-6">
+          <div className="flex items-center gap-2 text-ink">
+            {icon}
+            <h3 className="text-lg font-semibold">{title}</h3>
+          </div>
+          <p className="text-[15px] leading-relaxed text-ink-secondary">{body}</p>
+        </div>
       </div>
     </div>
   );
@@ -120,27 +124,27 @@ export default function Home() {
         {/* Hero */}
         <section className="relative overflow-hidden">
           <div className="mx-auto flex max-w-280 flex-col items-center px-4 pt-16 pb-12 text-center sm:px-6 sm:pt-24">
-            <Reveal>
+            <div className="animate-rise-in">
               <p className="inline-flex items-center gap-2 rounded-full border border-hairline bg-paper px-3 py-1 text-[13px] font-semibold text-ink-secondary shadow-card">
                 <span aria-hidden="true" className="size-1.5 rounded-full bg-sage" />
                 Scholarship eligibility, with receipts
               </p>
-            </Reveal>
-            <Reveal delay={0.06} className="mt-6 max-w-200">
+            </div>
+            <div className="mt-6 max-w-200 animate-rise-in [animation-delay:60ms]">
               <h1 className="font-display type-h1 text-ink">
                 Find the aid you qualify for, and the rule that proves it.
               </h1>
               {/* Its own block under the headline, not anchored to a word, so it
                   can't land mispositioned when the wrap point shifts. */}
               <MarkerUnderline className="mx-auto mt-1 h-3 w-60 translate-x-6 sm:mt-2 sm:h-4 sm:w-100 sm:translate-x-24" />
-            </Reveal>
-            <Reveal delay={0.12} className="mt-6 max-w-140">
+            </div>
+            <div className="mt-6 max-w-140 animate-rise-in [animation-delay:120ms]">
               <p className="text-lg leading-relaxed text-ink-secondary sm:text-xl">
                 Describe your situation in plain words. ScholarLens reads the official program rules
                 and tells you where you stand, quoting the exact clause behind every answer.
               </p>
-            </Reveal>
-            <Reveal delay={0.18} className="mt-8 flex flex-col items-center gap-3">
+            </div>
+            <div className="mt-8 flex animate-rise-in flex-col items-center gap-3 [animation-delay:180ms]">
               <div className="flex flex-wrap justify-center gap-3">
                 <Button asChild size="lg">
                   <Link href="/check">
@@ -153,7 +157,7 @@ export default function Home() {
                 </Button>
               </div>
               <p className="text-sm text-ink-secondary">No account. Nothing you enter is stored.</p>
-            </Reveal>
+            </div>
           </div>
 
           <div className="relative px-4 pb-16 sm:px-6 sm:pb-20">
@@ -248,7 +252,7 @@ export default function Home() {
               <ol className="relative grid gap-10 md:grid-cols-3 md:gap-8">
                 {STEPS.map((step, index) => (
                   <li key={step.title}>
-                    <Reveal delay={0.15 + index * 0.12} className="flex flex-col gap-4">
+                    <Reveal delay={0.15 + index * 0.08} className="flex flex-col gap-4">
                       <span className="flex size-10 items-center justify-center rounded-full border border-input bg-paper font-display text-lg text-ink">
                         {index + 1}
                       </span>

@@ -11,7 +11,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* "user" drops transform animations (keeping opacity) when the OS asks for reduced motion. */}
+      {/* "user" only covers the x/y/scale shorthands. Our animations use full transform
+          strings to stay on the compositor, so each moving element also carries
+          motion-reduce:transform-none!, which overrides Motion's inline transform in CSS.
+          useReducedMotion() would read matchMedia during hydration and mismatch the server HTML. */}
       <MotionConfig reducedMotion="user">{children}</MotionConfig>
     </QueryClientProvider>
   );

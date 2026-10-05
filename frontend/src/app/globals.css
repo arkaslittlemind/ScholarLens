@@ -124,6 +124,50 @@
   animation: marquee 40s linear infinite;
 }
 
+/* Hover motion only for a real mouse. Tailwind's hover: checks (hover: hover)
+   alone, which hybrid touch devices also report, leaving lifts stuck after a tap. */
+@custom-variant hover-fine {
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      @slot;
+    }
+  }
+}
+
+/* Pressables: the press scale gets the strong ease-out, colors a plain ease.
+   Tailwind v4's scale-* utilities set the standalone `scale` property, so it is
+   listed by name; a `transform` transition would never animate the press. */
+@utility transition-press {
+  transition:
+    scale 150ms var(--ease-out-strong),
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+/* Above-the-fold entrance. CSS, not Motion: it is in the server HTML, so the
+   headline never waits on hydration, and it runs off the main thread while the
+   page is still loading. Reduced motion keeps the fade and drops the rise. */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@utility animate-rise-in {
+  animation: rise-in 600ms var(--ease-out-strong) both;
+  @media (prefers-reduced-motion: reduce) {
+    animation-name: fade-in;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

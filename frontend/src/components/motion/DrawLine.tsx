@@ -8,7 +8,7 @@ export function DrawLine({ className }: { className?: string }) {
   return (
     <motion.div
       aria-hidden="true"
-      className={`origin-left ${className ?? ""}`}
+      className={`motion-reduce:transform-none! origin-left ${className ?? ""}`}
       initial={{ transform: "scaleX(0)" }}
       whileInView={{ transform: "scaleX(1)" }}
       viewport={{ once: true, margin: "0px 0px -80px 0px" }}
