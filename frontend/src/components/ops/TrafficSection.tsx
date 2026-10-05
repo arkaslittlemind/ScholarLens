@@ -17,7 +17,7 @@ export function TrafficSection({ traffic }: TrafficSectionProps) {
   if (traffic.status !== "ok" || !series) {
     const status = traffic.status === "ok" ? "unavailable" : traffic.status;
     return (
-      <p className="rounded-3xl border border-ink p-6 text-graphite">
+      <p className="rounded-3xl border border-hairline p-6 text-ink-secondary">
         {MESSAGES[status]} The Service health dashboard in Grafana shows the same data.
       </p>
     );
@@ -25,7 +25,7 @@ export function TrafficSection({ traffic }: TrafficSectionProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-graphite">
+      <p className="text-ink-secondary">
         Last {traffic.window_seconds / 3600} hours, {traffic.step_seconds / 60}-minute steps,
         times in UTC.
       </p>

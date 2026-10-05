@@ -2,47 +2,62 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/* Design tokens from project-requirement-docs/design.md - warm paper-notebook
-   system. Single light theme; the plan does not call for a dark variant. */
+/* Design tokens from project-requirement-docs/design.md - an editorial,
+   printed-paper system. Single light theme; the plan does not call for a
+   dark variant. */
 :root {
-  --color-cream-paper: #f8f5ed;
-  --color-ink: #000000;
-  --color-graphite: #707070;
-  --color-sunshine-highlight: #ffda6e;
-  --color-mint-signal: #6ece9d;
+  --color-paper: #ffffff;
+  --color-tint: #f7f5f1;
+  --color-ink: #1a1a1a;
+  --color-ink-secondary: #534a39;
+  --color-brown: #3b2c20;
+  --color-hairline: #e6e2da;
+  /* Decorative accents (marker strokes, dots). The -text variants are the
+     darker shades that clear 4.5:1 on their tint backgrounds. */
+  --color-rust: #d05d38;
+  --color-rust-text: #a3472b;
+  --color-rust-tint: #fbece5;
+  --color-sage: #8f9c5e;
+  --color-sage-text: #5b6538;
+  --color-sage-tint: #eef0e4;
 
-  /* shadcn/ui semantic tokens, mapped onto the palette above instead of the
-     generic neutral/oklch defaults so generated components (Button, etc.)
-     read as ScholarLens, not a stock shadcn theme. */
-  --background: var(--color-cream-paper);
+  /* shadcn/ui semantic tokens, mapped onto the palette above so generated
+     components read as ScholarLens, not a stock shadcn theme. */
+  --background: var(--color-paper);
   --foreground: var(--color-ink);
-  --card: var(--color-cream-paper);
+  --card: var(--color-paper);
   --card-foreground: var(--color-ink);
-  --popover: var(--color-cream-paper);
+  --popover: var(--color-paper);
   --popover-foreground: var(--color-ink);
-  --primary: var(--color-sunshine-highlight);
-  --primary-foreground: var(--color-ink);
-  --secondary: var(--color-cream-paper);
+  --primary: var(--color-brown);
+  --primary-foreground: var(--color-paper);
+  --secondary: var(--color-tint);
   --secondary-foreground: var(--color-ink);
-  --muted: var(--color-cream-paper);
-  --muted-foreground: var(--color-graphite);
-  --accent: var(--color-mint-signal);
+  --muted: var(--color-tint);
+  --muted-foreground: var(--color-ink-secondary);
+  --accent: var(--color-tint);
   --accent-foreground: var(--color-ink);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: var(--color-ink);
-  --input: var(--color-ink);
-  /* Ink, not mint: mint on cream is about 1.7:1, below the 3:1 a focus
-     indicator needs (WCAG 1.4.11). */
-  --ring: var(--color-ink);
+  --destructive: #b42318;
+  --border: var(--color-hairline);
+  --input: #d6d1c7;
+  --ring: var(--color-brown);
 }
 
 @theme inline {
-  --color-cream-paper: var(--color-cream-paper);
+  --color-paper: var(--color-paper);
+  --color-tint: var(--color-tint);
   --color-ink: var(--color-ink);
-  --color-graphite: var(--color-graphite);
-  --color-sunshine-highlight: var(--color-sunshine-highlight);
-  --color-mint-signal: var(--color-mint-signal);
-  --font-sans: var(--font-dm-sans);
+  --color-ink-secondary: var(--color-ink-secondary);
+  --color-brown: var(--color-brown);
+  --color-hairline: var(--color-hairline);
+  --color-rust: var(--color-rust);
+  --color-rust-text: var(--color-rust-text);
+  --color-rust-tint: var(--color-rust-tint);
+  --color-sage: var(--color-sage);
+  --color-sage-text: var(--color-sage-text);
+  --color-sage-tint: var(--color-sage-tint);
+  --font-sans: var(--font-instrument-sans);
+  --font-display: var(--font-fraunces);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -61,40 +76,78 @@
   --color-card: var(--card);
   --color-foreground: var(--foreground);
   --color-background: var(--background);
-  /* Fixed values from project-requirement-docs/design.md's Border Radius table
-     (cards/buttons 24px, images 12px, inputs 6px), not derived from a single
-     multiplied base - that previously turned any card taller than a pill
-     button into a near-ellipse (the base was 999px, meant only for pills). */
-  --radius-sm: 6px;
-  --radius-md: 6px;
-  --radius-lg: 24px;
-  --radius-xl: 12px;
-  --radius-2xl: 16px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
   --radius-3xl: 24px;
-  --radius-4xl: 28px;
+  --shadow-card: 0 1px 2px rgb(26 26 26 / 0.04), 0 8px 18px rgb(26 26 26 / 0.06);
+  --shadow-lift: 0 2px 4px rgb(26 26 26 / 0.04), 0 18px 40px rgb(26 26 26 / 0.1);
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
-body {
-  background: var(--color-cream-paper);
-  color: var(--color-ink);
-  font-family: var(--font-dm-sans);
-  font-feature-settings: "ss03", "ss04";
+/* Display type: Fraunces at its soft setting stands in for a warm book serif. */
+@utility font-display {
+  font-family: var(--font-fraunces);
+  font-variation-settings: "SOFT" 100, "WONK" 0;
+  font-weight: 450;
+  letter-spacing: -0.02em;
+}
+
+@utility type-h1 {
+  font-size: clamp(2.5rem, 1.6rem + 3.6vw, 4.5rem);
+  line-height: 1.04;
+}
+
+@utility type-h2 {
+  font-size: clamp(2rem, 1.5rem + 2vw, 3rem);
+  line-height: 1.1;
+}
+
+@utility type-eyebrow {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Constant motion, so linear. Runs on the compositor; the track holds two
+   copies of the list, so -50% lands exactly where it started. */
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@utility animate-marquee {
+  animation: marquee 40s linear infinite;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    @apply font-sans;
+    scroll-behavior: smooth;
+  }
   body {
     @apply bg-background text-foreground;
   }
-  html {
-    @apply font-sans;
+  ::selection {
+    background: var(--color-rust-tint);
+    color: var(--color-ink);
   }
   /* Links and other controls without their own focus ring. Components that
      draw a ring set outline-none, which overrides this. */
   :focus-visible {
-    outline: 2px solid var(--color-ink);
+    outline: 2px solid var(--color-brown);
     outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
   }
 }

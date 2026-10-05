@@ -1,14 +1,20 @@
 import type { Metadata } from "next";
-import { DM_Sans } from "next/font/google";
+import { Fraunces, Instrument_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 
-// Single-family type system per project-requirement-docs/design.md - DM Sans
-// carries everything from body copy to the display headline.
-const dmSans = DM_Sans({
-  variable: "--font-dm-sans",
+// Two-family system per project-requirement-docs/design.md: a soft book serif
+// for display headings, a clean grotesque for everything else.
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
   subsets: ["latin"],
-  weight: ["400", "500"],
+  axes: ["SOFT", "WONK", "opsz"],
+  style: ["normal", "italic"],
+});
+
+const instrumentSans = Instrument_Sans({
+  variable: "--font-instrument-sans",
+  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
@@ -19,8 +25,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${dmSans.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">
+    <html lang="en" className={`${fraunces.variable} ${instrumentSans.variable} h-full antialiased`}>
+      <body className="flex min-h-full flex-col">
         <Providers>{children}</Providers>
       </body>
     </html>

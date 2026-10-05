@@ -1,36 +1,51 @@
-import { CheckCircle2, CircleDot, XCircle } from "lucide-react";
+"use client";
+
+import { ArrowUpRight, CheckCircle2, CircleDot, Info, XCircle } from "lucide-react";
+import { motion, type Variants } from "motion/react";
+import { EASE_OUT } from "@/components/motion/Reveal";
 import { displayLabel, type EligibilityResult, type EligibilityStatus, type Source } from "@/lib/eligibility";
 
 // Renders arbitrary model/web-search output (explanation, supporting_clause) as
 // plain React text children only - never dangerouslySetInnerHTML.
 
-// Colors come from the existing palette only (feature 10's no-new-colors rule).
 // The icon and label always carry the meaning too, so color is never the only cue.
 const STATUS_META: Record<
   EligibilityStatus,
-  { label: string; icon: typeof CheckCircle2; badgeClassName: string }
+  { label: string; icon: typeof CheckCircle2; badgeClassName: string; headerClassName: string }
 > = {
   eligible: {
     label: "Eligible",
     icon: CheckCircle2,
-    badgeClassName: "border border-mint-signal bg-mint-signal text-ink",
+    badgeClassName: "bg-sage-tint text-sage-text",
+    headerClassName: "bg-sage-tint/50",
   },
   partial: {
     label: "Partial match",
     icon: CircleDot,
-    // Outlined, not filled: a solid yellow pill read as a second submit button.
-    badgeClassName: "border-2 border-sunshine-highlight bg-cream-paper text-ink",
+    badgeClassName: "bg-rust-tint text-rust-text",
+    headerClassName: "bg-rust-tint/50",
   },
   not_eligible: {
     label: "Not eligible",
     icon: XCircle,
-    badgeClassName: "border border-ink bg-cream-paper text-ink",
+    badgeClassName: "border border-input bg-paper text-ink",
+    headerClassName: "bg-tint",
   },
 };
 
 export function statusLabel(status: EligibilityStatus): string {
   return STATUS_META[status].label;
 }
+
+const stack: Variants = {
+  hidden: {},
+  shown: { transition: { staggerChildren: 0.06, delayChildren: 0.1 } },
+};
+
+const rise: Variants = {
+  hidden: { opacity: 0, transform: "translateY(8px)" },
+  shown: { opacity: 1, transform: "translateY(0px)", transition: { duration: 0.4, ease: EASE_OUT } },
+};
 
 // F-13 (blueprint/context/findings.md): source.url is untrusted web/retrieval
 // content with no backend scheme validation. Only ever render it as a navigable
@@ -51,7 +66,7 @@ interface SectionHeadingProps {
 
 function SectionHeading({ id, children }: SectionHeadingProps) {
   return (
-    <h3 id={id} className="text-sm font-medium text-ink">
+    <h3 id={id} className="type-eyebrow text-ink-secondary">
       {children}
     </h3>
   );
@@ -64,15 +79,29 @@ interface VerdictRuleProps {
 
 function VerdictRule({ clause, source }: VerdictRuleProps) {
   if (!clause) {
-    return <p className="text-sm text-graphite">No rule was quoted. This result rests on missing information.</p>;
+    return (
+      <p className="rounded-xl bg-tint p-4 text-sm text-ink-secondary">
+        No rule was quoted. This result rests on missing information.
+      </p>
+    );
   }
   return (
-    <figure aria-labelledby="verdict-rule" className="flex flex-col gap-2">
+    <figure aria-labelledby="verdict-rule" className="flex flex-col gap-3 rounded-xl border-l-2 border-rust bg-tint py-4 pr-4 pl-5">
       <SectionHeading id="verdict-rule">The rule</SectionHeading>
-      <blockquote className="border-l-2 border-ink pl-4 text-base text-ink wrap-anywhere">
-        &ldquo;{clause}&rdquo;
+      <blockquote className="font-display text-lg leading-snug text-ink wrap-anywhere sm:text-xl">
+        &ldquo;
+        {/* The marker sweep: a gradient whose width grows behind the text. */}
+        <motion.span
+          className="box-decoration-clone bg-linear-to-r from-rust-tint to-rust-tint bg-no-repeat"
+          initial={{ backgroundSize: "0% 100%" }}
+          animate={{ backgroundSize: "100% 100%" }}
+          transition={{ duration: 0.8, ease: [0.65, 0, 0.35, 1], delay: 0.5 }}
+        >
+          {clause}
+        </motion.span>
+        &rdquo;
       </blockquote>
-      {source && <figcaption className="pl-4 text-sm text-graphite wrap-anywhere">{source.document}</figcaption>}
+      {source && <figcaption className="text-sm text-ink-secondary wrap-anywhere">{source.document}</figcaption>}
     </figure>
   );
 }
@@ -86,22 +115,31 @@ interface VerdictSourceProps {
 
 function VerdictSource({ source, showDocument }: VerdictSourceProps) {
   if (!source) {
-    return <p className="text-sm text-graphite">No source document was cited for this result.</p>;
+    return <p className="text-sm text-ink-secondary">No source document was cited for this result.</p>;
   }
   const httpUrl = safeHttpUrl(source.url);
   return (
-    <section aria-labelledby="verdict-source" className="flex flex-col gap-1 text-sm wrap-anywhere">
+    <section aria-labelledby="verdict-source" className="flex flex-col gap-2 text-sm wrap-anywhere">
       <SectionHeading id="verdict-source">Source</SectionHeading>
-      {showDocument && <p className="text-graphite">{source.document}</p>}
+      {showDocument && <p className="text-ink-secondary">{source.document}</p>}
       {httpUrl ? (
         // The raw string, not httpUrl.href: the check above already proved it is
         // http(s), and href normalization would change what the backend sent.
-        <a href={source.url} target="_blank" rel="noopener noreferrer" className="w-fit text-ink underline underline-offset-4">
+        <a
+          href={source.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group inline-flex w-fit items-center gap-1 rounded-sm font-semibold text-ink underline decoration-input underline-offset-4 transition-colors duration-150 hover:decoration-ink"
+        >
           Open source on {httpUrl.hostname}
           <span className="sr-only"> (opens in a new tab)</span>
+          <ArrowUpRight
+            aria-hidden="true"
+            className="size-4 transition-transform duration-150 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+          />
         </a>
       ) : (
-        <p className="text-graphite">{source.url}</p>
+        <p className="text-ink-secondary">{source.url}</p>
       )}
     </section>
   );
@@ -118,10 +156,10 @@ function VerdictTrace({ steps }: VerdictTraceProps) {
       <SectionHeading id="verdict-trace">How this answer was found</SectionHeading>
       {/* A plain list on purpose: the in-flight steps already announced as a
           status region, and a second one would repeat them. */}
-      <ol aria-labelledby="verdict-trace" className="flex flex-col gap-1 text-sm text-graphite">
+      <ol aria-labelledby="verdict-trace" className="flex flex-col gap-1.5 text-sm text-ink-secondary">
         {steps.map((step) => (
           <li key={step} className="flex items-center gap-2">
-            <CheckCircle2 aria-hidden="true" className="size-4 shrink-0 text-ink" />
+            <CheckCircle2 aria-hidden="true" className="size-4 shrink-0 text-sage-text" />
             {displayLabel(step)}
           </li>
         ))}
@@ -139,44 +177,58 @@ export function VerdictCard({ result }: VerdictCardProps) {
   const Icon = meta.icon;
 
   return (
-    <div className="flex flex-col gap-6 rounded-3xl border border-ink bg-cream-paper p-8">
-      <div className="flex flex-col items-start gap-3">
-        <h2 className="text-2xl font-medium text-ink wrap-anywhere">
-          {result.source ? result.source.program : "Your result"}
-        </h2>
-        <div
-          className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium ${meta.badgeClassName}`}
+    <motion.div
+      initial="hidden"
+      animate="shown"
+      variants={stack}
+      className="overflow-hidden rounded-2xl border border-hairline bg-paper shadow-card"
+    >
+      <div className={`flex flex-col items-start gap-3 border-b border-hairline px-6 py-6 sm:px-8 ${meta.headerClassName}`}>
+        <motion.div
+          variants={rise}
+          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] font-semibold ${meta.badgeClassName}`}
         >
           <Icon aria-hidden="true" className="size-4" />
           {meta.label}
-        </div>
+        </motion.div>
+        <motion.h2 variants={rise} className="font-display text-[28px] leading-tight text-ink wrap-anywhere sm:text-[32px]">
+          {result.source ? result.source.program : "Your result"}
+        </motion.h2>
       </div>
 
-      <p className="text-lg text-ink">{result.explanation}</p>
+      <div className="flex flex-col gap-6 px-6 py-6 sm:px-8 sm:py-8">
+        <motion.p variants={rise} className="text-lg leading-relaxed text-ink">
+          {result.explanation}
+        </motion.p>
 
-      <VerdictRule clause={result.supporting_clause} source={result.source} />
+        <motion.div variants={rise}>
+          <VerdictRule clause={result.supporting_clause} source={result.source} />
+        </motion.div>
 
-      <VerdictSource source={result.source} showDocument={!result.supporting_clause} />
+        {result.missing_info.length > 0 && (
+          <motion.div variants={rise} className="flex gap-3 rounded-xl border border-dashed border-rust/50 p-4">
+            <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-rust-text" />
+            <div>
+              <p className="text-sm font-semibold text-ink">This result may change with more information:</p>
+              <ul className="mt-2 list-disc pl-5 text-sm text-ink-secondary marker:text-rust">
+                {result.missing_info.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          </motion.div>
+        )}
 
-      {result.missing_info.length > 0 && (
-        <div className="rounded-md border border-ink p-4">
-          <p className="text-sm font-medium text-ink">
-            This result may change with more information:
-          </p>
-          <ul className="mt-2 list-disc pl-5 text-sm text-graphite">
-            {result.missing_info.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </div>
-      )}
+        <motion.div variants={rise} className="grid gap-6 sm:grid-cols-2">
+          <VerdictSource source={result.source} showDocument={!result.supporting_clause} />
+          <VerdictTrace steps={result.tool_trace} />
+        </motion.div>
+      </div>
 
-      <VerdictTrace steps={result.tool_trace} />
-
-      <p className="text-sm text-graphite">
+      <motion.p variants={rise} className="border-t border-hairline bg-tint/60 px-6 py-4 text-[13px] text-ink-secondary sm:px-8">
         ScholarLens checks eligibility rules, not your chances of an award. Confirm details with the
         program before applying.
-      </p>
-    </div>
+      </motion.p>
+    </motion.div>
   );
 }
