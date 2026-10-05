@@ -22,7 +22,9 @@ class Settings(BaseSettings):
     rate_limit_global_per_day: int = Field(default=100, ge=1)
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
 
-    chroma_host: str = "localhost"
+    # Not "localhost": Compose publishes ChromaDB on IPv4 only, and Windows tries IPv6 first,
+    # which costs seconds per connection and pushes the first query past its timeout.
+    chroma_host: str = "127.0.0.1"
     chroma_port: int = 8001
     chroma_collection_name: str = "scholarship_programs"
     # Set in production to run Chroma embedded on the service's volume instead of as a server.
