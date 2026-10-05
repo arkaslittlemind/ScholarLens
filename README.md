@@ -212,7 +212,7 @@ value no longer works.
 | Metric (Prometheus name) | What it measures |
 | --- | --- |
 | `http_server_duration_milliseconds` | Request count, latency, and status code per route (`/health` excluded) |
-| `scholarlens_agent_duration_seconds` | Agent run duration by outcome: `success`, `timeout`, `tool_unavailable`, `error` |
+| `scholarlens_agent_duration_seconds` | Agent run duration by outcome: `success`, `rate_limited`, `timeout`, `tool_unavailable`, `error` |
 | `scholarlens_llm_requests_total` | Model requests made by completed agent runs |
 | `gen_ai_client_token_usage` | Input and output tokens per model response (from Pydantic AI) |
 | `scholarlens_tool_calls_total` | Tool calls by tool name |
