@@ -149,7 +149,7 @@ export default function Home() {
                 <Button asChild size="lg">
                   <Link href="/check">
                     Check your eligibility
-                    <ArrowRight aria-hidden="true" className="transition-transform duration-150 group-hover/button:translate-x-0.5" />
+                    <ArrowRight aria-hidden="true" className="transition-transform duration-150 motion-safe:pointer-fine:group-hover/button:translate-x-0.5" />
                   </Link>
                 </Button>
                 <Button asChild size="lg" variant="outline">
@@ -294,7 +294,7 @@ export default function Home() {
               <Button asChild size="lg" className="bg-paper text-brown hover:bg-tint">
                 <Link href="/check">
                   Check your eligibility
-                  <ArrowRight aria-hidden="true" className="transition-transform duration-150 group-hover/button:translate-x-0.5" />
+                  <ArrowRight aria-hidden="true" className="transition-transform duration-150 motion-safe:pointer-fine:group-hover/button:translate-x-0.5" />
                 </Link>
               </Button>
             </div>

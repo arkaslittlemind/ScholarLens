@@ -151,7 +151,7 @@ function VerdictSource({ source, showDocument }: VerdictSourceProps) {
           <span className="sr-only"> (opens in a new tab)</span>
           <ArrowUpRight
             aria-hidden="true"
-            className="size-4 transition-transform duration-150 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+            className="size-4 transition-transform duration-150 motion-safe:pointer-fine:group-hover:translate-x-0.5 motion-safe:pointer-fine:group-hover:-translate-y-0.5"
           />
         </a>
       ) : (
