@@ -312,7 +312,7 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
           <span className="grid">
             <span aria-hidden={disabled} className={labelLayerClass(!disabled)}>
               Check eligibility
-              <ArrowRight aria-hidden="true" className="transition-transform duration-150 group-hover/button:translate-x-0.5" />
+              <ArrowRight aria-hidden="true" className="transition-transform duration-150 motion-safe:pointer-fine:group-hover/button:translate-x-0.5" />
             </span>
             <span aria-hidden={!disabled} className={labelLayerClass(disabled)}>
               <Loader2 aria-hidden="true" className={disabled ? "motion-safe:animate-spin" : undefined} />

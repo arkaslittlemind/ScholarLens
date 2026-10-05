@@ -30,7 +30,13 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${instrumentSans.variable} h-full antialiased`}>
+    <html
+      lang="en"
+      // Smooth scrolling is for in-page anchors. This tells Next.js 16 to switch it off
+      // during route changes, so a new page starts at the top instead of animating there.
+      data-scroll-behavior="smooth"
+      className={`${fraunces.variable} ${instrumentSans.variable} h-full antialiased`}
+    >
       <body className="flex min-h-full flex-col">
         <Providers>{children}</Providers>
       </body>

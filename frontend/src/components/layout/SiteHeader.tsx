@@ -56,7 +56,7 @@ export function SiteHeader() {
             <Button asChild size="sm" className="hidden h-9 px-4 sm:inline-flex pointer-coarse:h-11">
               <Link href="/check">
                 Check eligibility
-                <ArrowRight aria-hidden="true" className="transition-transform duration-150 group-hover/button:translate-x-0.5" />
+                <ArrowRight aria-hidden="true" className="transition-transform duration-150 motion-safe:pointer-fine:group-hover/button:translate-x-0.5" />
               </Link>
             </Button>
           )}

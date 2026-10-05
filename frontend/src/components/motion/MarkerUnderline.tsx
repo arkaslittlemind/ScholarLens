@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
+import { EASE_OUT } from "@/components/motion/easing";
 
 interface MarkerUnderlineProps {
   className?: string;
@@ -26,7 +27,7 @@ export function MarkerUnderline({ className, delay = 0.35 }: MarkerUnderlineProp
         whileInView={{ pathLength: 1, opacity: 1 }}
         viewport={{ once: true }}
         transition={{
-          pathLength: { duration: 0.65, ease: [0.22, 1, 0.36, 1], delay },
+          pathLength: { duration: 0.65, ease: EASE_OUT, delay },
           opacity: { duration: 0.01, delay },
         }}
       />

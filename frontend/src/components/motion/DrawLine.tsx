@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { EASE_OUT } from "@/components/motion/Reveal";
+import { EASE_OUT } from "@/components/motion/easing";
 
 // A horizontal rule that draws left to right once in view, connecting a row of steps.
 export function DrawLine({ className }: { className?: string }) {

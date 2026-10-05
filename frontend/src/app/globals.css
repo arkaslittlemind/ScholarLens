@@ -95,6 +95,7 @@
   --shadow-card: 0 1px 2px rgb(26 26 26 / 0.04), 0 8px 18px rgb(26 26 26 / 0.06);
   --shadow-lift: 0 2px 4px rgb(26 26 26 / 0.04), 0 18px 40px rgb(26 26 26 / 0.1);
   --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
 }
 
 /* Display type: Fraunces at its soft setting stands in for a warm book serif.
@@ -196,6 +197,37 @@
   @media (prefers-reduced-motion: reduce) {
     animation-name: fade-in;
   }
+}
+
+/* The hero preview card: a longer rise with a slight scale, so the product
+   visibly settles into place under the headline. */
+@keyframes preview-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.98);
+  }
+}
+
+@utility animate-preview-in {
+  animation: preview-in 800ms var(--ease-out-strong) both;
+  @media (prefers-reduced-motion: reduce) {
+    animation-name: fade-in;
+  }
+}
+
+/* A highlighter pass behind quoted text. Not movement, so it plays under
+   reduced motion too. */
+@keyframes marker-sweep {
+  from {
+    background-size: 0% 100%;
+  }
+  to {
+    background-size: 100% 100%;
+  }
+}
+
+@utility animate-marker-sweep {
+  animation: marker-sweep 900ms var(--ease-in-out-strong) both;
 }
 
 @layer base {

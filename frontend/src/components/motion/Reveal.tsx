@@ -2,8 +2,7 @@
 
 import { motion } from "motion/react";
 import type { ReactNode } from "react";
-
-export const EASE_OUT: [number, number, number, number] = [0.23, 1, 0.32, 1];
+import { EASE_OUT } from "@/components/motion/easing";
 
 interface RevealProps {
   children: ReactNode;
