@@ -12,6 +12,8 @@ import { MarkerUnderline } from "@/components/motion/MarkerUnderline";
 import { Reveal } from "@/components/motion/Reveal";
 import { Button } from "@/components/ui/button";
 import { HOME_DESCRIPTION, HOME_FULL_TITLE, HOME_TITLE, pageMetadata } from "@/lib/site";
+import { HOME_JSON_LD } from "@/lib/structured-data";
+import { JsonLd } from "@/components/seo/JsonLd";
 
 export const metadata: Metadata = {
   ...pageMetadata({ title: HOME_TITLE, description: HOME_DESCRIPTION, path: "/" }),
@@ -127,6 +129,7 @@ export default function Home() {
   return (
     <div className="flex min-h-screen flex-col bg-paper text-ink">
       <SiteHeader />
+      <JsonLd data={HOME_JSON_LD} />
 
       <main className="flex-1">
         {/* Hero */}

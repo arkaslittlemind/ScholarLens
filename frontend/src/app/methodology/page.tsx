@@ -8,6 +8,8 @@ import { Reveal } from "@/components/motion/Reveal";
 import { Button } from "@/components/ui/button";
 import { COVERED_PROGRAMS } from "@/lib/programs";
 import { pageMetadata } from "@/lib/site";
+import { METHODOLOGY_JSON_LD } from "@/lib/structured-data";
+import { JsonLd } from "@/components/seo/JsonLd";
 
 export const metadata: Metadata = pageMetadata({
   title: "How the scholarship eligibility checker works",
@@ -78,6 +80,7 @@ export default function Methodology() {
   return (
     <div className="flex min-h-screen flex-col bg-paper text-ink">
       <SiteHeader />
+      <JsonLd data={METHODOLOGY_JSON_LD} />
 
       <main className="flex-1">
         <section className="border-b border-hairline bg-tint">

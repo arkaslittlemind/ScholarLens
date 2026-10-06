@@ -83,3 +83,21 @@ test("the sitemap lists the three indexable pages", async ({ request }) => {
   expect(locs).toEqual(PAGES.map((page) => page.canonical));
   expect(body.match(/<lastmod>2026-10-07<\/lastmod>/g)).toHaveLength(PAGES.length);
 });
+
+const JSON_LD_TYPES: Record<string, string[]> = {
+  "/": ["WebSite", "Person"],
+  "/check": ["WebApplication", "Person", "BreadcrumbList"],
+  "/methodology": ["BreadcrumbList"],
+};
+
+for (const [path, types] of Object.entries(JSON_LD_TYPES)) {
+  test(`${path} describes itself with JSON-LD`, async ({ page }) => {
+    await page.goto(path);
+    const scripts = page.locator('script[type="application/ld+json"]');
+    await expect(scripts).toHaveCount(1);
+    const body = (await scripts.textContent()) ?? "";
+    expect(body).not.toContain("<");
+    const graph = (JSON.parse(body) as { "@graph": { "@type": string }[] })["@graph"];
+    expect(graph.map((node) => node["@type"])).toEqual(types);
+  });
+}
