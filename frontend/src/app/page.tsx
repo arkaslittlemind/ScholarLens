@@ -1,4 +1,5 @@
 import { ArrowRight, BookOpenCheck, CheckCircle2, CircleDot, Globe, Quote } from "lucide-react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Faq } from "@/components/landing/Faq";
@@ -10,6 +11,13 @@ import { DrawLine } from "@/components/motion/DrawLine";
 import { MarkerUnderline } from "@/components/motion/MarkerUnderline";
 import { Reveal } from "@/components/motion/Reveal";
 import { Button } from "@/components/ui/button";
+import { HOME_DESCRIPTION, HOME_TITLE, SITE_NAME, pageMetadata } from "@/lib/site";
+
+export const metadata: Metadata = {
+  ...pageMetadata({ title: HOME_TITLE, description: HOME_DESCRIPTION, path: "/" }),
+  // The layout's title template only reaches nested segments, not this page beside it.
+  title: { absolute: `${HOME_TITLE} | ${SITE_NAME}` },
+};
 
 const PROBLEMS = [
   {

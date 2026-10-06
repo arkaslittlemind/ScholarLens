@@ -1,8 +1,17 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { EligibilityChecker } from "@/components/check/EligibilityChecker";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { COVERED_PROGRAMS } from "@/lib/programs";
+import { pageMetadata } from "@/lib/site";
+
+export const metadata: Metadata = pageMetadata({
+  title: "Check your scholarship and grant eligibility",
+  description:
+    "Tell us your state, income, GPA and year in school, and we will check your situation against federal and state aid rules and show the rule behind each result.",
+  path: "/check",
+});
 
 const TIPS = [
   "Your year in school and whether you already hold a degree",
