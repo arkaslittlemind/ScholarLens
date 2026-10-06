@@ -4,7 +4,7 @@ Measurements of the live site taken before any SEO work (feature 23a). The
 "After" columns are filled in by 23i, using the same method, so the two can be
 compared directly.
 
-- **Audit date:** 2026-10-07 (Lighthouse fetch time 2026-10-06 19:36 UTC)
+- **Audit date:** 2026-10-07 (Lighthouse runs 2026-10-06 19:35 to 19:38 UTC)
 - **Production URL:** https://scholar-lens-kappa.vercel.app
 - **Commit measured:** `336376d` on `main`, confirmed by the live `/` `h1`
   reading "See which scholarships you qualify for, and why."
@@ -12,7 +12,7 @@ compared directly.
   factor, simulated throttling (150 ms RTT, about 1.6 Mbps, 4x CPU slowdown),
   412 px wide screen.
 - **Method:** three runs per page; the table shows the run with the median
-  Performance score. The PageSpeed Insights API was the intended tool, but its
+  Performance score, and on a tie the earlier run. The PageSpeed Insights API was the intended tool, but its
   keyless daily quota returned HTTP 429 on every call, so Lighthouse ran
   locally instead. Local runs depend on the machine, so 23i should repeat them
   on the same machine and tool version.
@@ -23,22 +23,25 @@ compared directly.
 |---|---|---|---|
 | `/` | Performance | 78 (runs: 74, 78, 81) | |
 | `/` | SEO | 100 | |
+| `/` | FCP | 1.1 s | |
 | `/` | LCP | 3.8 s | |
 | `/` | CLS | 0 | |
 | `/` | TBT | 450 ms | |
-| `/` | LCP element | Header logo wordmark, `<span class="font-display text-title-sm">ScholarLens</span>` | |
+| `/` | LCP element | Header logo wordmark, `<span class="font-display text-title-sm">ScholarLens</span>` (runs: `h1`, logo, logo) | |
 | `/check` | Performance | 84 (runs: 82, 84, 87) | |
 | `/check` | SEO | 100 | |
+| `/check` | FCP | 1.1 s | |
 | `/check` | LCP | 3.8 s | |
 | `/check` | CLS | 0 | |
 | `/check` | TBT | 270 ms | |
-| `/check` | LCP element | Intro paragraph, `<p class="max-w-150 text-lg ...">Describe your situation and we'll tell you where you stand...` | |
+| `/check` | LCP element | Intro paragraph, `<p class="max-w-150 text-lg ...">Describe your situation and we'll tell you where you stand...` (same in all runs) | |
 | `/methodology` | Performance | 88 (runs: 86, 88, 88) | |
 | `/methodology` | SEO | 100 | |
+| `/methodology` | FCP | 1.1 s | |
 | `/methodology` | LCP | 3.7 s | |
 | `/methodology` | CLS | 0 | |
 | `/methodology` | TBT | 150 ms | |
-| `/methodology` | LCP element | The `h1`, "How ScholarLens reaches an answer." | |
+| `/methodology` | LCP element | The `h1`, "How ScholarLens reaches an answer." (runs: logo, `h1`, logo) | |
 
 Every Lighthouse SEO audit passed on all three pages. A 100 here only means
 the basics are present (status codes, a title, a description, crawlable
@@ -98,7 +101,7 @@ JavaScript (about 14 KiB) and render-blocking requests on both form factors.
 | `/check` | Canonical | none | |
 | `/check` | Robots meta | none | |
 | `/check` | Open Graph / Twitter | none | |
-| `/check` | Headings | `h1` Check your eligibility. `h2` What helps the check, Programs in the knowledge base | |
+| `/check` | Headings | `h1` "Check your eligibility", `h2` "What helps the check", "Programs in the knowledge base" | |
 | `/methodology` | HTTP status | 200 | |
 | `/methodology` | Title | Methodology · ScholarLens | |
 | `/methodology` | Description | How ScholarLens reads program rules, decides where to look, and cites every answer. | |
@@ -116,13 +119,14 @@ JavaScript (about 14 KiB) and render-blocking requests on both form factors.
 
 ## Observations for later steps
 
-- LCP sits at 3.7 to 3.8 s on every page while FCP is about 1.1 s. On `/` the
-  LCP element is the header logo rather than the hero headline; the headline
-  and preview fade in on a delay, which is worth examining in 23f.
+- LCP sits at 3.7 to 3.8 s on every page while FCP is about 1.1 s. The LCP
+  element flips between the header logo and the `h1` across runs on `/` and
+  `/methodology`; the hero headline and preview fade in on a delay, which is
+  worth examining in 23f.
 - `/` has the highest local TBT (450 ms) of the three pages, but PageSpeed
   Insights measured 10 ms, so treat local TBT as machine-dependent.
-- PageSpeed Insights flags about 69 KiB of unused JavaScript and
-  render-blocking requests (23f).
+- The JavaScript and render-blocking issues in the PageSpeed Insights
+  cross-check above belong to 23f.
 - Google has indexed nothing yet, so Search Console submission (23i) matters
   more than any ranking tweak.
 - `/check` has no title or description of its own (23b).
