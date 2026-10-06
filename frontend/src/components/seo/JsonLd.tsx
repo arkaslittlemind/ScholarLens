@@ -2,12 +2,12 @@ interface JsonLdProps {
   data: Record<string, unknown>;
 }
 
+// Escaping "<" means no string in the data can close the script tag early.
+export function serializeJsonLd(data: Record<string, unknown>): string {
+  return JSON.stringify(data).replace(/</g, "\\u003c");
+}
+
 export function JsonLd({ data }: JsonLdProps) {
-  return (
-    <script
-      type="application/ld+json"
-      // Only constants reach here, and escaping "<" means no string can close the tag.
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\u003c") }}
-    />
-  );
+  // Safe as raw HTML only because serializeJsonLd escapes every "<".
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(data) }} />;
 }

@@ -5,11 +5,11 @@ import type { ReactNode } from "react";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Reveal } from "@/components/motion/Reveal";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { Button } from "@/components/ui/button";
 import { COVERED_PROGRAMS } from "@/lib/programs";
 import { pageMetadata } from "@/lib/site";
 import { METHODOLOGY_JSON_LD } from "@/lib/structured-data";
-import { JsonLd } from "@/components/seo/JsonLd";
 
 export const metadata: Metadata = pageMetadata({
   title: "How the scholarship eligibility checker works",

@@ -10,10 +10,10 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { DrawLine } from "@/components/motion/DrawLine";
 import { MarkerUnderline } from "@/components/motion/MarkerUnderline";
 import { Reveal } from "@/components/motion/Reveal";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { Button } from "@/components/ui/button";
 import { HOME_DESCRIPTION, HOME_FULL_TITLE, HOME_TITLE, pageMetadata } from "@/lib/site";
 import { HOME_JSON_LD } from "@/lib/structured-data";
-import { JsonLd } from "@/components/seo/JsonLd";
 
 export const metadata: Metadata = {
   ...pageMetadata({ title: HOME_TITLE, description: HOME_DESCRIPTION, path: "/" }),
