@@ -3,18 +3,48 @@ import { expect, test } from "@playwright/test";
 const SITE_URL = "https://scholar-lens-kappa.vercel.app";
 
 const PAGES = [
-  { path: "/", title: "Scholarship and grant eligibility checker | ScholarLens", canonical: SITE_URL },
+  {
+    path: "/",
+    title: "Scholarship and grant eligibility checker | ScholarLens",
+    canonical: SITE_URL,
+    imageAlt: "ScholarLens: see which scholarships you qualify for, with the rule behind each answer",
+  },
   {
     path: "/check",
     title: "Check your scholarship and grant eligibility | ScholarLens",
     canonical: `${SITE_URL}/check`,
+    imageAlt: "ScholarLens eligibility checker: describe your situation and get a cited answer",
   },
   {
     path: "/methodology",
     title: "How the scholarship eligibility checker works | ScholarLens",
     canonical: `${SITE_URL}/methodology`,
+    imageAlt: "How ScholarLens checks official program rules and cites every answer",
   },
 ];
+
+for (const { path, imageAlt } of PAGES) {
+  test(`${path} has its own share image`, async ({ page, request }) => {
+    await page.goto(path);
+    const imageUrl = await page.locator('meta[property="og:image"]').getAttribute("content");
+    // Dev builds these URLs from the request host; production builds use metadataBase.
+    expect(imageUrl).toMatch(new RegExp(`^https?://[^/]+${path === "/" ? "" : path}/opengraph-image`));
+    await expect(page.locator('meta[property="og:image:width"]')).toHaveAttribute("content", "1200");
+    await expect(page.locator('meta[property="og:image:height"]')).toHaveAttribute("content", "630");
+    await expect(page.locator('meta[property="og:image:alt"]')).toHaveAttribute("content", imageAlt);
+    const twitterUrl = await page.locator('meta[name="twitter:image"]').getAttribute("content");
+    expect(twitterUrl).toMatch(new RegExp(`^https?://[^/]+${path === "/" ? "" : path}/twitter-image`));
+    await expect(page.locator('meta[name="twitter:image:alt"]')).toHaveAttribute("content", imageAlt);
+
+    // The tags point at production; fetch the same paths from the test server.
+    for (const url of [imageUrl, twitterUrl]) {
+      const { pathname, search } = new URL(url ?? "");
+      const response = await request.get(pathname + search);
+      expect(response.status()).toBe(200);
+      expect(response.headers()["content-type"]).toBe("image/png");
+    }
+  });
+}
 
 for (const { path, title, canonical } of PAGES) {
   test(`${path} has its own title, canonical URL and share tags`, async ({ page }) => {
