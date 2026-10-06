@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 const SECTIONS = [
   { id: "knowledge-base", label: "The knowledge base" },
   { id: "looking-further", label: "Looking further" },
-  { id: "no-rule-no-yes", label: "No rule, no yes" },
+  { id: "no-rule-no-yes", label: "Why every yes needs a rule" },
   { id: "what-you-get", label: "What you get back" },
   { id: "limits", label: "What it doesn't do" },
 ];
@@ -147,7 +147,7 @@ export default function Methodology() {
               </div>
             </Section>
 
-            <Section id="no-rule-no-yes" number={3} title="No quoted rule, no positive answer.">
+            <Section id="no-rule-no-yes" number={3} title="It won't give a positive answer without a quoted rule.">
               <p>
                 The agent is not allowed to call you eligible, or even a partial match, without quoting
                 the clause it relied on and naming its source. If a rule depends on something you
@@ -189,7 +189,7 @@ export default function Methodology() {
             </Section>
 
             <Reveal className="flex flex-col items-start gap-5 rounded-2xl bg-brown p-8 text-paper sm:p-10">
-              <h2 className="font-display text-title leading-tight sm:text-title-lg">Ready to try it?</h2>
+              <h2 className="font-display text-title leading-tight sm:text-title-lg">Try it with your own situation</h2>
               <p className="max-w-110 text-paper/75">Describe your situation and get a cited answer in about a minute.</p>
               <Button asChild size="lg" className="bg-paper text-brown hover:bg-tint">
                 <Link href="/check">

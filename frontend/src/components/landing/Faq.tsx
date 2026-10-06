@@ -18,11 +18,11 @@ const FAQS = [
   },
   {
     q: "Does \"eligible\" mean I'll get the award?",
-    a: "No. ScholarLens checks whether you meet the published eligibility rules, not your chances of an award, which can depend on funding, deadlines, and the program's own review. Always confirm with the program before you apply.",
+    a: "Not necessarily, because ScholarLens checks whether you meet the published eligibility rules, not your chances of an award, which can depend on funding, deadlines, and the program's own review. Always confirm with the program before you apply.",
   },
   {
     q: "What if it can't find a rule for my situation?",
-    a: "It says so. A result without a quoted rule is never marked eligible, and if the answer depends on something you didn't mention, like your enrollment status, it lists exactly what's missing instead of guessing.",
+    a: "It tells you that plainly. A result without a quoted rule is never marked eligible, and if the answer depends on something you didn't mention, like your enrollment status, it lists exactly what's missing instead of guessing.",
   },
 ];
 

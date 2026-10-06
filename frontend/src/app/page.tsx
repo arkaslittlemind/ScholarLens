@@ -18,7 +18,7 @@ const PROBLEMS = [
   },
   {
     title: "Every program words it differently",
-    body: "One state says \"Student Aid Index\", another says \"family income\". Comparing them is a job.",
+    body: "One state asks about your \"Student Aid Index\" while another asks about \"family income\", so comparing programs side by side takes real work.",
   },
   {
     title: "Chatbots sound sure and cite nothing",
@@ -132,7 +132,7 @@ export default function Home() {
             </div>
             <div className="mt-6 max-w-200 animate-rise-in [animation-delay:60ms]">
               <h1 className="font-display type-h1 text-ink">
-                Find the aid you qualify for, and the rule that proves it.
+                See which scholarships you qualify for, and why.
               </h1>
               {/* Its own block under the headline, not anchored to a word, so it
                   can't land mispositioned when the wrap point shifts. */}
@@ -140,8 +140,8 @@ export default function Home() {
             </div>
             <div className="mt-6 max-w-140 animate-rise-in [animation-delay:120ms]">
               <p className="text-lg leading-relaxed text-ink-secondary sm:text-xl">
-                Describe your situation in plain words. ScholarLens reads the official program rules
-                and tells you where you stand, quoting the exact clause behind every answer.
+                Describe your situation the way you would to a counselor, and ScholarLens checks it
+                against the official rules for each program.
               </p>
             </div>
             <div className="mt-8 flex animate-rise-in flex-col items-center gap-3 [animation-delay:180ms]">
@@ -156,7 +156,7 @@ export default function Home() {
                   <Link href="#how-it-works">See how it works</Link>
                 </Button>
               </div>
-              <p className="text-sm text-ink-secondary">No account. Nothing you enter is stored.</p>
+              <p className="text-sm text-ink-secondary">You don&apos;t need an account, and nothing you type is stored.</p>
             </div>
           </div>
 
@@ -172,7 +172,7 @@ export default function Home() {
         <section id="programs" className="scroll-mt-20 bg-tint pb-20">
           <div className="mx-auto flex max-w-280 flex-col items-center gap-6 px-4 sm:px-6">
             <p className="text-sm font-semibold text-ink-secondary">
-              Reads the published rules for 10 federal and state programs
+              ScholarLens reads the published rules for ten federal and state programs
             </p>
           </div>
           <div className="mt-6">
@@ -185,7 +185,7 @@ export default function Home() {
           <Reveal className="flex flex-col gap-4">
             <Eyebrow>The problem</Eyebrow>
             <h2 className="font-display type-h2 max-w-120">
-              Eligibility rules are written for administrators, not students.
+              Eligibility rules are written for program staff, and students are left to decode them.
             </h2>
           </Reveal>
           <ul className="flex flex-col gap-6">
@@ -213,7 +213,7 @@ export default function Home() {
             <Reveal delay={0}>
               <FeatureCard
                 icon={<Quote aria-hidden="true" className="size-4.5 text-rust" />}
-                title="Cited, not guessed"
+                title="Every answer shows its source"
                 body="Every answer quotes the clause it came from and links the source document, so you can verify it in seconds."
               >
                 <CitedVisual />
@@ -223,7 +223,7 @@ export default function Home() {
               <FeatureCard
                 icon={<CircleDot aria-hidden="true" className="size-4.5 text-rust" />}
                 title="Partial matches count"
-                body="Eligibility is rarely a clean yes or no. See what you meet, what's missing, and what would change the answer."
+                body="Eligibility is rarely a clean yes or no, so your result shows which rules you meet, what is still missing, and what would change the answer."
               >
                 <PartialVisual />
               </FeatureCard>
@@ -245,7 +245,7 @@ export default function Home() {
           <div className="mx-auto flex max-w-280 flex-col gap-14 px-4 sm:px-6">
             <Reveal className="flex flex-col gap-4">
               <Eyebrow>How it works</Eyebrow>
-              <h2 className="font-display type-h2 max-w-140">Three steps, about a minute.</h2>
+              <h2 className="font-display type-h2 max-w-140">It takes three steps and usually about a minute.</h2>
             </Reveal>
             <div className="relative">
               <DrawLine className="absolute top-5 right-0 left-0 hidden h-px bg-input md:block" />
@@ -270,7 +270,7 @@ export default function Home() {
         <section id="faq" className="mx-auto grid max-w-280 scroll-mt-16 gap-10 px-4 py-24 sm:px-6 md:grid-cols-[0.8fr_1.2fr] md:py-32">
           <Reveal className="flex flex-col gap-4">
             <Eyebrow>FAQ</Eyebrow>
-            <h2 className="font-display type-h2">Questions, answered.</h2>
+            <h2 className="font-display type-h2">What people usually ask first</h2>
             <p className="text-body-sm leading-relaxed text-ink-secondary">
               Want the detail on sources and limits?{" "}
               <Link href="/methodology" className="rounded-sm font-semibold text-ink underline decoration-input underline-offset-4 transition-colors hover:decoration-ink">
@@ -289,8 +289,8 @@ export default function Home() {
           <Reveal className="mx-auto max-w-280">
             <div className="relative flex flex-col items-center gap-6 overflow-hidden rounded-3xl bg-brown px-6 py-16 text-center text-paper sm:py-20">
               <CheckCircle2 aria-hidden="true" className="size-8 text-rust" />
-              <h2 className="font-display type-h2 max-w-160">See what you qualify for in about a minute.</h2>
-              <p className="max-w-120 text-lg text-paper/75">No account, no profile, nothing stored. Just a cited answer.</p>
+              <h2 className="font-display type-h2 max-w-160">Find out what you qualify for in about a minute.</h2>
+              <p className="max-w-120 text-lg text-paper/75">You won&apos;t need an account, nothing you type is saved, and every result comes with the rule it relies on.</p>
               <Button asChild size="lg" className="bg-paper text-brown hover:bg-tint">
                 <Link href="/check">
                   Check your eligibility
