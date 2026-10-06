@@ -39,3 +39,15 @@ test("/ops is closed to crawlers", async ({ request }) => {
   const response = await request.get("/ops", { maxRedirects: 0 });
   expect([401, 503]).toContain(response.status());
 });
+
+test("robots.txt allows the site, blocks /ops and points to the sitemap", async ({ request }) => {
+  const body = await (await request.get("/robots.txt")).text();
+  expect(body).toContain("User-Agent: *\nAllow: /\nDisallow: /ops");
+  expect(body).toContain(`Sitemap: ${SITE_URL}/sitemap.xml`);
+});
+
+test("the sitemap lists the three indexable pages", async ({ request }) => {
+  const body = await (await request.get("/sitemap.xml")).text();
+  const locs = [...body.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1]);
+  expect(locs).toEqual(PAGES.map((page) => page.canonical));
+});
