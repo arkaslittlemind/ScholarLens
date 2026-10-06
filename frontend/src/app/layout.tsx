@@ -14,11 +14,22 @@ import { Providers } from "./providers";
 
 // Two-family system per project-requirement-docs/design.md: a soft book serif
 // for display headings, a clean grotesque for everything else.
+// Only the axes the design sets: SOFT is pinned in the font-display utility and
+// opsz drives automatic optical sizing. Keep both declarations' axes in sync.
 const fraunces = Fraunces({
   variable: "--font-fraunces",
   subsets: ["latin"],
-  axes: ["SOFT", "WONK", "opsz"],
-  style: ["normal", "italic"],
+  axes: ["SOFT", "opsz"],
+});
+
+// Italic only appears in the hero annotations, which show at xl widths. Its own
+// declaration keeps it out of the preloads, so phones never download it.
+const frauncesItalic = Fraunces({
+  variable: "--font-fraunces-italic",
+  subsets: ["latin"],
+  axes: ["SOFT", "opsz"],
+  style: "italic",
+  preload: false,
 });
 
 const instrumentSans = Instrument_Sans({
@@ -47,7 +58,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       // Smooth scrolling is for in-page anchors. This tells Next.js 16 to switch it off
       // during route changes, so a new page starts at the top instead of animating there.
       data-scroll-behavior="smooth"
-      className={`${fraunces.variable} ${instrumentSans.variable} h-full antialiased`}
+      className={`${fraunces.variable} ${frauncesItalic.variable} ${instrumentSans.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
         <Providers>{children}</Providers>

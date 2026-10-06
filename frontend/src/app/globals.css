@@ -103,9 +103,14 @@
    below, about -0.02em at 32px, -0.03em at 72px (em is the element's own size). */
 @utility font-display {
   font-family: var(--font-fraunces);
-  font-variation-settings: "SOFT" 100, "WONK" 0;
+  font-variation-settings: "SOFT" 100;
   font-weight: 450;
   letter-spacing: min(0em, calc(0.68px - 0.04em));
+
+  /* The italic face is a separate, non-preloaded font (see layout.tsx). */
+  &.italic {
+    font-family: var(--font-fraunces-italic);
+  }
 }
 
 @utility type-h1 {
