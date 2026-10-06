@@ -9,7 +9,7 @@ import { TrafficSection } from "@/components/ops/TrafficSection";
 import { fetchOpsSummary } from "@/lib/ops";
 
 export const metadata: Metadata = {
-  title: "Operations - ScholarLens",
+  title: "Operations",
   robots: { index: false, follow: false },
 };
 

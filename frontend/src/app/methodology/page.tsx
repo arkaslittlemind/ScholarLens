@@ -7,11 +7,14 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Reveal } from "@/components/motion/Reveal";
 import { Button } from "@/components/ui/button";
 import { COVERED_PROGRAMS } from "@/lib/programs";
+import { pageMetadata } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "Methodology · ScholarLens",
-  description: "How ScholarLens reads program rules, decides where to look, and cites every answer.",
-};
+export const metadata: Metadata = pageMetadata({
+  title: "How the scholarship eligibility checker works",
+  description:
+    "How ScholarLens reads official program rules, when it searches the web, and why it never calls you eligible without quoting the rule it relied on.",
+  path: "/methodology",
+});
 
 const SECTIONS = [
   { id: "knowledge-base", label: "The knowledge base" },
