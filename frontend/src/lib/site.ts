@@ -8,6 +8,10 @@ export const SITE_NAME = "ScholarLens";
 
 export const HOME_TITLE = "Scholarship and grant eligibility checker";
 
+export const TITLE_TEMPLATE = `%s | ${SITE_NAME}`;
+
+export const HOME_FULL_TITLE = TITLE_TEMPLATE.replace("%s", HOME_TITLE);
+
 export const HOME_DESCRIPTION =
   "Describe your situation and see which scholarships and grants you qualify for, from the Pell Grant to state aid, with the exact program rule quoted.";
 

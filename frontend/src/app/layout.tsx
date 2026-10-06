@@ -1,6 +1,14 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Instrument_Sans } from "next/font/google";
-import { HOME_DESCRIPTION, HOME_TITLE, OPEN_GRAPH_DEFAULTS, SITE_NAME, SITE_URL } from "@/lib/site";
+import {
+  HOME_DESCRIPTION,
+  HOME_FULL_TITLE,
+  HOME_TITLE,
+  OPEN_GRAPH_DEFAULTS,
+  SITE_NAME,
+  SITE_URL,
+  TITLE_TEMPLATE,
+} from "@/lib/site";
 import "./globals.css";
 import { Providers } from "./providers";
 
@@ -20,13 +28,10 @@ const instrumentSans = Instrument_Sans({
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: {
-    template: `%s | ${SITE_NAME}`,
-    default: `${HOME_TITLE} | ${SITE_NAME}`,
-  },
+  title: { template: TITLE_TEMPLATE, default: HOME_FULL_TITLE },
   description: HOME_DESCRIPTION,
   applicationName: SITE_NAME,
-  openGraph: OPEN_GRAPH_DEFAULTS,
+  openGraph: { ...OPEN_GRAPH_DEFAULTS, title: HOME_TITLE },
   twitter: { card: "summary_large_image" },
 };
 

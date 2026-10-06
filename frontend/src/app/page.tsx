@@ -11,12 +11,12 @@ import { DrawLine } from "@/components/motion/DrawLine";
 import { MarkerUnderline } from "@/components/motion/MarkerUnderline";
 import { Reveal } from "@/components/motion/Reveal";
 import { Button } from "@/components/ui/button";
-import { HOME_DESCRIPTION, HOME_TITLE, SITE_NAME, pageMetadata } from "@/lib/site";
+import { HOME_DESCRIPTION, HOME_FULL_TITLE, HOME_TITLE, pageMetadata } from "@/lib/site";
 
 export const metadata: Metadata = {
   ...pageMetadata({ title: HOME_TITLE, description: HOME_DESCRIPTION, path: "/" }),
   // The layout's title template only reaches nested segments, not this page beside it.
-  title: { absolute: `${HOME_TITLE} | ${SITE_NAME}` },
+  title: { absolute: HOME_FULL_TITLE },
 };
 
 const PROBLEMS = [
