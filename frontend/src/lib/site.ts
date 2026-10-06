@@ -15,6 +15,13 @@ export const HOME_FULL_TITLE = TITLE_TEMPLATE.replace("%s", HOME_TITLE);
 export const HOME_DESCRIPTION =
   "Describe your situation and see which scholarships and grants you qualify for, from the Pell Grant to state aid, with the exact program rule quoted.";
 
+export const CHECK_DESCRIPTION =
+  "Tell us your state, income, GPA and year in school, and we will check your situation against federal and state aid rules and show the rule behind each result.";
+
+export const AUTHOR_NAME = "Arkadipta Mojumder";
+
+export const AUTHOR_URL = "https://github.com/arkaslittlemind";
+
 export const OPEN_GRAPH_DEFAULTS = {
   siteName: SITE_NAME,
   type: "website",

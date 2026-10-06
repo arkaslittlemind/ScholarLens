@@ -3,13 +3,14 @@ import Link from "next/link";
 import { EligibilityChecker } from "@/components/check/EligibilityChecker";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { COVERED_PROGRAMS } from "@/lib/programs";
-import { pageMetadata } from "@/lib/site";
+import { CHECK_DESCRIPTION, pageMetadata } from "@/lib/site";
+import { CHECK_JSON_LD } from "@/lib/structured-data";
 
 export const metadata: Metadata = pageMetadata({
   title: "Check your scholarship and grant eligibility",
-  description:
-    "Tell us your state, income, GPA and year in school, and we will check your situation against federal and state aid rules and show the rule behind each result.",
+  description: CHECK_DESCRIPTION,
   path: "/check",
 });
 
@@ -24,6 +25,7 @@ export default function Check() {
   return (
     <div className="flex min-h-screen flex-col bg-paper text-ink">
       <SiteHeader />
+      <JsonLd data={CHECK_JSON_LD} />
 
       <main className="flex-1">
         <section className="border-b border-hairline bg-tint">
