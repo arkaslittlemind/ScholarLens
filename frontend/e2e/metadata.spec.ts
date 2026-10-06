@@ -32,13 +32,17 @@ for (const { path, imageAlt } of PAGES) {
     await expect(page.locator('meta[property="og:image:width"]')).toHaveAttribute("content", "1200");
     await expect(page.locator('meta[property="og:image:height"]')).toHaveAttribute("content", "630");
     await expect(page.locator('meta[property="og:image:alt"]')).toHaveAttribute("content", imageAlt);
-    await expect(page.locator('meta[name="twitter:image"]')).toHaveCount(1);
+    const twitterUrl = await page.locator('meta[name="twitter:image"]').getAttribute("content");
+    expect(twitterUrl).toMatch(new RegExp(`^https?://[^/]+${path === "/" ? "" : path}/twitter-image`));
+    await expect(page.locator('meta[name="twitter:image:alt"]')).toHaveAttribute("content", imageAlt);
 
-    // The tag points at production; fetch the same path from the test server.
-    const { pathname, search } = new URL(imageUrl ?? "");
-    const response = await request.get(pathname + search);
-    expect(response.status()).toBe(200);
-    expect(response.headers()["content-type"]).toBe("image/png");
+    // The tags point at production; fetch the same paths from the test server.
+    for (const url of [imageUrl, twitterUrl]) {
+      const { pathname, search } = new URL(url ?? "");
+      const response = await request.get(pathname + search);
+      expect(response.status()).toBe(200);
+      expect(response.headers()["content-type"]).toBe("image/png");
+    }
   });
 }
 
