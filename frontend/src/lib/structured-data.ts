@@ -8,13 +8,25 @@ const AUTHOR_ID = `${SITE_URL}/#author`;
 // author also carry this minimal node.
 const AUTHOR_REF = { "@type": "Person", "@id": AUTHOR_ID, name: AUTHOR_NAME };
 
-function breadcrumbs(name: string, path: string) {
+interface Crumb {
+  name: string;
+  path: string;
+}
+
+const HOME_CRUMB: Crumb = { name: "Home", path: "" };
+
+const PROGRAMS_CRUMB: Crumb = { name: "Programs", path: "/programs" };
+
+// The trail after Home, in order.
+function breadcrumbs(trail: Crumb[]) {
   return {
     "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
-      { "@type": "ListItem", position: 2, name, item: `${SITE_URL}${path}` },
-    ],
+    itemListElement: [HOME_CRUMB, ...trail].map((crumb, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: crumb.name,
+      item: `${SITE_URL}${crumb.path}`,
+    })),
   };
 }
 
@@ -49,11 +61,23 @@ export const CHECK_JSON_LD = {
       author: { "@id": AUTHOR_ID },
     },
     AUTHOR_REF,
-    breadcrumbs("Check eligibility", "/check"),
+    breadcrumbs([{ name: "Check eligibility", path: "/check" }]),
   ],
 };
 
 export const METHODOLOGY_JSON_LD = {
   "@context": CONTEXT,
-  "@graph": [breadcrumbs("Methodology", "/methodology")],
+  "@graph": [breadcrumbs([{ name: "Methodology", path: "/methodology" }])],
 };
+
+export const PROGRAMS_JSON_LD = {
+  "@context": CONTEXT,
+  "@graph": [breadcrumbs([PROGRAMS_CRUMB])],
+};
+
+export function programJsonLd(program: Crumb) {
+  return {
+    "@context": CONTEXT,
+    "@graph": [breadcrumbs([PROGRAMS_CRUMB, program])],
+  };
+}

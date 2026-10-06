@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { COVERED_PROGRAMS, programPath } from "../src/lib/programs";
 
 const SITE_URL = "https://scholar-lens-kappa.vercel.app";
 
@@ -77,11 +78,17 @@ test("robots.txt allows the site, blocks /ops and points to the sitemap", async 
   }
 });
 
-test("the sitemap lists the three indexable pages", async ({ request }) => {
+test("the sitemap lists every indexable page", async ({ request }) => {
   const body = await (await request.get("/sitemap.xml")).text();
   const locs = [...body.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1]);
-  expect(locs).toEqual(PAGES.map((page) => page.canonical));
-  expect(body.match(/<lastmod>2026-10-07<\/lastmod>/g)).toHaveLength(PAGES.length);
+  expect(locs).toEqual([
+    ...PAGES.map((page) => page.canonical),
+    `${SITE_URL}/programs`,
+    ...COVERED_PROGRAMS.map((program) => `${SITE_URL}${programPath(program.slug)}`),
+  ]);
+  expect(body.match(/<lastmod>2026-10-07<\/lastmod>/g)).toHaveLength(PAGES.length + 1);
+  // Program pages carry their corpus review date.
+  expect(body.match(/<lastmod>2026-09-21<\/lastmod>/g)).toHaveLength(COVERED_PROGRAMS.length);
 });
 
 const JSON_LD_TYPES: Record<string, string[]> = {

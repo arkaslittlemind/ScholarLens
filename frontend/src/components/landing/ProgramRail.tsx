@@ -1,16 +1,25 @@
 "use client";
 
 import { Pause, Play } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
-import { COVERED_PROGRAMS } from "@/lib/programs";
+import { COVERED_PROGRAMS, type CoveredProgram, programPath } from "@/lib/programs";
 
-function ProgramChip({ name, scope }: { name: string; scope: string }) {
+// The duplicate copy that closes the marquee loop is hidden from assistive tech,
+// so its links must also stay out of the tab order.
+function ProgramChip({ program, focusable }: { program: CoveredProgram; focusable: boolean }) {
   return (
-    <li className="flex shrink-0 items-center gap-3 rounded-xl border border-hairline bg-paper px-4 py-3 shadow-card">
-      <span className="font-display text-body-lg whitespace-nowrap text-ink">{name}</span>
-      <span className="rounded-full bg-tint px-2 py-0.5 text-xs font-semibold whitespace-nowrap text-ink-secondary">
-        {scope}
-      </span>
+    <li className="shrink-0">
+      <Link
+        href={programPath(program.slug)}
+        tabIndex={focusable ? undefined : -1}
+        className="flex items-center gap-3 rounded-xl border border-hairline bg-paper px-4 py-3 shadow-card transition-colors duration-150 hover:border-ink-secondary"
+      >
+        <span className="font-display text-body-lg whitespace-nowrap text-ink">{program.name}</span>
+        <span className="rounded-full bg-tint px-2 py-0.5 text-xs font-semibold whitespace-nowrap text-ink-secondary">
+          {program.scope}
+        </span>
+      </Link>
     </li>
   );
 }
@@ -27,15 +36,15 @@ export function ProgramRail() {
         className="group relative w-full overflow-hidden mask-x-from-90% mask-x-to-100% motion-reduce:mask-none"
       >
         {/* Reduced motion gets the same list, wrapped and still. */}
-        <div className="flex w-max py-2 group-hover:paused group-data-[paused=true]:paused motion-safe:animate-marquee motion-reduce:w-full motion-reduce:flex-wrap motion-reduce:justify-center">
+        <div className="flex w-max py-2 group-hover:paused group-focus-within:paused group-data-[paused=true]:paused motion-safe:animate-marquee motion-reduce:w-full motion-reduce:flex-wrap motion-reduce:justify-center">
           <ul aria-label="Programs covered" className="flex gap-4 pr-4 motion-reduce:flex-wrap motion-reduce:justify-center motion-reduce:pr-0">
             {COVERED_PROGRAMS.map((program) => (
-              <ProgramChip key={program.name} {...program} />
+              <ProgramChip key={program.slug} program={program} focusable />
             ))}
           </ul>
           <ul aria-hidden="true" className="flex gap-4 pr-4 motion-reduce:hidden">
             {COVERED_PROGRAMS.map((program) => (
-              <ProgramChip key={program.name} {...program} />
+              <ProgramChip key={program.slug} program={program} focusable={false} />
             ))}
           </ul>
         </div>

@@ -2,6 +2,7 @@
 program: Florida Bright Futures - Florida Academic Scholars (FAS) Award
 document: Eligibility summary
 url: https://www.floridabrightfutures.gov/
+reviewed: 2026-09-21
 ---
 ## Eligibility
 

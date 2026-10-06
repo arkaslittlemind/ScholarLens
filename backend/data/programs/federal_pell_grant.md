@@ -2,6 +2,7 @@
 program: Federal Pell Grant
 document: Eligibility summary
 url: https://studentaid.gov/understand-aid/types/grants/pell
+reviewed: 2026-09-21
 ---
 ## Eligibility
 

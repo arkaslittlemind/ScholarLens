@@ -3,6 +3,7 @@ import { Logo } from "@/components/layout/Logo";
 
 const FOOTER_LINKS = [
   { href: "/check", label: "Check eligibility" },
+  { href: "/programs", label: "Programs" },
   { href: "/methodology", label: "Methodology" },
   { href: "/#faq", label: "FAQ" },
 ];

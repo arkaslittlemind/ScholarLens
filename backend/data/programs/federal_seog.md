@@ -2,6 +2,7 @@
 program: Federal Supplemental Educational Opportunity Grant (FSEOG)
 document: Eligibility summary
 url: https://studentaid.gov/understand-aid/types/grants/fseog
+reviewed: 2026-09-21
 ---
 ## Eligibility
 
