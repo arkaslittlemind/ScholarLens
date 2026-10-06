@@ -2,6 +2,7 @@
 program: New Jersey NJ STARS (and NJ STARS II)
 document: Eligibility summary
 url: https://hesaa.org/Documents/FactSheets/NJSTARS/FactSheetfor2026HSGrad.pdf
+reviewed: 2026-09-21
 ---
 ## Eligibility (NJ STARS, initial award at a New Jersey county college)
 

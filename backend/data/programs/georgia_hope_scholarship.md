@@ -2,6 +2,7 @@
 program: Georgia HOPE Scholarship
 document: Eligibility summary
 url: https://www.gafutures.org/hope-state-aid-programs/hope-zell-miller-scholarships/hope-scholarship/initial-academic-eligibility/
+reviewed: 2026-09-21
 ---
 ## Eligibility
 

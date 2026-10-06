@@ -7,7 +7,7 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { Reveal } from "@/components/motion/Reveal";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { Button } from "@/components/ui/button";
-import { COVERED_PROGRAMS } from "@/lib/programs";
+import { COVERED_PROGRAMS, programPath } from "@/lib/programs";
 import { pageMetadata } from "@/lib/site";
 import { METHODOLOGY_JSON_LD } from "@/lib/structured-data";
 
@@ -129,7 +129,14 @@ export default function Methodology() {
                     </p>
                     <ul className="mt-2 flex flex-col gap-1 text-body-sm">
                       {COVERED_PROGRAMS.filter((program) => program.scope === scope).map((program) => (
-                        <li key={program.name}>{program.name}</li>
+                        <li key={program.slug}>
+                          <Link
+                            href={programPath(program.slug)}
+                            className="rounded-sm underline decoration-hairline underline-offset-4 transition-colors duration-150 hover:text-ink hover:decoration-ink"
+                          >
+                            {program.name}
+                          </Link>
+                        </li>
                       ))}
                     </ul>
                   </div>

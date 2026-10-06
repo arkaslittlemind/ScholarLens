@@ -2,6 +2,7 @@
 program: New York Tuition Assistance Program (TAP)
 document: Eligibility summary
 url: https://hesc.ny.gov/find-aid/nys-grants-scholarships/tuition-assistance-program-tap
+reviewed: 2026-09-21
 ---
 ## Eligibility
 

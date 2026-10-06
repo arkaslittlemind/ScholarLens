@@ -2,6 +2,7 @@
 program: Federal TEACH Grant (Teacher Education Assistance for College and Higher Education)
 document: Eligibility summary
 url: https://fsapartners.ed.gov/knowledge-center/fsa-handbook/2026-2027/vol9/ch1-eligibility-teach-grants
+reviewed: 2026-09-21
 ---
 ## Eligibility
 

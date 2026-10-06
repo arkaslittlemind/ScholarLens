@@ -2,6 +2,7 @@
 program: California Cal Grant (A and B)
 document: Eligibility summary
 url: https://www.csac.ca.gov/cal-grant
+reviewed: 2026-09-21
 ---
 ## Eligibility (Cal Grant A)
 

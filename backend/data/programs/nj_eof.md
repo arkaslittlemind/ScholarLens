@@ -2,6 +2,7 @@
 program: New Jersey Educational Opportunity Fund (EOF)
 document: Eligibility summary
 url: https://www.nj.gov/highereducation/EOF/EOF_Eligibility.shtml
+reviewed: 2026-09-21
 ---
 ## Eligibility
 
