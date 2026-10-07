@@ -78,3 +78,13 @@ def test_the_committed_profiles_are_backed_by_the_committed_corpus():
     documents = load_documents(_DATA / "programs")
     profiles = load_profiles(_DATA / "evaluation" / "profiles.json", documents)
     assert profiles
+
+
+def test_out_of_corpus_profiles_score_status_only():
+    documents = load_documents(_DATA / "programs")
+    profiles = load_profiles(_DATA / "evaluation" / "profiles.json", documents)
+
+    web = [profile for profile in profiles if profile.profile_id.startswith("web-")]
+
+    assert web
+    assert all(p.expected_program is None and p.expected_citation is None for p in web)

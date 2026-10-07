@@ -1,8 +1,8 @@
 import pytest
 
-from app.agent.agent import CHECKING_OFFICIAL_SOURCES
+from app.agent.agent import CHECKING_OFFICIAL_SOURCES, RunMeasurement
 from app.agent.models import EligibilityResult, EligibilityStatus, Source
-from app.evaluation.models import AttemptResult, EvaluationProfile
+from app.evaluation.models import AttemptResult, EvaluationProfile, EvaluationRun
 from app.evaluation.scoring import aggregate, score_attempt
 
 _CORPUS = ["Must rank in the top 15% of your graduating class, measured at the end of the year."]
@@ -33,8 +33,13 @@ def _result(**overrides: object) -> EligibilityResult:
     return EligibilityResult(**fields)
 
 
+_MEASUREMENT = RunMeasurement(
+    tool_calls=2, model_requests=3, retrieval_ms=400.0, web_search_ms=0.0, first_turn_ms=900.0
+)
+
+
 def test_a_correct_grounded_answer_has_no_failures():
-    attempt = score_attempt(_profile(), 1, _CORPUS, _result(), tool_calls=2, latency_ms=10.0)
+    attempt = score_attempt(_profile(), 1, _CORPUS, _result(), _MEASUREMENT, latency_ms=10.0)
 
     assert attempt.outcome == "completed"
     assert attempt.status_correct and attempt.citation_correct
@@ -144,3 +149,65 @@ def test_consistency_counts_profiles_whose_repeats_all_agree():
         AttemptResult(profile_id="c", attempt=2, outcome="engine_error", status_correct=False),
     ]
     assert aggregate(attempts, repeats=2).consistency_score == pytest.approx(1 / 3)
+
+
+def test_an_attempt_keeps_the_run_measurement():
+    attempt = score_attempt(_profile(), 1, _CORPUS, _result(), _MEASUREMENT, latency_ms=10.0)
+
+    assert attempt.tool_calls == 2
+    assert attempt.model_requests == 3
+    assert attempt.retrieval_ms == 400.0
+    assert attempt.web_search_ms == 0.0
+    assert attempt.first_turn_ms == 900.0
+
+
+def test_aggregate_splits_latency_by_web_search_and_averages_the_timing():
+    attempts = [
+        _attempt("a", status="eligible", status_correct=True, latency_ms=4000.0,
+                 model_requests=2, retrieval_ms=300.0, web_search_ms=0.0, first_turn_ms=1000.0),
+        _attempt("b", status="eligible", status_correct=True, latency_ms=6000.0,
+                 model_requests=2, retrieval_ms=500.0, web_search_ms=0.0, first_turn_ms=1400.0),
+        _attempt("web-c", status="not_eligible", status_correct=True, latency_ms=12000.0,
+                 used_web_search=True, model_requests=3, retrieval_ms=400.0,
+                 web_search_ms=2000.0, first_turn_ms=1200.0),
+        AttemptResult(profile_id="d", attempt=1, outcome="engine_error", status_correct=False),
+    ]
+
+    metrics = aggregate(attempts, repeats=1)
+
+    assert metrics.corpus_latency_ms == 5000.0
+    assert metrics.web_latency_ms == 12000.0
+    assert metrics.model_requests == pytest.approx(7 / 3)
+    assert metrics.retrieval_ms == 400.0
+    assert metrics.web_search_ms == 2000.0
+    assert metrics.first_turn_ms == 1200.0
+
+
+def test_aggregate_timing_is_none_for_attempts_recorded_without_it():
+    attempts = [_attempt("a", status="eligible", status_correct=True, latency_ms=100.0)]
+
+    metrics = aggregate(attempts, repeats=1)
+
+    assert metrics.corpus_latency_ms == 100.0
+    assert metrics.web_latency_ms is None
+    assert metrics.model_requests is None
+    assert metrics.retrieval_ms is None
+    assert metrics.web_search_ms is None
+    assert metrics.first_turn_ms is None
+
+
+def test_a_run_record_written_before_timing_existed_still_parses():
+    old = (
+        '{"eligibility_accuracy": 0.9, "citation_accuracy": 0.95, "hallucination_rate": 0.0,'
+        ' "tool_call_count": 1.0, "latency_ms": 7600.0, "consistency_score": 0.9,'
+        ' "failure_counts": {}, "run_id": "r1", "run_at": "2026-10-05T18:38:01Z",'
+        ' "agent_model": "google:gemini-3.8-flash", "embedding_model": "gemini-embedding-001",'
+        ' "ingestion_run_id": "i1", "profile_count": 1, "repeats": 1, "attempts": [{'
+        '"profile_id": "a", "attempt": 1, "outcome": "completed", "latency_ms": 7600.0,'
+        ' "tool_calls": 1, "status": "eligible", "status_correct": true}]}'
+    )
+
+    run = EvaluationRun.model_validate_json(old)
+
+    assert run.web_latency_ms is None and run.model_requests is None
+    assert run.attempts[0].retrieval_ms is None

@@ -21,7 +21,8 @@ class EvaluationProfile(BaseModel):
     profile_id: str
     request: EligibilityRequest
     expected_status: EligibilityStatus
-    # Both null only when the expected verdict rests on missing information, not on a rule.
+    # Both null when the expected verdict rests on missing information, or when the program is
+    # outside the corpus (`web-` profiles): web text cannot be checked, so only status is scored.
     expected_program: str | None = None
     expected_citation: str | None = None
     category: ProfileCategory
@@ -39,6 +40,11 @@ class AttemptResult(BaseModel):
     outcome: Literal["completed", "engine_error"]
     latency_ms: float | None = None
     tool_calls: int | None = None
+    # Timing was added after the first runs were recorded, so older records carry none.
+    model_requests: int | None = None
+    retrieval_ms: float | None = None
+    web_search_ms: float | None = None
+    first_turn_ms: float | None = None
     status: EligibilityStatus | None = None
     source_program: str | None = None
     # Kept so a person can review citations by hand.
@@ -58,6 +64,13 @@ class RunMetrics(BaseModel):
     hallucination_rate: float | None = None
     tool_call_count: float
     latency_ms: float
+    # Mean latency of completed attempts answered without and with web search.
+    corpus_latency_ms: float | None = None
+    web_latency_ms: float | None = None
+    model_requests: float | None = None
+    retrieval_ms: float | None = None
+    web_search_ms: float | None = None
+    first_turn_ms: float | None = None
     # Null when each profile ran once, since one attempt cannot disagree with itself.
     consistency_score: float | None = None
     failure_counts: dict[str, int]

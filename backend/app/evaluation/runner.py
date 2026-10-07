@@ -35,11 +35,11 @@ async def _run_attempt(
 ) -> AttemptResult:
     started = time.monotonic()
     try:
-        result, tool_calls = await agent.check_eligibility_measured(profile.request)
+        result, measurement = await agent.check_eligibility_measured(profile.request)
     except EligibilityEngineError:
         return score_attempt(profile, attempt, corpus_bodies, None)
     latency_ms = (time.monotonic() - started) * 1000
-    return score_attempt(profile, attempt, corpus_bodies, result, tool_calls, latency_ms)
+    return score_attempt(profile, attempt, corpus_bodies, result, measurement, latency_ms)
 
 
 def _append_record(path: Path, run: EvaluationRun) -> None:
