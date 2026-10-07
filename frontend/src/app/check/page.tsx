@@ -67,10 +67,12 @@ export default function Check() {
                 ))}
               </ul>
               <p className="mt-4 text-sm leading-relaxed text-ink-secondary">
-                Asking about something else? The agent can check official sources on the web.{" "}
+                If you&apos;re asking about something else, the agent can check official sources on
+                the web. The methodology explains{" "}
                 <Link href="/methodology" className="rounded-sm font-semibold text-ink underline decoration-input underline-offset-4 transition-colors hover:decoration-ink">
-                  How it decides
+                  how the agent decides where to look
                 </Link>
+                .
               </p>
             </div>
           </aside>

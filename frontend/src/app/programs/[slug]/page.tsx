@@ -6,7 +6,7 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { Button } from "@/components/ui/button";
-import { type Block, getProgram, getPrograms, type Program } from "@/lib/corpus";
+import { type Block, formatReviewedDate, getProgram, getPrograms, type Program } from "@/lib/corpus";
 import { programPath } from "@/lib/programs";
 import { pageMetadata } from "@/lib/site";
 import { programJsonLd } from "@/lib/structured-data";
@@ -22,15 +22,8 @@ function scopeLabel(program: Program): string {
   return program.scope === "Federal" ? "federal" : `${program.scope} state`;
 }
 
-// Pinned to UTC: the date is a calendar day, and a local time zone could shift it back one.
-const REVIEWED_FORMAT = new Intl.DateTimeFormat("en-US", { dateStyle: "long", timeZone: "UTC" });
-
-function formatReviewed(program: Program): string {
-  return REVIEWED_FORMAT.format(new Date(`${program.reviewed}T00:00:00Z`));
-}
-
 function describe(program: Program): string {
-  return `The ${program.name} eligibility rules ScholarLens checks your situation against, last reviewed ${formatReviewed(program)}, with a link to the official source.`;
+  return `The ${program.name} eligibility rules ScholarLens checks your situation against, last reviewed ${formatReviewedDate(program.reviewed)}, with a link to the official source.`;
 }
 
 function loadProgram(slug: string): Program {
@@ -99,7 +92,7 @@ export default async function ProgramPage({ params }: PageProps<"/programs/[slug
             <p className="text-sm font-semibold text-ink-secondary">
               Rules last reviewed{" "}
               <time dateTime={program.reviewed}>
-                {formatReviewed(program)}
+                {formatReviewedDate(program.reviewed)}
               </time>
             </p>
           </div>

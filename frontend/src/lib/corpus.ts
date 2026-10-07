@@ -151,3 +151,17 @@ export function getPrograms(): Program[] {
 export function getProgram(slug: string): Program | undefined {
   return getPrograms().find((program) => program.slug === slug);
 }
+
+// The oldest, so a site-wide "last reviewed" claim holds for every program.
+export function getOldestReviewDate(): string {
+  return getPrograms()
+    .map((program) => program.reviewed)
+    .reduce((earliest, date) => (date < earliest ? date : earliest));
+}
+
+// Pinned to UTC: the date is a calendar day, and a local time zone could shift it back one.
+const REVIEWED_FORMAT = new Intl.DateTimeFormat("en-US", { dateStyle: "long", timeZone: "UTC" });
+
+export function formatReviewedDate(date: string): string {
+  return REVIEWED_FORMAT.format(new Date(`${date}T00:00:00Z`));
+}
