@@ -5,7 +5,16 @@ const DESCRIPTION = "I'm a first-year undergraduate and a U.S. citizen.";
 
 const RESULT: EligibilityResult = {
   status: "eligible",
-  explanation: "You meet the Pell Grant's enrollment rules.",
+  summary: "You meet the Pell Grant's enrollment rules.",
+  reasons: ["You are an undergraduate without a bachelor's degree, which the rule requires."],
+  next_steps: ["Submit the FAFSA."],
+  alternatives: [
+    {
+      program: "Federal SEOG",
+      why_it_may_fit: "Pell Grant recipients with exceptional need get priority.",
+      source_url: "https://studentaid.gov/understand-aid/types/grants/fseog",
+    },
+  ],
   supporting_clause: "Must be an undergraduate student who has not earned a bachelor's degree.",
   source: {
     program: "Federal Pell Grant",

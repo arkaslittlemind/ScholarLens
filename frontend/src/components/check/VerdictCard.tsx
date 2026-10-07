@@ -3,10 +3,17 @@
 import { ArrowUpRight, CheckCircle2, CircleDot, Info, XCircle } from "lucide-react";
 import { motion, type Variants } from "motion/react";
 import { EASE_IN_OUT, EASE_OUT } from "@/components/motion/easing";
-import { displayLabel, type EligibilityResult, type EligibilityStatus, type Source } from "@/lib/eligibility";
+import {
+  displayLabel,
+  type Alternative,
+  type EligibilityResult,
+  type EligibilityStatus,
+  type Source,
+} from "@/lib/eligibility";
 
-// Renders arbitrary model/web-search output (explanation, supporting_clause) as
-// plain React text children only - never dangerouslySetInnerHTML.
+// Renders arbitrary model/web-search output (summary, reasons, next steps,
+// alternatives, supporting_clause) as plain React text children only - never
+// dangerouslySetInnerHTML.
 
 // The icon and label always carry the meaning too, so color is never the only cue.
 const STATUS_META: Record<
@@ -64,8 +71,8 @@ const settle: Variants = {
 };
 
 // F-13 (blueprint/context/findings.md): source.url is untrusted web/retrieval
-// content with no backend scheme validation. Only ever render it as a navigable
-// link when it's actually http(s); otherwise show it as inert text.
+// content with no backend scheme validation. Alternatives are filtered on the
+// backend, but both go through this check before becoming a link.
 function safeHttpUrl(url: string): URL | null {
   try {
     const parsed = new URL(url);
@@ -85,6 +92,88 @@ function SectionHeading({ id, children }: SectionHeadingProps) {
     <h3 id={id} className="type-eyebrow text-ink-secondary">
       {children}
     </h3>
+  );
+}
+
+interface SourceLinkProps {
+  url: string;
+  label: string;
+}
+
+// A link only when the URL is http(s); anything else stays inert text.
+function SourceLink({ url, label }: SourceLinkProps) {
+  const httpUrl = safeHttpUrl(url);
+  if (!httpUrl) return <p className="text-ink-secondary">{url}</p>;
+  return (
+    <a
+      // The raw string, not httpUrl.href: the check above already proved it is
+      // http(s), and href normalization would change what the backend sent.
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group inline-flex w-fit items-center gap-1 rounded-sm font-semibold text-ink underline decoration-input underline-offset-4 transition-colors duration-150 hover:decoration-ink"
+    >
+      {label} {httpUrl.hostname}
+      <span className="sr-only"> (opens in a new tab)</span>
+      <ArrowUpRight
+        aria-hidden="true"
+        className="size-4 transition-transform duration-150 motion-safe:pointer-fine:group-hover:translate-x-0.5 motion-safe:pointer-fine:group-hover:-translate-y-0.5"
+      />
+    </a>
+  );
+}
+
+// The model can repeat an entry, so the text alone is not a unique key.
+function itemKey(index: number, text: string): string {
+  return `${index}-${text}`;
+}
+
+interface VerdictListProps {
+  id: string;
+  heading: string;
+  items: string[];
+  ordered?: boolean;
+}
+
+function VerdictList({ id, heading, items, ordered = false }: VerdictListProps) {
+  const List = ordered ? "ol" : "ul";
+  return (
+    <section aria-labelledby={id} className="flex flex-col gap-2">
+      <SectionHeading id={id}>{heading}</SectionHeading>
+      <List
+        className={`flex flex-col gap-1.5 pl-5 leading-relaxed text-ink marker:text-ink-secondary ${ordered ? "list-decimal" : "list-disc"}`}
+      >
+        {items.map((item, index) => (
+          <li key={itemKey(index, item)} className="wrap-anywhere">
+            {item}
+          </li>
+        ))}
+      </List>
+    </section>
+  );
+}
+
+interface VerdictAlternativesProps {
+  alternatives: Alternative[];
+}
+
+function VerdictAlternatives({ alternatives }: VerdictAlternativesProps) {
+  return (
+    <section aria-labelledby="verdict-alternatives" className="flex flex-col gap-3">
+      <SectionHeading id="verdict-alternatives">Other programs to look at</SectionHeading>
+      <ul className="flex flex-col gap-3">
+        {alternatives.map((alternative, index) => (
+          <li
+            key={itemKey(index, alternative.program)}
+            className="flex flex-col gap-1.5 rounded-xl border border-hairline p-4 text-sm wrap-anywhere"
+          >
+            <p className="font-semibold text-ink">{alternative.program}</p>
+            <p className="text-ink-secondary">{alternative.why_it_may_fit}</p>
+            <SourceLink url={alternative.source_url} label="Official page on" />
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -133,30 +222,11 @@ function VerdictSource({ source, showDocument }: VerdictSourceProps) {
   if (!source) {
     return <p className="text-sm text-ink-secondary">No source document was cited for this result.</p>;
   }
-  const httpUrl = safeHttpUrl(source.url);
   return (
     <section aria-labelledby="verdict-source" className="flex flex-col gap-2 text-sm wrap-anywhere">
       <SectionHeading id="verdict-source">Source</SectionHeading>
       {showDocument && <p className="text-ink-secondary">{source.document}</p>}
-      {httpUrl ? (
-        // The raw string, not httpUrl.href: the check above already proved it is
-        // http(s), and href normalization would change what the backend sent.
-        <a
-          href={source.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group inline-flex w-fit items-center gap-1 rounded-sm font-semibold text-ink underline decoration-input underline-offset-4 transition-colors duration-150 hover:decoration-ink"
-        >
-          Open source on {httpUrl.hostname}
-          <span className="sr-only"> (opens in a new tab)</span>
-          <ArrowUpRight
-            aria-hidden="true"
-            className="size-4 transition-transform duration-150 motion-safe:pointer-fine:group-hover:translate-x-0.5 motion-safe:pointer-fine:group-hover:-translate-y-0.5"
-          />
-        </a>
-      ) : (
-        <p className="text-ink-secondary">{source.url}</p>
-      )}
+      <SourceLink url={source.url} label="Open source on" />
     </section>
   );
 }
@@ -216,12 +286,18 @@ export function VerdictCard({ result }: VerdictCardProps) {
 
       <div className="flex flex-col gap-6 px-6 py-6 sm:px-8 sm:py-8">
         <motion.p variants={rise} className="motion-reduce:transform-none! text-lg leading-relaxed text-ink">
-          {result.explanation}
+          {result.summary}
         </motion.p>
 
         <motion.div variants={rise} className="motion-reduce:transform-none!">
           <VerdictRule clause={result.supporting_clause} source={result.source} />
         </motion.div>
+
+        {result.reasons.length > 0 && (
+          <motion.div variants={rise} className="motion-reduce:transform-none!">
+            <VerdictList id="verdict-reasons" heading="Why" items={result.reasons} />
+          </motion.div>
+        )}
 
         {result.missing_info.length > 0 && (
           <motion.div variants={rise} className="motion-reduce:transform-none! flex gap-3 rounded-xl border border-dashed border-rust/50 p-4">
@@ -234,6 +310,18 @@ export function VerdictCard({ result }: VerdictCardProps) {
                 ))}
               </ul>
             </div>
+          </motion.div>
+        )}
+
+        {result.next_steps.length > 0 && (
+          <motion.div variants={rise} className="motion-reduce:transform-none!">
+            <VerdictList id="verdict-next-steps" heading="Next steps" items={result.next_steps} ordered />
+          </motion.div>
+        )}
+
+        {result.alternatives.length > 0 && (
+          <motion.div variants={rise} className="motion-reduce:transform-none!">
+            <VerdictAlternatives alternatives={result.alternatives} />
           </motion.div>
         )}
 

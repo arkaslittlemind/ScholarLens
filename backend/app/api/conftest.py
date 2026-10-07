@@ -16,7 +16,7 @@ ALLOWED_ORIGIN = "https://app.example.com"
 def cited_result() -> EligibilityResult:
     return EligibilityResult(
         status=EligibilityStatus.ELIGIBLE,
-        explanation="Meets the class rank rule.",
+        summary="Meets the class rank rule.",
         supporting_clause="Must rank in the top 15% of your graduating class.",
         source=Source(program="NJ STARS", document="Rules", url="https://example.org/stars"),
         tool_trace=["searching program rules"],

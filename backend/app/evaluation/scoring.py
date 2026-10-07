@@ -100,6 +100,7 @@ def score_attempt(
         status=result.status,
         source_program=result.source.program if result.source else None,
         supporting_clause=result.supporting_clause,
+        alternative_count=len(result.alternatives),
         used_web_search=used_web_search,
         status_correct=status_correct,
         citation_correct=citation_correct,
@@ -115,6 +116,11 @@ def _mean(values: list[float]) -> float:
 def _mean_or_none(values: list[float | int | None]) -> float | None:
     present = [value for value in values if value is not None]
     return sum(present) / len(present) if present else None
+
+
+def _total_or_none(values: list[int | None]) -> int | None:
+    present = [value for value in values if value is not None]
+    return sum(present) if present else None
 
 
 def _rate(flags: list[bool | None]) -> float | None:
@@ -154,6 +160,7 @@ def aggregate(attempts: list[AttemptResult], repeats: int) -> RunMetrics:
         # Over web answers only: counting the zeros of corpus answers would hide the search cost.
         web_search_ms=_mean_or_none([a.web_search_ms for a in completed if a.used_web_search]),
         first_turn_ms=_mean_or_none([a.first_turn_ms for a in completed]),
+        alternatives_dropped=_total_or_none([a.alternatives_dropped for a in completed]),
         consistency_score=_consistency(attempts, repeats),
         failure_counts=dict(failure_counts),
     )

@@ -31,7 +31,10 @@ from app.tools.web_search import WebResult, WebSearchUnavailableError
 _CLAUSE = "Must rank in the top 15% of your graduating class."
 _ANSWER = {
     "status": "eligible",
-    "explanation": "The student ranks in the top 15% of the class.",
+    "summary": "You meet the NJ STARS class rank rule.",
+    "reasons": ["You rank in the top 15% of your class, which the rule requires."],
+    "next_steps": ["Apply through your county college."],
+    "alternatives": [],
     "supporting_clause": _CLAUSE,
     "source": {"program": "NJ STARS", "document": "Rules", "url": "https://example.org/stars"},
     "missing_info": [],
@@ -71,8 +74,10 @@ class FakeWebSearch:
         return [WebResult(title="Official page", url="https://example.org", snippet="Rule text")]
 
 
-def scripted(*turns: list[tuple[str, str]]) -> tuple[FunctionModel, list[list[ModelMessage]]]:
-    """A model that makes each turn's tool calls in order, then returns `_ANSWER`.
+def scripted(
+    *turns: list[tuple[str, str]], answer: dict[str, object] = _ANSWER
+) -> tuple[FunctionModel, list[list[ModelMessage]]]:
+    """A model that makes each turn's tool calls in order, then returns `answer`.
 
     Also records the message history it saw on every turn.
     """
@@ -85,7 +90,7 @@ def scripted(*turns: list[tuple[str, str]]) -> tuple[FunctionModel, list[list[Mo
             return ModelResponse(
                 parts=[ToolCallPart(tool, {"query": query}) for tool, query in turns[turn]]
             )
-        return ModelResponse(parts=[ToolCallPart(info.output_tools[0].name, _ANSWER)])
+        return ModelResponse(parts=[ToolCallPart(info.output_tools[0].name, answer)])
 
     return FunctionModel(respond), seen
 
@@ -130,6 +135,99 @@ def test_a_retrieval_run_returns_the_cited_answer_with_the_rendered_trace(build_
     ]
     assert measurement.tool_calls == 1
     assert tools[0].queries == ["NJ STARS class rank"]
+
+
+def test_a_run_returns_the_summary_reasons_and_next_steps_unchanged(build_agent):
+    model, _ = scripted([("retrieve_program_rules", "NJ STARS class rank")])
+
+    result, measurement = _check(build_agent(model))
+
+    assert result.summary == _ANSWER["summary"]
+    assert result.reasons == _ANSWER["reasons"]
+    assert result.next_steps == _ANSWER["next_steps"]
+    assert result.alternatives == []
+    assert measurement.alternatives_dropped == 0
+
+
+def _alternative(program: str, source_url: str) -> dict[str, str]:
+    return {
+        "program": program,
+        "why_it_may_fit": "It funds students like you.",
+        "source_url": source_url,
+    }
+
+
+def _with_alternatives(*alternatives: dict[str, str]) -> dict[str, object]:
+    return {**_ANSWER, "alternatives": list(alternatives)}
+
+
+def test_an_alternative_whose_url_a_tool_returned_is_kept(build_agent):
+    answer = _with_alternatives(
+        _alternative("Tuition Aid Grant", "https://example.org/stars"),
+        _alternative("Web Grant", "https://example.org"),
+    )
+    model, _ = scripted(
+        [("retrieve_program_rules", "NJ STARS"), ("search_the_web", "grants")], answer=answer
+    )
+
+    result, measurement = _check(build_agent(model))
+
+    assert [alt.program for alt in result.alternatives] == ["Tuition Aid Grant", "Web Grant"]
+    assert measurement.alternatives_dropped == 0
+
+
+@pytest.mark.parametrize(
+    "source_url",
+    [
+        "https://example.org/stars/#rules",
+        "https://example.org/",
+        "https://example.org#top",
+        "https://EXAMPLE.org/stars",
+    ],
+)
+def test_slash_fragment_or_host_case_still_matches_a_returned_url(build_agent, source_url):
+    model, _ = scripted(
+        [("retrieve_program_rules", "NJ STARS"), ("search_the_web", "grants")],
+        answer=_with_alternatives(_alternative("Tuition Aid Grant", source_url)),
+    )
+
+    result, measurement = _check(build_agent(model))
+
+    assert len(result.alternatives) == 1
+    assert measurement.alternatives_dropped == 0
+
+
+@pytest.mark.parametrize(
+    "alternative",
+    [
+        _alternative("Invented Fellowship", "https://example.org/invented"),
+        _alternative("Script Grant", "javascript:alert(1)"),
+        _alternative("Blank Link Grant", ""),
+        _alternative("  ", "https://example.org/stars"),
+        _alternative(" nj stars ", "https://example.org/stars"),
+    ],
+    ids=["unseen-url", "non-http", "empty-url", "blank-program", "same-as-source"],
+)
+def test_an_ungrounded_or_repeated_alternative_is_dropped_and_counted(build_agent, alternative):
+    answer = _with_alternatives(
+        alternative, _alternative("Tuition Aid Grant", "https://example.org/stars")
+    )
+    model, _ = scripted([("retrieve_program_rules", "NJ STARS")], answer=answer)
+
+    result, measurement = _check(build_agent(model))
+
+    assert [alt.program for alt in result.alternatives] == ["Tuition Aid Grant"]
+    assert measurement.alternatives_dropped == 1
+
+
+def test_alternatives_from_a_run_with_no_tool_call_are_all_dropped(build_agent):
+    answer = _with_alternatives(_alternative("Tuition Aid Grant", "https://example.org/stars"))
+    model, _ = scripted(answer=answer)
+
+    result, measurement = _check(build_agent(model))
+
+    assert result.alternatives == []
+    assert measurement.alternatives_dropped == 1
 
 
 def test_each_label_appears_once_but_every_tool_call_is_counted(build_agent, tools):
@@ -286,6 +384,9 @@ def test_the_full_pipeline_through_the_api(build_agent, make_settings, monkeypat
     assert response.status_code == 200
     body = response.json()
     assert body["supporting_clause"] == _CLAUSE
+    assert body["summary"] == _ANSWER["summary"]
+    assert {"reasons", "next_steps", "alternatives"} <= body.keys()
+    assert "explanation" not in body
     assert body["source"]["url"] == "https://example.org/stars"
     assert body["tool_trace"] == [
         SEARCHING_PROGRAM_RULES,

@@ -6,6 +6,7 @@ import os
 import time
 from dataclasses import dataclass, field
 from functools import lru_cache
+from urllib.parse import urlsplit
 
 # Suppress pydantic-ai's startup banner; must be set before pydantic_ai.Agent is imported/used.
 os.environ.setdefault("PYDANTIC_AI_NO_BANNER", "1")
@@ -18,7 +19,7 @@ from pydantic_ai.exceptions import ModelHTTPError
 from pydantic_ai.models.google import GoogleModel
 from pydantic_ai.providers.google import GoogleProvider
 
-from app.agent.models import EligibilityResult
+from app.agent.models import Alternative, EligibilityResult, Source
 from app.agent.provider_errors import ProviderRateLimit, QuotaType, classify_rate_limit
 from app.api.models import EligibilityRequest
 from app.config import Settings, get_settings, secret_value
@@ -42,7 +43,14 @@ _SYSTEM_PROMPT = (
     "or 'partial' without a supporting_clause quoted from a retrieved "
     "chunk or web result, and a matching source. If a rule depends on a "
     "student attribute that was not provided, list it in missing_info "
-    "instead of guessing."
+    "instead of guessing. Address the student as 'you'. Write summary as one "
+    "or two plain sentences that give the answer. Each entry in reasons ties "
+    "one fact about the student to one rule. next_steps are concrete actions, "
+    "such as applying, confirming a detail, or providing missing information; "
+    "they never name a program. Name other programs only in alternatives, and "
+    "only when a tool result in this run gave their official URL; copy that "
+    "URL exactly into source_url, and never repeat the program in source. "
+    "Leave any list empty rather than pad it."
 )
 
 
@@ -76,6 +84,8 @@ class _Deps:
     retrieval_seconds: float = 0.0
     web_search_seconds: float = 0.0
     first_tool_at: float | None = None
+    # Every URL a tool returned in this attempt; an alternative must link to one of them.
+    seen_urls: set[str] = field(default_factory=set)
 
     def tool_started(self) -> float:
         now = time.perf_counter()
@@ -95,9 +105,10 @@ class RunMeasurement:
     web_search_ms: float
     # Run start to the first tool call, which is the model's first turn; None with no tool call.
     first_turn_ms: float | None
+    alternatives_dropped: int = 0
 
     @classmethod
-    def of(cls, deps: _Deps, model_requests: int) -> "RunMeasurement":
+    def of(cls, deps: _Deps, model_requests: int, alternatives_dropped: int) -> "RunMeasurement":
         first_turn = None if deps.first_tool_at is None else deps.first_tool_at - deps.started
         return cls(
             tool_calls=deps.tool_calls,
@@ -105,7 +116,35 @@ class RunMeasurement:
             retrieval_ms=deps.retrieval_seconds * 1000,
             web_search_ms=deps.web_search_seconds * 1000,
             first_turn_ms=None if first_turn is None else first_turn * 1000,
+            alternatives_dropped=alternatives_dropped,
         )
+
+
+def _comparable_url(url: str) -> str | None:
+    """The URL with a lowercase host and no fragment or trailing slash; None if not a web link."""
+    try:
+        parts = urlsplit(url.strip())
+    except ValueError:
+        return None
+    if parts.scheme not in ("http", "https") or not parts.hostname:
+        return None
+    return parts._replace(netloc=parts.netloc.lower(), fragment="").geturl().removesuffix("/")
+
+
+def _grounded_alternatives(
+    alternatives: list[Alternative], source: Source | None, seen_urls: set[str]
+) -> tuple[list[Alternative], int]:
+    """Keep alternatives that link to a URL a tool returned and name another program."""
+    seen = {comparable for url in seen_urls if (comparable := _comparable_url(url))}
+    verdict_program = source.program.strip().casefold() if source else None
+    kept = [
+        alternative
+        for alternative in alternatives
+        if _comparable_url(alternative.source_url) in seen
+        and (program := alternative.program.strip().casefold())
+        and program != verdict_program
+    ]
+    return kept, len(alternatives) - len(kept)
 
 
 def _model_name(settings: Settings) -> str:
@@ -149,6 +188,7 @@ def _build_agent(settings: Settings) -> Agent[_Deps, EligibilityResult]:
             chunks = await ctx.deps.retriever.retrieve(query)
         finally:
             ctx.deps.retrieval_seconds += time.perf_counter() - started
+        ctx.deps.seen_urls.update(chunk.url for chunk in chunks)
         return [chunk.model_dump() for chunk in chunks]
 
     @agent.tool
@@ -162,6 +202,7 @@ def _build_agent(settings: Settings) -> Agent[_Deps, EligibilityResult]:
             results = await ctx.deps.web_search.search(query)
         finally:
             ctx.deps.web_search_seconds += time.perf_counter() - started
+        ctx.deps.seen_urls.update(result.url for result in results)
         return [result.model_dump() for result in results]
 
     return agent
@@ -233,7 +274,10 @@ class EligibilityAgent:
         llm_requests.add(run_result.usage.requests, {"gen_ai.request.model": self._model_name})
         output = run_result.output
         output.tool_trace = [*deps.trace, VALIDATING_ELIGIBILITY, PREPARING_CITED_ANSWER]
-        return output, RunMeasurement.of(deps, run_result.usage.requests)
+        output.alternatives, dropped = _grounded_alternatives(
+            output.alternatives, output.source, deps.seen_urls
+        )
+        return output, RunMeasurement.of(deps, run_result.usage.requests, dropped)
 
     def _can_retry(self, limit: ProviderRateLimit, deadline: float) -> bool:
         # A daily quota won't clear in time, and the retried run needs a full model-call window

@@ -6,7 +6,10 @@ const DESCRIPTION =
 
 const CITED_RESULT: EligibilityResult = {
   status: "eligible",
-  explanation: "You meet the Pell Grant's financial need and enrollment rules.",
+  summary: "You meet the Pell Grant's financial need and enrollment rules.",
+  reasons: [],
+  next_steps: [],
+  alternatives: [],
   supporting_clause: "Must be an undergraduate student who has not earned a bachelor's degree.",
   source: {
     program: "Federal Pell Grant",
@@ -58,7 +61,7 @@ test("a student checks eligibility and reads a cited verdict", async ({ page }) 
   releaseResponse();
 
   await expect(page.getByText("Eligible", { exact: true })).toBeVisible();
-  await expect(page.getByText(CITED_RESULT.explanation)).toBeVisible();
+  await expect(page.getByText(CITED_RESULT.summary)).toBeVisible();
   await expect(page.locator("blockquote")).toHaveText(`“${CITED_RESULT.supporting_clause}”`);
   await expect(page.getByRole("heading", { level: 2, name: "Federal Pell Grant" })).toBeVisible();
   // The heading already names the program and the rule's caption the document,

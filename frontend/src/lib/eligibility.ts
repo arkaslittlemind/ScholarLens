@@ -7,7 +7,7 @@ export interface EligibilityRequest {
   major?: string;
 }
 
-// Mirrors backend/app/agent/models.py's EligibilityStatus / Source / EligibilityResult.
+// Mirrors backend/app/agent/models.py's EligibilityStatus / Source / Alternative / EligibilityResult.
 export type EligibilityStatus = "eligible" | "partial" | "not_eligible";
 
 export interface Source {
@@ -16,9 +16,18 @@ export interface Source {
   url: string;
 }
 
+export interface Alternative {
+  program: string;
+  why_it_may_fit: string;
+  source_url: string;
+}
+
 export interface EligibilityResult {
   status: EligibilityStatus;
-  explanation: string;
+  summary: string;
+  reasons: string[];
+  next_steps: string[];
+  alternatives: Alternative[];
   supporting_clause: string | null;
   source: Source | null;
   missing_info: string[];
@@ -79,6 +88,15 @@ function isSource(value: unknown): value is Source {
   );
 }
 
+function isAlternative(value: unknown): value is Alternative {
+  return (
+    isRecord(value) &&
+    typeof value.program === "string" &&
+    typeof value.why_it_may_fit === "string" &&
+    typeof value.source_url === "string"
+  );
+}
+
 function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item) => typeof item === "string");
 }
@@ -100,7 +118,11 @@ function isEligibilityResult(value: unknown): value is EligibilityResult {
   const result = value;
   return (
     STATUSES.includes(result.status as EligibilityStatus) &&
-    typeof result.explanation === "string" &&
+    typeof result.summary === "string" &&
+    isStringArray(result.reasons) &&
+    isStringArray(result.next_steps) &&
+    Array.isArray(result.alternatives) &&
+    result.alternatives.every(isAlternative) &&
     (result.supporting_clause === null || typeof result.supporting_clause === "string") &&
     (result.source === null || isSource(result.source)) &&
     isStringArray(result.missing_info) &&

@@ -1,7 +1,7 @@
 import pytest
 
 from app.agent.agent import CHECKING_OFFICIAL_SOURCES, RunMeasurement
-from app.agent.models import EligibilityResult, EligibilityStatus, Source
+from app.agent.models import Alternative, EligibilityResult, EligibilityStatus, Source
 from app.evaluation.models import AttemptResult, EvaluationProfile, EvaluationRun
 from app.evaluation.scoring import aggregate, score_attempt
 
@@ -25,7 +25,7 @@ def _profile(**overrides: object) -> EvaluationProfile:
 def _result(**overrides: object) -> EligibilityResult:
     fields: dict[str, object] = {
         "status": EligibilityStatus.ELIGIBLE,
-        "explanation": "Meets the class rank rule.",
+        "summary": "Meets the class rank rule.",
         "supporting_clause": "Must rank in the top 15% of your graduating class",
         "source": Source(program="NJ STARS", document="Rules", url="https://example.org"),
         **overrides,
@@ -211,3 +211,41 @@ def test_a_run_record_written_before_timing_existed_still_parses():
 
     assert run.web_latency_ms is None and run.model_requests is None
     assert run.attempts[0].retrieval_ms is None
+    assert run.alternatives_dropped is None
+    assert run.attempts[0].alternative_count is None
+    assert run.attempts[0].alternatives_dropped is None
+
+
+def test_an_attempt_records_the_alternatives_kept_and_dropped():
+    alternative = Alternative(program="NJ TAG", why_it_may_fit="Need based.", source_url="https://e.org")
+    measurement = RunMeasurement(
+        tool_calls=1, model_requests=2, retrieval_ms=1.0, web_search_ms=0.0, first_turn_ms=1.0,
+        alternatives_dropped=2,
+    )
+
+    attempt = score_attempt(
+        _profile(), 1, _CORPUS, _result(alternatives=[alternative]), measurement
+    )
+
+    assert attempt.alternative_count == 1
+    assert attempt.alternatives_dropped == 2
+
+
+def test_an_engine_error_records_no_alternative_counts():
+    attempt = score_attempt(_profile(), 1, _CORPUS, None)
+    assert attempt.alternative_count is None and attempt.alternatives_dropped is None
+
+
+def test_aggregate_totals_dropped_alternatives_over_attempts_that_recorded_them():
+    attempts = [
+        _attempt("a", status="eligible", status_correct=True, alternatives_dropped=2),
+        _attempt("b", status="eligible", status_correct=True, alternatives_dropped=0),
+        _attempt("c", status="eligible", status_correct=True),
+    ]
+
+    assert aggregate(attempts, repeats=1).alternatives_dropped == 2
+
+
+def test_aggregate_dropped_alternatives_is_none_when_no_attempt_recorded_it():
+    attempts = [_attempt("a", status="eligible", status_correct=True)]
+    assert aggregate(attempts, repeats=1).alternatives_dropped is None

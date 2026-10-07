@@ -17,9 +17,19 @@ class Source(BaseModel):
     url: str
 
 
+class Alternative(BaseModel):
+    program: str
+    why_it_may_fit: str
+    # Kept only when a tool returned this URL in the same run, so it is a source, not a guess.
+    source_url: str
+
+
 class EligibilityResult(BaseModel):
     status: EligibilityStatus
-    explanation: str
+    summary: str
+    reasons: list[str] = Field(default_factory=list)
+    next_steps: list[str] = Field(default_factory=list)
+    alternatives: list[Alternative] = Field(default_factory=list)
     # Null only when the verdict rests on missing information rather than a rule.
     supporting_clause: str | None = None
     source: Source | None = None

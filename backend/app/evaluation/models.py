@@ -45,6 +45,9 @@ class AttemptResult(BaseModel):
     retrieval_ms: float | None = None
     web_search_ms: float | None = None
     first_turn_ms: float | None = None
+    # Alternatives shown, and those the server dropped for not linking to a tool-returned URL.
+    alternative_count: int | None = None
+    alternatives_dropped: int | None = None
     status: EligibilityStatus | None = None
     source_program: str | None = None
     # Kept so a person can review citations by hand.
@@ -71,6 +74,8 @@ class RunMetrics(BaseModel):
     retrieval_ms: float | None = None
     web_search_ms: float | None = None
     first_turn_ms: float | None = None
+    # A total, not a mean: any dropped alternative means the prompt let an uncited one through.
+    alternatives_dropped: int | None = None
     # Null when each profile ran once, since one attempt cannot disagree with itself.
     consistency_score: float | None = None
     failure_counts: dict[str, int]
