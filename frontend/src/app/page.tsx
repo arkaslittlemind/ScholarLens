@@ -10,9 +10,10 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { DrawLine } from "@/components/motion/DrawLine";
 import { MarkerUnderline } from "@/components/motion/MarkerUnderline";
 import { Reveal } from "@/components/motion/Reveal";
+import { RulesReviewed } from "@/components/programs/RulesReviewed";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { Button } from "@/components/ui/button";
-import { HOME_DESCRIPTION, HOME_FULL_TITLE, HOME_TITLE, pageMetadata } from "@/lib/site";
+import { AUTHOR_NAME, AUTHOR_URL, HOME_DESCRIPTION, HOME_FULL_TITLE, HOME_TITLE, pageMetadata } from "@/lib/site";
 import { HOME_JSON_LD } from "@/lib/structured-data";
 
 export const metadata: Metadata = {
@@ -143,7 +144,7 @@ export default function Home() {
             </div>
             <div className="mt-6 max-w-200 animate-rise-in [animation-delay:60ms]">
               <h1 className="font-display type-h1 text-ink">
-                See which scholarships you qualify for, and why.
+                A scholarship and grant eligibility checker that shows its sources.
               </h1>
               {/* Its own block under the headline, not anchored to a word, so it
                   can't land mispositioned when the wrap point shifts. */}
@@ -152,7 +153,8 @@ export default function Home() {
             <div className="mt-6 max-w-140 animate-rise-in [animation-delay:120ms]">
               <p className="text-lg leading-relaxed text-ink-secondary sm:text-xl">
                 Describe your situation the way you would to a counselor, and ScholarLens checks it
-                against the official rules for each program.
+                against the official rules for the Pell Grant, other federal aid, and state grants in
+                California, Florida, Georgia, New Jersey and New York.
               </p>
             </div>
             <div className="mt-8 flex animate-rise-in flex-col items-center gap-3 [animation-delay:180ms]">
@@ -181,10 +183,12 @@ export default function Home() {
 
         {/* Programs */}
         <section id="programs" className="scroll-mt-20 bg-tint pb-20">
-          <div className="mx-auto flex max-w-280 flex-col items-center gap-6 px-4 sm:px-6">
-            <p className="text-sm font-semibold text-ink-secondary">
-              ScholarLens reads the published rules for ten federal and state programs
-            </p>
+          <div className="mx-auto flex max-w-280 flex-col items-center gap-2 px-4 text-center sm:px-6">
+            <h2 className="text-sm font-semibold text-ink-secondary">
+              ScholarLens checks Pell Grant and state grant eligibility against the published rules
+              for ten programs
+            </h2>
+            <RulesReviewed className="text-xs text-ink-secondary" />
           </div>
           <div className="mt-6">
             <ProgramRail />
@@ -277,15 +281,45 @@ export default function Home() {
           </div>
         </section>
 
+        {/* About */}
+        <section id="about" className="mx-auto grid max-w-280 scroll-mt-16 gap-10 px-4 pt-24 sm:px-6 md:grid-cols-[0.8fr_1.2fr] md:pt-32">
+          <Reveal className="flex flex-col gap-4">
+            <Eyebrow>About</Eyebrow>
+            <h2 className="font-display type-h2">Who built ScholarLens and why</h2>
+          </Reveal>
+          <Reveal delay={0.08} className="flex max-w-170 flex-col gap-5 text-body-lg leading-relaxed text-ink-secondary">
+            <p>
+              ScholarLens is an independent project built by{" "}
+              <a href={AUTHOR_URL} className="rounded-sm font-semibold text-ink underline decoration-input underline-offset-4 transition-colors hover:decoration-ink">
+                {AUTHOR_NAME} (GitHub profile)
+              </a>
+              . It isn&apos;t affiliated with the U.S. Department of Education, any state agency, or
+              any of the programs it covers.
+            </p>
+            <p>
+              The rules that decide who gets financial aid are written for the people who run the
+              programs, so a student with a simple question often ends up reading long policy
+              documents to answer it. General-purpose chatbots will answer the same question with
+              confidence, yet they rarely say where the answer came from, which matters when money
+              and deadlines are involved.
+            </p>
+            <p>
+              So ScholarLens reads the published rules, quotes the one it relied on, links the
+              official source, and says plainly when your situation doesn&apos;t give it enough to
+              go on.
+            </p>
+          </Reveal>
+        </section>
+
         {/* FAQ */}
         <section id="faq" className="mx-auto grid max-w-280 scroll-mt-16 gap-10 px-4 py-24 sm:px-6 md:grid-cols-[0.8fr_1.2fr] md:py-32">
           <Reveal className="flex flex-col gap-4">
             <Eyebrow>FAQ</Eyebrow>
             <h2 className="font-display type-h2">What people usually ask first</h2>
             <p className="text-body-sm leading-relaxed text-ink-secondary">
-              Want the detail on sources and limits?{" "}
+              The methodology page explains{" "}
               <Link href="/methodology" className="rounded-sm font-semibold text-ink underline decoration-input underline-offset-4 transition-colors hover:decoration-ink">
-                Read the methodology
+                how ScholarLens reads the rules and where its limits are
               </Link>
               .
             </p>

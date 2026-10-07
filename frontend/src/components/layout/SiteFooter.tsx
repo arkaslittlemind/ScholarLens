@@ -6,6 +6,7 @@ const FOOTER_LINKS = [
   { href: "/programs", label: "Programs" },
   { href: "/methodology", label: "Methodology" },
   { href: "/#faq", label: "FAQ" },
+  { href: "/#about", label: "About" },
 ];
 
 export function SiteFooter() {
@@ -15,8 +16,16 @@ export function SiteFooter() {
         <div className="flex max-w-sm flex-col gap-3">
           <Logo />
           <p className="text-sm leading-relaxed text-ink-secondary">
-            ScholarLens checks published eligibility rules, not your chances of an award. Always
-            confirm details with the program before applying.
+            ScholarLens is not financial advice. It checks whether you meet the published eligibility
+            rules, which can&apos;t tell you whether you will receive an award. Before you apply,
+            confirm the details with the program itself, starting from{" "}
+            <Link
+              href="/programs"
+              className="rounded-sm font-semibold text-ink underline decoration-input underline-offset-4 transition-colors hover:decoration-ink"
+            >
+              the official sources listed for each program
+            </Link>
+            .
           </p>
         </div>
         <nav aria-label="Footer" className="flex flex-wrap gap-x-8 gap-y-3">

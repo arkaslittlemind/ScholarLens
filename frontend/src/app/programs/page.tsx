@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
+import { RulesReviewed } from "@/components/programs/RulesReviewed";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { COVERED_PROGRAMS, programPath } from "@/lib/programs";
 import { pageMetadata } from "@/lib/site";
@@ -35,6 +36,7 @@ export default function Programs() {
               federal and state programs. Each page lists one program&apos;s eligibility rules, when they
               were last reviewed, and a link to the official source.
             </p>
+            <RulesReviewed className="text-sm font-semibold text-ink-secondary" />
           </div>
         </section>
 
