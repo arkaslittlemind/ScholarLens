@@ -4,6 +4,9 @@ import type { Metadata } from "next";
 // means changing this line, then adding redirects and re-verifying Search Console.
 export const SITE_URL = "https://scholar-lens-kappa.vercel.app";
 
+// Belongs to the Search Console URL-prefix property for SITE_URL; a new domain needs a new token.
+export const GOOGLE_SITE_VERIFICATION = "Y1G3d4WXB0oYTFD_5C336PP4zDh57hXcEwTAYdEw6ZA";
+
 export const SITE_NAME = "ScholarLens";
 
 export const HOME_TITLE = "Scholarship and grant eligibility checker";

@@ -108,3 +108,10 @@ for (const [path, types] of Object.entries(JSON_LD_TYPES)) {
     expect(graph.map((node) => node["@type"])).toEqual(types);
   });
 }
+
+test("/ carries the Google Search Console verification tag", async ({ page }) => {
+  await page.goto("/");
+  const tag = page.locator('meta[name="google-site-verification"]');
+  await expect(tag).toHaveCount(1);
+  await expect(tag).toHaveAttribute("content", "Y1G3d4WXB0oYTFD_5C336PP4zDh57hXcEwTAYdEw6ZA");
+});

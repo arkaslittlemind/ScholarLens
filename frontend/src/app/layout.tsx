@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Instrument_Sans } from "next/font/google";
 import {
+  GOOGLE_SITE_VERIFICATION,
   HOME_DESCRIPTION,
   HOME_FULL_TITLE,
   HOME_TITLE,
@@ -44,6 +45,7 @@ export const metadata: Metadata = {
   applicationName: SITE_NAME,
   openGraph: { ...OPEN_GRAPH_DEFAULTS, title: HOME_TITLE },
   twitter: { card: "summary_large_image" },
+  verification: { google: GOOGLE_SITE_VERIFICATION },
 };
 
 // Mobile browser chrome blends into the white header instead of a default grey bar.
