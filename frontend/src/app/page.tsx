@@ -153,8 +153,7 @@ export default function Home() {
             <div className="mt-6 max-w-140 animate-rise-in [animation-delay:120ms]">
               <p className="text-lg leading-relaxed text-ink-secondary sm:text-xl">
                 Describe your situation the way you would to a counselor, and ScholarLens checks it
-                against the official rules for the Pell Grant, other federal aid, and state grants in
-                California, Florida, Georgia, New Jersey and New York.
+                against official program rules and searches the web when a program isn&apos;t covered.
               </p>
             </div>
             <div className="mt-8 flex animate-rise-in flex-col items-center gap-3 [animation-delay:180ms]">
