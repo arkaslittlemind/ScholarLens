@@ -1,10 +1,12 @@
 "use client";
 
 import { ArrowUpRight, CheckCircle2, CircleDot, Info, XCircle } from "lucide-react";
-import { motion, type Variants } from "motion/react";
+import { motion, useReducedMotion, type Variants } from "motion/react";
+import { StreamingSummary, summaryRevealDelay } from "@/components/check/StreamingSummary";
 import { EASE_IN_OUT, EASE_OUT } from "@/components/motion/easing";
 import {
   displayLabel,
+  safeHttpUrl,
   type Alternative,
   type EligibilityResult,
   type EligibilityStatus,
@@ -69,18 +71,6 @@ const settle: Variants = {
     },
   },
 };
-
-// F-13 (blueprint/context/findings.md): source.url is untrusted web/retrieval
-// content with no backend scheme validation. Alternatives are filtered on the
-// backend, but both go through this check before becoming a link.
-function safeHttpUrl(url: string): URL | null {
-  try {
-    const parsed = new URL(url);
-    return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed : null;
-  } catch {
-    return null;
-  }
-}
 
 interface SectionHeadingProps {
   id: string;
@@ -177,12 +167,16 @@ function VerdictAlternatives({ alternatives }: VerdictAlternativesProps) {
   );
 }
 
+// The marker sweep starts once the rule has risen in.
+const RULE_SWEEP_DELAY_SECONDS = 0.5;
+
 interface VerdictRuleProps {
   clause: string | null;
   source: Source | null;
+  sweepDelay: number;
 }
 
-function VerdictRule({ clause, source }: VerdictRuleProps) {
+function VerdictRule({ clause, source, sweepDelay }: VerdictRuleProps) {
   if (!clause) {
     return (
       <p className="rounded-xl bg-tint p-4 text-sm text-ink-secondary">
@@ -200,7 +194,7 @@ function VerdictRule({ clause, source }: VerdictRuleProps) {
           className="box-decoration-clone bg-linear-to-r from-rust-tint to-rust-tint bg-no-repeat"
           initial={{ backgroundSize: "0% 100%" }}
           animate={{ backgroundSize: "100% 100%" }}
-          transition={{ duration: 0.8, ease: EASE_IN_OUT, delay: 0.5 }}
+          transition={{ duration: 0.8, ease: EASE_IN_OUT, delay: sweepDelay }}
         >
           {clause}
         </motion.span>
@@ -261,6 +255,13 @@ interface VerdictCardProps {
 export function VerdictCard({ result }: VerdictCardProps) {
   const meta = STATUS_META[result.status];
   const Icon = meta.icon;
+  const reduceMotion = useReducedMotion() ?? false;
+  // Everything after the summary waits for its last word, so the card reads top to bottom.
+  const followDelay = reduceMotion ? 0 : summaryRevealDelay(result.summary);
+  const followSummary: Variants = {
+    hidden: {},
+    shown: { transition: { delayChildren: followDelay, staggerChildren: 0.04 } },
+  };
 
   return (
     <motion.div
@@ -284,57 +285,64 @@ export function VerdictCard({ result }: VerdictCardProps) {
         </motion.h2>
       </div>
 
-      <div className="flex flex-col gap-6 px-6 py-6 sm:px-8 sm:py-8">
-        <motion.p variants={rise} className="motion-reduce:transform-none! text-lg leading-relaxed text-ink">
-          {result.summary}
-        </motion.p>
-
-        <motion.div variants={rise} className="motion-reduce:transform-none!">
-          <VerdictRule clause={result.supporting_clause} source={result.source} />
-        </motion.div>
-
-        {result.reasons.length > 0 && (
-          <motion.div variants={rise} className="motion-reduce:transform-none!">
-            <VerdictList id="verdict-reasons" heading="Why" items={result.reasons} />
-          </motion.div>
-        )}
-
-        {result.missing_info.length > 0 && (
-          <motion.div variants={rise} className="motion-reduce:transform-none! flex gap-3 rounded-xl border border-dashed border-rust/50 p-4">
-            <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-rust-text" />
-            <div>
-              <p className="text-sm font-semibold text-ink">This result may change with more information:</p>
-              <ul className="mt-2 list-disc pl-5 text-sm text-ink-secondary marker:text-rust">
-                {result.missing_info.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-            </div>
-          </motion.div>
-        )}
-
-        {result.next_steps.length > 0 && (
-          <motion.div variants={rise} className="motion-reduce:transform-none!">
-            <VerdictList id="verdict-next-steps" heading="Next steps" items={result.next_steps} ordered />
-          </motion.div>
-        )}
-
-        {result.alternatives.length > 0 && (
-          <motion.div variants={rise} className="motion-reduce:transform-none!">
-            <VerdictAlternatives alternatives={result.alternatives} />
-          </motion.div>
-        )}
-
-        <motion.div variants={rise} className="motion-reduce:transform-none! grid gap-6 sm:grid-cols-2">
-          <VerdictSource source={result.source} showDocument={!result.supporting_clause} />
-          <VerdictTrace steps={result.tool_trace} />
-        </motion.div>
+      <div className="px-6 pt-6 sm:px-8 sm:pt-8">
+        <StreamingSummary text={result.summary} source={result.source} />
       </div>
 
-      <motion.p variants={rise} className="motion-reduce:transform-none! border-t border-hairline bg-tint/60 px-6 py-4 text-caption text-ink-secondary sm:px-8">
-        ScholarLens checks eligibility rules, not your chances of an award. Confirm details with the
-        program before applying.
-      </motion.p>
+      {/* One sequence for everything after the summary, so the footer still comes last. */}
+      <motion.div variants={followSummary}>
+        <div className="flex flex-col gap-6 px-6 pt-6 pb-6 sm:px-8 sm:pb-8">
+          <motion.div variants={rise} className="motion-reduce:transform-none!">
+            <VerdictRule
+              clause={result.supporting_clause}
+              source={result.source}
+              sweepDelay={RULE_SWEEP_DELAY_SECONDS + followDelay}
+            />
+          </motion.div>
+
+          {result.reasons.length > 0 && (
+            <motion.div variants={rise} className="motion-reduce:transform-none!">
+              <VerdictList id="verdict-reasons" heading="Why" items={result.reasons} />
+            </motion.div>
+          )}
+
+          {result.missing_info.length > 0 && (
+            <motion.div variants={rise} className="motion-reduce:transform-none! flex gap-3 rounded-xl border border-dashed border-rust/50 p-4">
+              <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-rust-text" />
+              <div>
+                <p className="text-sm font-semibold text-ink">This result may change with more information:</p>
+                <ul className="mt-2 list-disc pl-5 text-sm text-ink-secondary marker:text-rust">
+                  {result.missing_info.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            </motion.div>
+          )}
+
+          {result.next_steps.length > 0 && (
+            <motion.div variants={rise} className="motion-reduce:transform-none!">
+              <VerdictList id="verdict-next-steps" heading="Next steps" items={result.next_steps} ordered />
+            </motion.div>
+          )}
+
+          {result.alternatives.length > 0 && (
+            <motion.div variants={rise} className="motion-reduce:transform-none!">
+              <VerdictAlternatives alternatives={result.alternatives} />
+            </motion.div>
+          )}
+
+          <motion.div variants={rise} className="motion-reduce:transform-none! grid gap-6 sm:grid-cols-2">
+            <VerdictSource source={result.source} showDocument={!result.supporting_clause} />
+            <VerdictTrace steps={result.tool_trace} />
+          </motion.div>
+        </div>
+
+        <motion.p variants={rise} className="motion-reduce:transform-none! border-t border-hairline bg-tint/60 px-6 py-4 text-caption text-ink-secondary sm:px-8">
+          ScholarLens checks eligibility rules, not your chances of an award. Confirm details with the
+          program before applying.
+        </motion.p>
+      </motion.div>
     </motion.div>
   );
 }

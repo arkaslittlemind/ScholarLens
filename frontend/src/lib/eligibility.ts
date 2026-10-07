@@ -40,6 +40,18 @@ export function displayLabel(step: string): string {
   return step.charAt(0).toUpperCase() + step.slice(1);
 }
 
+// F-13 (blueprint/context/findings.md): source.url is untrusted web/retrieval
+// content with no backend scheme validation. Alternatives are filtered on the
+// backend, but every model-supplied URL goes through this check before becoming a link.
+export function safeHttpUrl(url: string): URL | null {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 // Mirrors backend/app/api/errors.py's ErrorDetail / ErrorResponse.
 export interface ErrorDetail {
   code: string;

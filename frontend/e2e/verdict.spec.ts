@@ -211,3 +211,57 @@ test("a response in the old shape is treated as unexpected", async ({ page }) =>
   await expect(page.getByText("Old shape.")).toHaveCount(0);
   await expect(page.getByRole("alert").filter({ hasText: /\S/ })).toBeVisible();
 });
+
+const STREAMED: EligibilityResult = {
+  status: "eligible",
+  summary: "You meet the Pell Grant's enrollment rules because you are a first-year undergraduate.",
+  reasons: [],
+  next_steps: [],
+  alternatives: [],
+  supporting_clause: "Must be an undergraduate student who has not earned a bachelor's degree.",
+  source: {
+    program: "Federal Pell Grant",
+    document: "Eligibility summary",
+    url: "https://studentaid.gov/understand-aid/types/grants/pell",
+  },
+  missing_info: [],
+  tool_trace: ["searching program rules"],
+};
+
+test("the summary ends with a chip linking its source", async ({ page }) => {
+  await checkWith(page, STREAMED);
+
+  await expect(page.getByText(STREAMED.summary)).toBeVisible();
+  const chip = page.getByRole("link", { name: "Source: studentaid.gov (opens in a new tab)" });
+  await expect(chip).toHaveAttribute("href", STREAMED.source!.url);
+  await expect(chip).toHaveAttribute("target", "_blank");
+  await expect(chip).toHaveAttribute("rel", "noopener noreferrer");
+});
+
+test("no source chip without an http source", async ({ page }) => {
+  await checkWith(page, {
+    ...STREAMED,
+    source: { ...STREAMED.source!, url: "javascript:alert(1)" },
+  });
+  await expect(page.getByText(STREAMED.summary)).toBeVisible();
+  await expect(page.getByRole("link", { name: /^Source:/ })).toHaveCount(0);
+});
+
+test("no source chip when the result has no source", async ({ page }) => {
+  await checkWith(page, { ...STREAMED, status: "partial", supporting_clause: null, source: null });
+  await expect(page.getByText(STREAMED.summary)).toBeVisible();
+  await expect(page.getByRole("link", { name: /^Source:/ })).toHaveCount(0);
+});
+
+test("with reduced motion the whole summary shows at once", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await checkWith(page, STREAMED);
+
+  const summary = page.getByText(STREAMED.summary);
+  await expect(summary).toBeVisible();
+  const opacities = await summary
+    .locator("span")
+    .evaluateAll((words) => words.map((word) => getComputedStyle(word).opacity));
+  expect(opacities.length).toBeGreaterThan(0);
+  expect(opacities.every((opacity) => opacity === "1")).toBe(true);
+});
