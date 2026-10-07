@@ -1,8 +1,9 @@
 """Deterministic scoring of agent answers against labeled profiles. No model judge."""
 
 from collections import Counter
+from dataclasses import asdict
 
-from app.agent.agent import CHECKING_OFFICIAL_SOURCES
+from app.agent.agent import CHECKING_OFFICIAL_SOURCES, RunMeasurement
 from app.agent.models import EligibilityResult, EligibilityStatus
 from app.evaluation.models import (
     AttemptResult,
@@ -59,7 +60,7 @@ def score_attempt(
     attempt: int,
     corpus_bodies: list[str],
     result: EligibilityResult | None,
-    tool_calls: int | None = None,
+    measurement: RunMeasurement | None = None,
     latency_ms: float | None = None,
 ) -> AttemptResult:
     """Score one agent answer; a `None` result is an engine error."""
@@ -95,7 +96,7 @@ def score_attempt(
         attempt=attempt,
         outcome="completed",
         latency_ms=latency_ms,
-        tool_calls=tool_calls,
+        **(asdict(measurement) if measurement else {}),
         status=result.status,
         source_program=result.source.program if result.source else None,
         supporting_clause=result.supporting_clause,
@@ -109,6 +110,11 @@ def score_attempt(
 
 def _mean(values: list[float]) -> float:
     return sum(values) / len(values) if values else 0.0
+
+
+def _mean_or_none(values: list[float | int | None]) -> float | None:
+    present = [value for value in values if value is not None]
+    return sum(present) / len(present) if present else None
 
 
 def _rate(flags: list[bool | None]) -> float | None:
@@ -141,6 +147,13 @@ def aggregate(attempts: list[AttemptResult], repeats: int) -> RunMetrics:
         hallucination_rate=_rate([a.hallucinated for a in attempts]),
         tool_call_count=_mean([a.tool_calls for a in completed if a.tool_calls is not None]),
         latency_ms=_mean([a.latency_ms for a in completed if a.latency_ms is not None]),
+        corpus_latency_ms=_mean_or_none([a.latency_ms for a in completed if not a.used_web_search]),
+        web_latency_ms=_mean_or_none([a.latency_ms for a in completed if a.used_web_search]),
+        model_requests=_mean_or_none([a.model_requests for a in completed]),
+        retrieval_ms=_mean_or_none([a.retrieval_ms for a in completed]),
+        # Over web answers only: counting the zeros of corpus answers would hide the search cost.
+        web_search_ms=_mean_or_none([a.web_search_ms for a in completed if a.used_web_search]),
+        first_turn_ms=_mean_or_none([a.first_turn_ms for a in completed]),
         consistency_score=_consistency(attempts, repeats),
         failure_counts=dict(failure_counts),
     )

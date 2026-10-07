@@ -69,9 +69,43 @@ def _log_failure(message: str, exc: Exception) -> None:
 class _Deps:
     retriever: DocumentRetriever
     web_search: WebSearchClient
+    started: float = field(default_factory=time.perf_counter)
     trace: list[str] = field(default_factory=list)
     # `trace` dedupes labels, so it cannot say how many times a tool ran.
     tool_calls: int = 0
+    retrieval_seconds: float = 0.0
+    web_search_seconds: float = 0.0
+    first_tool_at: float | None = None
+
+    def tool_started(self) -> float:
+        now = time.perf_counter()
+        self.tool_calls += 1
+        if self.first_tool_at is None:
+            self.first_tool_at = now
+        return now
+
+
+@dataclass(frozen=True)
+class RunMeasurement:
+    """Where the answering attempt spent its time; model time is the rest of the run."""
+
+    tool_calls: int
+    model_requests: int
+    retrieval_ms: float
+    web_search_ms: float
+    # Run start to the first tool call, which is the model's first turn; None with no tool call.
+    first_turn_ms: float | None
+
+    @classmethod
+    def of(cls, deps: _Deps, model_requests: int) -> "RunMeasurement":
+        first_turn = None if deps.first_tool_at is None else deps.first_tool_at - deps.started
+        return cls(
+            tool_calls=deps.tool_calls,
+            model_requests=model_requests,
+            retrieval_ms=deps.retrieval_seconds * 1000,
+            web_search_ms=deps.web_search_seconds * 1000,
+            first_turn_ms=None if first_turn is None else first_turn * 1000,
+        )
 
 
 def _model_name(settings: Settings) -> str:
@@ -95,6 +129,9 @@ def _build_agent(settings: Settings) -> Agent[_Deps, EligibilityResult]:
         deps_type=_Deps,
         output_type=EligibilityResult,
         system_prompt=_SYSTEM_PROMPT,
+        # Measured in 24a: the final answering turn was about 9.8 s of a 13.6 s answer, and the
+        # default thinking level spends most of it reasoning about rules that are quoted anyway.
+        model_settings={"thinking": "low"},
         # Spans keep model, token usage, and tool names; prompts and tool payloads carry
         # student data, so they stay out of telemetry.
         capabilities=[Instrumentation(settings=InstrumentationSettings(include_content=False))],
@@ -103,22 +140,28 @@ def _build_agent(settings: Settings) -> Agent[_Deps, EligibilityResult]:
     @agent.tool
     async def retrieve_program_rules(ctx: RunContext[_Deps], query: str) -> list[dict]:
         """Search the ScholarLens knowledge base for program rules matching `query`."""
-        ctx.deps.tool_calls += 1
+        started = ctx.deps.tool_started()
         tool_calls.add(1, {"app.tool.name": "retrieve_program_rules"})
         # A repeat call (multi-query retrieval) must not repeat the label in the rendered trace.
         if SEARCHING_PROGRAM_RULES not in ctx.deps.trace:
             ctx.deps.trace.append(SEARCHING_PROGRAM_RULES)
-        chunks = await ctx.deps.retriever.retrieve(query)
+        try:
+            chunks = await ctx.deps.retriever.retrieve(query)
+        finally:
+            ctx.deps.retrieval_seconds += time.perf_counter() - started
         return [chunk.model_dump() for chunk in chunks]
 
     @agent.tool
     async def search_the_web(ctx: RunContext[_Deps], query: str) -> list[dict]:
         """Search the web for official program information matching `query`."""
-        ctx.deps.tool_calls += 1
+        started = ctx.deps.tool_started()
         tool_calls.add(1, {"app.tool.name": "search_the_web"})
         if CHECKING_OFFICIAL_SOURCES not in ctx.deps.trace:
             ctx.deps.trace.append(CHECKING_OFFICIAL_SOURCES)
-        results = await ctx.deps.web_search.search(query)
+        try:
+            results = await ctx.deps.web_search.search(query)
+        finally:
+            ctx.deps.web_search_seconds += time.perf_counter() - started
         return [result.model_dump() for result in results]
 
     return agent
@@ -154,8 +197,8 @@ class EligibilityAgent:
 
     async def check_eligibility_measured(
         self, request: EligibilityRequest
-    ) -> tuple[EligibilityResult, int]:
-        """Like `check_eligibility`, plus how many tool calls the answering attempt made."""
+    ) -> tuple[EligibilityResult, RunMeasurement]:
+        """Like `check_eligibility`, plus where the answering attempt spent its time."""
         started = time.perf_counter()
         deadline = started + self._run_timeout_seconds
 
@@ -190,7 +233,7 @@ class EligibilityAgent:
         llm_requests.add(run_result.usage.requests, {"gen_ai.request.model": self._model_name})
         output = run_result.output
         output.tool_trace = [*deps.trace, VALIDATING_ELIGIBILITY, PREPARING_CITED_ANSWER]
-        return output, deps.tool_calls
+        return output, RunMeasurement.of(deps, run_result.usage.requests)
 
     def _can_retry(self, limit: ProviderRateLimit, deadline: float) -> bool:
         # A daily quota won't clear in time, and the retried run needs a full model-call window

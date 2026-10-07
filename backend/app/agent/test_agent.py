@@ -43,9 +43,11 @@ class FakeRetriever:
     def __init__(self) -> None:
         self.queries: list[str] = []
         self.error: Exception | None = None
+        self.delay = 0.0
 
     async def retrieve(self, query: str) -> list[RetrievedChunk]:
         self.queries.append(query)
+        await asyncio.sleep(self.delay)
         if self.error is not None:
             raise self.error
         return [
@@ -59,9 +61,11 @@ class FakeWebSearch:
     def __init__(self) -> None:
         self.queries: list[str] = []
         self.error: Exception | None = None
+        self.delay = 0.0
 
     async def search(self, query: str) -> list[WebResult]:
         self.queries.append(query)
+        await asyncio.sleep(self.delay)
         if self.error is not None:
             raise self.error
         return [WebResult(title="Official page", url="https://example.org", snippet="Rule text")]
@@ -114,7 +118,7 @@ def _check(agent: EligibilityAgent, **fields: object):
 def test_a_retrieval_run_returns_the_cited_answer_with_the_rendered_trace(build_agent, tools):
     model, _ = scripted([("retrieve_program_rules", "NJ STARS class rank")])
 
-    result, tool_calls = _check(build_agent(model))
+    result, measurement = _check(build_agent(model))
 
     assert result.status == "eligible"
     assert result.supporting_clause == _CLAUSE
@@ -124,7 +128,7 @@ def test_a_retrieval_run_returns_the_cited_answer_with_the_rendered_trace(build_
         VALIDATING_ELIGIBILITY,
         PREPARING_CITED_ANSWER,
     ]
-    assert tool_calls == 1
+    assert measurement.tool_calls == 1
     assert tools[0].queries == ["NJ STARS class rank"]
 
 
@@ -134,7 +138,7 @@ def test_each_label_appears_once_but_every_tool_call_is_counted(build_agent, too
         [("search_the_web", "NJ STARS official"), ("search_the_web", "HESAA NJ STARS")],
     )
 
-    result, tool_calls = _check(build_agent(model))
+    result, measurement = _check(build_agent(model))
 
     assert result.tool_trace == [
         SEARCHING_PROGRAM_RULES,
@@ -142,8 +146,50 @@ def test_each_label_appears_once_but_every_tool_call_is_counted(build_agent, too
         VALIDATING_ELIGIBILITY,
         PREPARING_CITED_ANSWER,
     ]
-    assert tool_calls == 4
+    assert measurement.tool_calls == 4
     assert tools[1].queries == ["NJ STARS official", "HESAA NJ STARS"]
+
+
+def test_a_run_measures_model_requests_and_time_inside_each_tool(build_agent, tools):
+    retriever, web_search = tools
+    retriever.delay, web_search.delay = 0.05, 0.03
+    model, _ = scripted([("retrieve_program_rules", "rank")], [("search_the_web", "official")])
+
+    _, measurement = _check(build_agent(model))
+
+    assert measurement.tool_calls == 2
+    # Two tool turns, then the answer.
+    assert measurement.model_requests == 3
+    assert measurement.retrieval_ms >= 50
+    assert measurement.web_search_ms >= 30
+    assert 0 <= measurement.first_turn_ms < measurement.retrieval_ms
+
+
+def test_a_run_without_web_search_spends_no_time_there(build_agent, tools):
+    tools[0].delay = 0.02
+    model, _ = scripted([("retrieve_program_rules", "rank")])
+
+    _, measurement = _check(build_agent(model))
+
+    assert measurement.retrieval_ms >= 20
+    assert measurement.web_search_ms == 0
+    assert measurement.model_requests == 2
+
+
+def test_a_run_that_calls_no_tool_has_no_first_turn_time(build_agent):
+    model, _ = scripted()
+
+    _, measurement = _check(build_agent(model))
+
+    assert measurement.tool_calls == 0
+    assert measurement.first_turn_ms is None
+    assert measurement.retrieval_ms == measurement.web_search_ms == 0
+
+
+def test_the_agent_asks_gemini_for_low_thinking(build_agent):
+    agent = build_agent(scripted()[0])
+
+    assert agent._agent.model_settings == {"thinking": "low"}
 
 
 def test_the_retrieved_chunks_are_returned_to_the_model(build_agent):
@@ -272,11 +318,11 @@ def test_a_short_provider_delay_is_retried_once_and_answers(build_agent):
     answer, _ = scripted()
     model, calls = rate_limited_first(gemini_429(_PER_MINUTE, retry_delay="0.05s"), 1, answer)
 
-    result, tool_calls = _check(build_agent(model))
+    result, measurement = _check(build_agent(model))
 
     assert result.supporting_clause == _CLAUSE
     assert len(calls) == 2
-    assert tool_calls == 0
+    assert measurement.tool_calls == 0
 
 
 def test_the_answering_attempt_alone_sets_the_trace_and_tool_count(build_agent, tools):
@@ -291,12 +337,12 @@ def test_the_answering_attempt_alone_sets_the_trace_and_tool_count(build_agent, 
             raise ModelHTTPError(status_code=429, model_name="gemini-test", body=body)
         return ModelResponse(parts=[ToolCallPart(info.output_tools[0].name, _ANSWER)])
 
-    result, tool_calls = _check(build_agent(FunctionModel(respond)))
+    result, measurement = _check(build_agent(FunctionModel(respond)))
 
     # The first attempt searched, then hit the limit; the retry answered without a tool.
     assert tools[0].queries == ["q"]
     assert result.tool_trace == [VALIDATING_ELIGIBILITY, PREPARING_CITED_ANSWER]
-    assert tool_calls == 0
+    assert measurement.tool_calls == 0
 
 
 def test_a_second_rate_limit_after_the_retry_is_busy(build_agent):

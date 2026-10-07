@@ -28,6 +28,14 @@ def _verdict(met: bool | None) -> str:
     return "not measured" if met is None else "met" if met else "MISSED"
 
 
+def _ms(value: float | None) -> str:
+    return "n/a" if value is None else f"{value:.0f} ms"
+
+
+def _mean_count(value: float | None) -> str:
+    return "n/a" if value is None else f"{value:.2f}"
+
+
 def _print_summary(
     run: EvaluationRun, profiles: list[EvaluationProfile], settings: Settings
 ) -> None:
@@ -49,7 +57,13 @@ def _print_summary(
     )
     print(f"consistency           {_percent(run.consistency_score)}")
     print(f"mean latency          {run.latency_ms:.0f} ms")
+    print(f"  without web search  {_ms(run.corpus_latency_ms)}")
+    print(f"  with web search     {_ms(run.web_latency_ms)}")
     print(f"mean tool calls       {run.tool_call_count:.2f}")
+    print(f"mean model requests   {_mean_count(run.model_requests)}")
+    print(f"mean first model turn {_ms(run.first_turn_ms)}")
+    print(f"mean retrieval time   {_ms(run.retrieval_ms)}")
+    print(f"mean web search time  {_ms(run.web_search_ms)} per web answer")
     print(f"failure categories    {run.failure_counts or 'none'}")
 
     failing = [attempt for attempt in run.attempts if attempt.failure_categories]

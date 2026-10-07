@@ -278,5 +278,29 @@
     },
     "expected_status": "partial",
     "category": "missing_info"
+  },
+  {
+    "profile_id": "web-nsf-grfp-international",
+    "request": {
+      "description": "I am an international student from India on an F-1 visa, in the first year of my PhD in computer science at a U.S. university. I am not a U.S. citizen or permanent resident. Am I eligible for the NSF Graduate Research Fellowship Program (GRFP)?"
+    },
+    "expected_status": "not_eligible",
+    "category": "clear"
+  },
+  {
+    "profile_id": "web-gilman-no-pell",
+    "request": {
+      "description": "I am a U.S. citizen and a junior at a U.S. university, applying to a credit-bearing semester study abroad program in Spain. I do not receive a Federal Pell Grant and will not receive one during the term abroad. Am I eligible for the Benjamin A. Gilman International Scholarship?"
+    },
+    "expected_status": "not_eligible",
+    "category": "clear"
+  },
+  {
+    "profile_id": "web-goldwater-gpa-too-low",
+    "request": {
+      "description": "I am a U.S. citizen and a sophomore at a U.S. university majoring in chemistry, and I plan a research career. My college GPA is 2.7 on a 4.0 scale. Am I eligible for the Barry Goldwater Scholarship?"
+    },
+    "expected_status": "not_eligible",
+    "category": "clear"
   }
 ]
