@@ -1,5 +1,7 @@
 # ScholarLens
 
+**Live:** <https://scholar-lens-kappa.vercel.app>
+
 Students often don't know which scholarships or grants they actually qualify
 for: eligibility rules are buried in long PDFs and program pages, and keyword
 search either misses real matches or confidently returns wrong ones.
