@@ -1,307 +1,226 @@
 # ScholarLens
 
-**Live:** <https://scholar-lens-kappa.vercel.app>
+A scholarship and grant eligibility checker that shows its sources. Describe
+your situation in plain words, and ScholarLens tells you which programs you may
+qualify for, quoting the exact rule behind each answer and linking to the
+official page it came from.
 
-Students often don't know which scholarships or grants they actually qualify
-for: eligibility rules are buried in long PDFs and program pages, and keyword
-search either misses real matches or confidently returns wrong ones.
-ScholarLens takes a student's basic information (income, state, GPA, major,
-and so on) and determines which programs they may qualify for, showing the
-exact rule behind each result, so the answer is auditable rather than a
-black box.
+**[Live demo](https://scholar-lens-kappa.vercel.app)** ·
+**[Technical guide](docs/readme-versions/README-2026-10-09.md)** ·
+**[Design docs](design-docs/)**
 
-## Evaluation results
+![The ScholarLens landing page, with the headline "A scholarship and grant eligibility checker that shows its sources" and buttons to check eligibility or see how it works](docs/screenshots/landing.png)
 
-The agent is scored against 25 hand-labeled student profiles, each with the
-expected verdict, program, and rule. This run used the deployed production
-backend on 2026-10-05 (UTC), `gemini-3.8-flash` with `gemini-embedding-001`,
-each profile answered 3 times (75 answers):
+## Overview
 
-| Metric | Result | Target | Status |
-| --- | --- | --- | --- |
-| Eligibility accuracy: the verdict matches the label | 93.3% | above 80% | met |
-| Citation accuracy: the quoted rule and program match the knowledge base | 97.0% | above 70% | met |
-| Hallucination rate: of the answers scored, the share that claim eligibility without a citation or quote a rule found nowhere in the knowledge base | 1.4% | below 10% | met |
-| Consistency: the same verdict across the 3 repeats | 92.0% | no target | not applicable |
+Financial aid rules are written for the people who run the programs, so a
+student with a simple question often ends up reading long policy documents to
+answer it. Keyword search misses real matches, and general-purpose chatbots
+answer confidently without saying where the answer came from.
 
-Mean latency was 7.6 s per answer with 1.01 tool calls. 5 of the 75 verdicts
-were wrong: 3 were `calgrant-a-meets-gpa` returning "partial" instead of
-"eligible", and 2 were Gemini requests that ran past their deadline and
-returned no answer. One more answer had the right verdict but quoted a rule
-found nowhere in the knowledge base. Rerun it with
-`python -m app.evaluation` (see Deploy for running it in production).
+ScholarLens is an Agentic RAG application. A Pydantic AI agent reads a
+knowledge base of official program rules, searches the web when a program
+isn't covered, and returns a structured, cited verdict instead of an opaque
+yes or no. It covers ten federal and state programs today, including the Pell
+Grant, Cal Grant, NY TAP and Georgia HOPE.
 
-![Grafana AI quality dashboard for production showing this run: eligibility accuracy 93%, citation accuracy 97%, hallucination rate 1%, consistency 92%, 7.60 s average latency, and trend charts against the 80%, 70%, and 10% targets](docs/screenshots/ai-quality.png)
+## Features
 
-## Repo layout
+- **Cited verdicts.** Every answer is eligible, partial match, or not eligible,
+  with the rule quoted word for word and a link to the official source.
+- **Reasons and missing information.** Each reason ties one fact about the
+  student to one rule, and a rule that depends on something the student didn't
+  mention is listed instead of guessed.
+- **Grounded suggestions.** Other programs are suggested only when a tool
+  returned their official page during the same check.
+- **No accounts, nothing stored.** Prompts and tool payloads are kept out of
+  logs and telemetry.
+- **Measured quality.** A labeled evaluation set scores accuracy, citations,
+  hallucinations and consistency, with results on a Grafana dashboard.
+- **Production ready.** Per-visitor rate limits, timeouts on every external
+  call, OpenTelemetry tracing, dashboards, and alert rules.
 
-```
-frontend/   Next.js (App Router, TypeScript, Tailwind), the SaaS client
-backend/    FastAPI + Pydantic AI, the API and Agentic RAG engine
-infra/      Deployment / observability config (Docker Compose, env templates)
-```
+![A ScholarLens result for the Federal Pell Grant: a "Partial match" verdict, a plain-language summary, the quoted rule from the program's eligibility summary, and the reasons that tie each fact about the student to a rule](docs/screenshots/check-result.png)
 
-## Quickstart
+## How it works
 
-### Frontend
-```bash
-cd frontend
-npm install
-npm run dev            # http://localhost:3000
-```
+### Architecture
 
-### Backend
-```bash
-cd backend
-python -m venv .venv
-# Windows: .venv\Scripts\Activate.ps1   |   macOS/Linux: source .venv/bin/activate
-pip install -e ".[dev]"
-uvicorn app.main:app --reload   # http://localhost:8000  (docs at /docs)
-```
+![ScholarLens architecture: the student's browser loads the Next.js app on Vercel, which calls the FastAPI service on Railway. The Pydantic AI agent inside it talks to Gemini, an embedded ChromaDB knowledge base, and Tavily web search, and the service sends traces, metrics, and logs to Grafana Cloud. A separate ingestion job fills ChromaDB.](docs/screenshots/architecture.png)
 
-### Operations view (`/ops`)
+The Next.js frontend on Vercel calls `POST /eligibility` on a FastAPI service
+on Railway. The service runs the agent on Google Gemini with two tools:
+`retrieve_program_rules`, which queries ChromaDB (embedded on a persistent
+volume in production), and `search_the_web`, which calls Tavily. An ingestion
+job chunks and embeds the program documents in `backend/data/programs/`.
+Traces, metrics, and logs go to Grafana Cloud over OTLP.
 
-`/ops` is a password-protected page for maintainers. It shows traffic trends for
-the last 6 hours (request rate, 5xx ratio, `/eligibility` latency, tool calls),
-the latest and recent evaluation runs against their targets, and ingestion
-health. The evaluation and ingestion sections read the backend's own status
-files. The trends come from Grafana Cloud.
+### Request flow
 
-To enable it:
+![Sequence of one eligibility check: Next.js posts to /eligibility, FastAPI starts the agent with a 45 second budget, Gemini asks for retrieve_program_rules, the agent queries ChromaDB for rule chunks, optionally searches the web through Tavily, sends the tool results back to Gemini, receives a structured EligibilityResult, and returns a cited verdict as JSON](docs/screenshots/request-flow.png)
 
-1. Generate one long random token and set it as `OPS_API_TOKEN` in both
-   `backend/.env` and `frontend/.env.local`. The frontend sends it server-side
-   only, so the browser never sees it.
-2. Set `OPS_USERNAME` and `OPS_PASSWORD` in `frontend/.env.local`. `/ops` asks
-   for them through the browser's login prompt, and returns 503 while either is
-   unset.
-3. Optional, for the trend charts: set `GRAFANA_PROMETHEUS_URL`,
-   `GRAFANA_PROMETHEUS_USER`, and `GRAFANA_PROMETHEUS_TOKEN` in `backend/.env`.
-   The comments in `backend/.env.example` say where to find them. Without
-   them, the page says the trends are not configured and shows everything else.
+The whole check runs inside a single 45-second budget. The model chooses the
+tools, the agent runs them, and the model returns a typed `EligibilityResult`
+that the API validates and grounds before responding.
 
-The shared password has no rate limiting or lockout yet (feature 18), so use a
-long one.
+### Agent decisions
 
-### Deploy
+![The agent's decision flow: a validated request either hits the rate limit and gets a 429, or reaches the agent. The agent always searches the knowledge base first, searches the web only when the rules don't cover the question, writes the final answer with a quoted rule, and passes a grounding check before the 200 response. Timeouts, tool outages and provider limits return a 503.](docs/screenshots/agent-workflow.png)
 
-The backend runs on Railway as one always-on service, and ChromaDB runs embedded
-on that service's volume. The frontend runs on Vercel. Both serve HTTPS. Keep
-every secret in the platform's env vars, never in the repo.
+- The knowledge base is always queried first; the web is searched only when
+  the retrieved rules don't cover the question.
+- An `eligible` or `partial` verdict requires a quoted clause and a matching
+  source.
+- Alternatives whose link no tool returned are dropped before the response.
+- Over the rate limit returns `429` with `Retry-After`. A timeout, tool outage,
+  or provider rate limit returns `503`, and a provider limit is retried once
+  when the wait fits the time budget.
 
-**1. Backend on Railway.** Create a project from this GitHub repo with one
-service deploying from `main`, then set it up:
+## Evaluation
 
-- Settings: root directory `backend`, config file `/backend/railway.toml`. The
-  config path is absolute because Railway does not resolve it from the root
-  directory. That file sets the Dockerfile build, the `/health` check, and
-  restart on failure.
-- Keep 1 replica. The rate limits live in process memory and embedded Chroma
-  allows one process.
-- Add a volume mounted at `/data`. Volumes are created from the project canvas
-  (Ctrl/Cmd+K, or right-click the canvas), not from the service settings. Do
-  not mount it over `/app/data`, which holds the bundled corpus.
-- Generate a public domain.
-- Keep Under Attack Mode off (service Settings, Edge). When it is on, the edge
-  answers every non-browser request, including `/health`, with a plain-text
-  `rate limited` 429 that never reaches the app.
-- Variables: `GOOGLE_API_KEY`, `TAVILY_API_KEY`, `OPS_API_TOKEN`,
-  `FRONTEND_ORIGIN` (set in step 3), `CHROMA_PERSIST_PATH=/data/chroma`,
-  `INGESTION_STATUS_PATH=/data/ingestion-status.json`,
-  `EVALUATION_RUNS_PATH=/data/evaluation-runs.jsonl`, and
-  `FORWARDED_ALLOW_IPS=*`. Optional: the `GRAFANA_PROMETHEUS_*` values for
-  `/ops` trends.
+25 hand-labeled student profiles, each answered 3 times (75 answers), against
+the production deployment on 2026-10-05 with `gemini-3.8-flash` and
+`gemini-embedding-001`:
 
-`FORWARDED_ALLOW_IPS` is read by uvicorn itself. Railway's edge replaces any
-`X-Forwarded-For` the client sends and puts the real client IP first. With
-`*`, uvicorn takes that first entry, so the per-IP rate limits apply to real
-visitors. If the variable is unset, every visitor shares one limit.
-
-**2. Ingest the corpus once.** Run ingestion inside the running service. It
-reads the bundled corpus from `/app/data/programs`. `railway ssh` needs an SSH
-key registered with Railway; the CLI offers to register your local key on first
-use.
-
-```bash
-railway ssh -s <backend-service> -- sh -c "cd /app && python -m app.ingestion"
-```
-
-Then restart the service (latest deployment's menu, Restart) so the API reopens
-the rebuilt collection. Repeat both whenever `backend/data/programs/` changes.
-
-To run the evaluation against production, start it in the background inside the
-service so a dropped SSH session does not lose it (the run is recorded only when
-it finishes), then follow the log:
-
-```bash
-railway ssh -s <backend-service> -- sh -c "cd /app && EVALUATION_REPEATS=3 setsid nohup python -m app.evaluation > /data/evaluation.log 2>&1 < /dev/null &"
-railway ssh -s <backend-service> -- tail -n 30 /data/evaluation.log
-```
-
-It appends to `/data/evaluation-runs.jsonl`, which the AI quality dashboard and
-`/ops` read. Do not redeploy or restart the service during a run. Three repeats
-of the 25 profiles make 75 agent runs, all billed to the Gemini key.
-
-**3. Frontend on Vercel.** Import the repo with root directory `frontend` and
-set these variables:
-
-- `NEXT_PUBLIC_API_URL`: the full Railway origin including the scheme, such as
-  `https://<service>.up.railway.app`. Without `https://` the browser treats it
-  as a relative path and every check 404s on Vercel. It is inlined at build
-  time, so a change needs a redeploy.
-- `OPS_USERNAME`, `OPS_PASSWORD`, `OPS_API_TOKEN`: the token must equal the
-  backend's.
-
-Then set the backend's `FRONTEND_ORIGIN` to the Vercel production origin
-exactly, such as `https://scholarlens.vercel.app`, with no trailing slash.
-Railway stages variable changes, so deploy them for the backend to pick up the
-new origin. Vercel preview deployments are not allowed by CORS.
-
-**4. Production telemetry (Grafana Cloud).** The backend sends traces, metrics,
-and logs straight to Grafana Cloud's OTLP gateway, with no collector in
-production. In Grafana Cloud, open your stack, then the OpenTelemetry tile, and
-generate a token; the tile shows the values below. Set them on the Railway
-service:
-
-- `OTEL_EXPORTER_OTLP_ENDPOINT`: the gateway URL ending in `/otlp`, such as
-  `https://otlp-gateway-prod-us-east-0.grafana.net/otlp`. The app adds
-  `/v1/traces`, `/v1/metrics`, and `/v1/logs`.
-- `OTEL_EXPORTER_OTLP_HEADERS`: `Authorization=Basic%20<base64 of instanceID:token>`.
-  Use `%20`, not a space, after `Basic`. It is a secret, so keep it in Railway
-  only. To build it yourself:
-  `python -c "import base64,getpass; i=input('Instance ID: '); t=getpass.getpass('Token: '); print('Authorization=Basic%20' + base64.b64encode(f'{i}:{t}'.encode()).decode())"`
-- `OTEL_RESOURCE_ATTRIBUTES=deployment.environment=production`, which tells
-  production data apart in Grafana.
-- Optional: `OTEL_METRIC_EXPORT_INTERVAL`, the metric export interval in
-  milliseconds (60000 when unset).
-- Optional: `GRAFANA_PROMETHEUS_URL`, `GRAFANA_PROMETHEUS_USER`, and
-  `GRAFANA_PROMETHEUS_TOKEN` for the `/ops` trend charts (see Operations view
-  above). These are a separate read-only login.
-
-Spans, metrics, and logs are scrubbed the same way as locally. If Grafana
-Cloud is unreachable or the token is wrong, requests are unaffected; the
-backend only logs OTel's "Failed to export" warnings to Railway's log view.
-
-### Docker (local dev)
-```bash
-docker compose -f infra/docker-compose.yml up
-```
-Brings up the FastAPI backend, ChromaDB (persistent volume), and an
-OpenTelemetry Collector together. The frontend still runs separately via
-`next dev`.
-
-The backend traces each request (API, agent, LLM calls, retrieval, web search)
-and sends spans to the collector, which prints them
-(`docker compose -f infra/docker-compose.yml logs otel-collector`). Spans carry
-timings, models, token counts, and error types, never student input.
-
-Metrics go to the same collector, which serves them in Prometheus format at
-<http://localhost:8889/metrics>. The backend exports every 60 seconds; set
-`OTEL_METRIC_EXPORT_INTERVAL=5000` (milliseconds) on the backend for faster
-local checks. Metric labels only ever take fixed values, never student input.
-
-The backend's own log lines also go to the collector, which prints them next to
-the spans. Each one carries the same allowlisted fields and correlation ID as the
-stdout JSON line, plus the code location and the trace ID of its request. An
-exception is recorded by type only, never its message or stacktrace; the stdout
-line also keeps the traceback frames, which the export leaves out.
-
-Compose points the backend at the collector's OTLP/HTTP receiver
-(`http://otel-collector:4318`). For a backend you run on the host, set
-`OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318`. An older `:4317` (gRPC)
-value no longer works.
-
-| Metric (Prometheus name) | What it measures |
-| --- | --- |
-| `http_server_duration_milliseconds` | Request count, latency, and status code per route (`/health` excluded) |
-| `scholarlens_agent_duration_seconds` | Agent run duration by outcome: `success`, `rate_limited`, `timeout`, `tool_unavailable`, `error` |
-| `scholarlens_llm_requests_total` | Model requests made by completed agent runs |
-| `gen_ai_client_token_usage` | Input and output tokens per model response (from Pydantic AI) |
-| `scholarlens_tool_calls_total` | Tool calls by tool name |
-| `scholarlens_retrieval_duration_seconds` | ChromaDB retrieval latency by outcome |
-| `scholarlens_web_search_duration_seconds` | Tavily search latency by outcome |
-| `scholarlens_ingestion_*` | Last ingestion run: success, finish time, chunk count |
-| `scholarlens_evaluation_*` | Latest evaluation run: accuracy, citation accuracy, hallucination rate, consistency, latency, tool calls, run time |
-
-The ingestion and evaluation gauges are read from `data/ingestion-status.json`
-and `data/evaluation-runs.jsonl`; a gauge is absent until its file exists.
-
-To also send a local backend's traces to Grafana Cloud Tempo, its metrics to
-Grafana Cloud's Prometheus, and its logs to Loki, copy `infra/.env.example` to
-`infra/.env`, fill in your stack's OTLP credentials, and add the override.
-Production sends its own telemetry directly (Deploy, step 4).
-
-```bash
-docker compose -f infra/docker-compose.yml -f infra/docker-compose.grafana.yml up
-```
-
-#### Dashboards
-
-Two Grafana dashboards live in `infra/grafana/dashboards/`:
-
-- `service-health.json`: request rate, 5xx ratio and 4xx rate, `/eligibility`
-  latency, agent outcomes and duration, and ChromaDB and Tavily latency and
-  failures.
-- `ai-quality.json`: the latest evaluation run, evaluation trends against the
-  targets (eligibility above 80%, citation above 70%, hallucination below 10%),
-  tool calls, LLM requests, and token usage.
-
-![Grafana service health dashboard for production over 7 days: request rate and status codes by route, a 0% 5xx ratio, 5.30 s mean /eligibility latency, and agent runs by outcome, with sparse test traffic](docs/screenshots/service-health.png)
-
-The AI quality dashboard for the latest production run is shown under
-Evaluation results at the top of this file.
-
-To import one, open Grafana Cloud, go to Dashboards > New > Import, and upload
-the file. Pick your stack's Prometheus data source in the "Data source" drop-down
-at the top of the dashboard. Importing a file again replaces the existing copy.
-The panels fill from production (Deploy, step 4), or while a local backend runs
-with the Grafana override above. Use the "Environment" drop-down to choose
-which: `production` (the default), `local`, or All. Production sets
-`deployment.environment=production` itself; the Grafana override's collector
-labels everything else `local`.
-
-A few things to know when reading them:
-
-- The evaluation panels show the latest run. The backend re-reads it at every
-  metric export and Grafana Cloud's Prometheus (Mimir) stores each sample, so a
-  trend line is flat between runs, steps when
-  `python -m app.evaluation` finishes, and has gaps while the backend is down. A
-  quality stat with no value means the run could not measure it (for example, no
-  hallucination judgement); it is never shown as 0.
-- Prometheus `rate()` cannot see the first sample of a new series, so the first
-  request with a new status code or failure outcome after a backend start does
-  not show up in rate panels. Later ones do.
-- The dashed line on `/eligibility latency` marks 30 s, where the slow-latency
-  alert below fires on p95.
-
-#### Alerts and operations
-
-`infra/grafana/alerts/scholarlens-alerts.yaml` holds the production alert rules
-in Prometheus rule format. Every rule only looks at
-`deployment_environment="production"`, so local runs never alert.
-
-To load them, open Grafana Cloud, go to Alerting > Alert rules, and use "Import
-to Grafana-managed rules" with the YAML file. If your stack does not offer a
-file import, create each rule by hand with its query, pending period ("for"),
-and severity label from the file. Grafana-managed rules notify the stack's
-default contact point, which emails the stack owner; use "Test" on the contact
-point to check delivery. Every rule returns no data while things are healthy,
-so if a rule shows "No Data", set its "Alert state if no data" to Normal.
-
-| Alert | Fires when | First checks |
+| Metric | Result | Target |
 | --- | --- | --- |
-| `ScholarLensMetricsMissing` | No production metrics for 15 minutes | Railway service status, `GET /health`, Railway logs for "Failed to export" |
-| `ScholarLensServerErrors` | 3 or more 5xx responses in 15 minutes | Requests by status code, then the failing trace in Tempo and its Loki lines |
-| `ScholarLensAgentFailures` | 3 or more agent runs end in `timeout`, `tool_unavailable`, or `error` in 15 minutes | Agent runs by outcome, Retrieval and Web search panels, a failing trace |
-| `ScholarLensProviderRateLimited` | Gemini refuses a run with a rate limit or quota error | Gemini quota and billing in Google AI Studio |
-| `ScholarLensSlowEligibility` | p95 `/eligibility` latency above 30 s for 15 minutes | The LLM, retrieval, and web search spans of a slow trace |
-| `ScholarLensEligibilityAccuracyLow`, `ScholarLensCitationAccuracyLow`, `ScholarLensHallucinationRateHigh` | The latest production evaluation run misses its target | The failure categories and failing attempts printed by `python -m app.evaluation`, then rerun it |
+| Eligibility accuracy: the verdict matches the label | 93.3% | above 80% |
+| Citation accuracy: the quoted rule and program match the knowledge base | 97.0% | above 70% |
+| Hallucination rate: eligible with no citation, or a rule not in the knowledge base | 1.4% | below 10% |
+| Consistency: the same verdict across the 3 repeats | 92.0% | none |
 
-Errors are counted rather than taken as a ratio, because at low traffic one
-failed request out of three would trip any ratio. The missing-metrics alert
-watches the ingestion gauge, which the backend exports every interval while
-the ingestion status file exists (`INGESTION_STATUS_PATH`, `/data/ingestion-status.json`
-on the production volume), even with no traffic. The quality alerts
-keep firing until a passing evaluation run replaces the failing one. Like the
-rate panels, the count alerts miss the first failure of a new kind after a
-backend start.
+Mean latency was 7.6 s per answer with 1.01 tool calls, at about Rs 0.47 of
+model usage per answer. Run it with `python -m app.evaluation`; each run is
+appended to `data/evaluation-runs.jsonl` and shown on the AI quality dashboard.
+
+![Grafana AI quality dashboard for production: eligibility accuracy 93%, citation accuracy 97%, hallucination rate 1%, consistency 92%, 7.60 s average latency, and trend charts against the 80%, 70%, and 10% targets](docs/screenshots/ai-quality.png)
+
+## Tech stack
+
+| Area | Tools |
+| --- | --- |
+| Frontend | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, TanStack Query, Motion |
+| Backend | Python 3.11, FastAPI, Pydantic AI, Pydantic Settings |
+| AI and retrieval | Google Gemini (`gemini-3.8-flash`, `gemini-embedding-001`), ChromaDB, Tavily |
+| Testing | pytest, Playwright, Ruff, ESLint, an evaluation pipeline |
+| Observability | OpenTelemetry, Grafana Cloud (Tempo, Prometheus, Loki) |
+| Hosting | Vercel (frontend), Railway (backend), Docker Compose for local development |
+
+## Getting started
+
+**Prerequisites:** Node.js 20+, Python 3.11+, Docker, a
+[Google AI Studio](https://aistudio.google.com) API key, and a
+[Tavily](https://tavily.com) API key.
+
+1. **Configure.** Copy `backend/.env.example` to `backend/.env` and set
+   `GOOGLE_API_KEY` and `TAVILY_API_KEY`. Copy `frontend/.env.example` to
+   `frontend/.env.local`; its defaults point at the local backend.
+2. **Start ChromaDB.**
+
+   ```bash
+   docker compose -f infra/docker-compose.yml up -d chromadb
+   ```
+
+3. **Install the backend and build the knowledge base.**
+
+   ```bash
+   cd backend
+   py -3.11 -m venv .venv         # macOS/Linux: python3.11 -m venv .venv
+   .venv\Scripts\Activate.ps1     # macOS/Linux: source .venv/bin/activate
+   pip install -e ".[dev]"
+   python -m app.ingestion
+   uvicorn app.main:app --reload  # http://localhost:8000, API docs at /docs
+   ```
+
+4. **Run the frontend.**
+
+   ```bash
+   cd frontend
+   npm install
+   npm run dev                    # http://localhost:3000
+   ```
+
+To run the whole backend stack in Docker instead, with an OpenTelemetry
+Collector, use `docker compose -f infra/docker-compose.yml up`.
+
+### Configuration
+
+All backend settings are environment variables, documented in
+`backend/.env.example`. The ones you are most likely to change:
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `GOOGLE_API_KEY` | none | Gemini chat and embeddings |
+| `TAVILY_API_KEY` | none | Web search tool |
+| `AGENT_MODEL` | `google:gemini-3.8-flash` | Model the agent runs on |
+| `FRONTEND_ORIGIN` | `http://localhost:3000` | Allowed CORS origin |
+| `RATE_LIMIT_PER_MINUTE` / `RATE_LIMIT_PER_DAY` | `5` / `20` | Per-visitor limits on `/eligibility` |
+| `AGENT_RUN_TIMEOUT_SECONDS` | `45` | Budget for one whole check |
+| `CHROMA_PERSIST_PATH` | unset | Use embedded ChromaDB at this path instead of the server |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | unset | Send traces, metrics, and logs to an OTLP endpoint |
+
+The frontend reads `NEXT_PUBLIC_API_URL` (the backend origin) from
+`frontend/.env.local`.
+
+### Development
+
+| Task | Command |
+| --- | --- |
+| Backend tests (no keys or network needed) | `cd backend && pytest` |
+| Backend lint | `cd backend && ruff check .` |
+| Frontend lint | `cd frontend && npm run lint` |
+| Frontend build | `cd frontend && npm run build` |
+| Browser tests (stubs the API, starts its own server on port 3100) | `cd frontend && npm run test:e2e` |
+| Rebuild the knowledge base | `cd backend && python -m app.ingestion` |
+| Run the evaluation (uses the Gemini key) | `cd backend && python -m app.evaluation` |
+
+The first browser test run needs `npx playwright install chromium`.
+
+## Project structure
+
+```
+frontend/      Next.js app: landing page, eligibility checker, program pages, /ops
+backend/
+  app/api/         FastAPI routes, rate limiting, error envelope
+  app/agent/       Pydantic AI agent and result models
+  app/retrieval/   ChromaDB client
+  app/tools/       Tavily web search client
+  app/ingestion/   Chunking and embedding of program documents
+  app/evaluation/  Labeled profiles, runner, and scoring
+  data/programs/   Source documents for the knowledge base
+infra/         Docker Compose, OpenTelemetry Collector, Grafana dashboards and alerts
+design-docs/   Per-feature write-ups of how and why each part was built
+docs/          Screenshots, the SEO baseline, and earlier README versions
+```
+
+## Documentation
+
+- [Technical guide](docs/readme-versions/README-2026-10-09.md): deployment to
+  Railway and Vercel, Grafana Cloud telemetry, metrics, dashboards, alerts, and
+  the maintainer `/ops` page.
+- [Backend README](backend/README.md): timeouts, retries, dependency pinning,
+  and ingestion details.
+- [Design docs](design-docs/): one write-up per feature, from the first
+  endpoint to production observability.
+- [SEO baseline](docs/seo-baseline.md): Lighthouse and on-page measurements
+  before and after the SEO work.
+
+## Contributing
+
+Issues and pull requests are welcome. Before opening a pull request, run the
+backend tests and lint, plus the frontend lint and build. Run the browser
+tests too if you change the `/check` page. [AGENTS.md](AGENTS.md) describes the
+coding conventions used across the repo.
+
+## License
+
+No license has been chosen yet, so the code is all rights reserved by default.
+Please open an issue if you'd like to use it.
+
+## About
+
+ScholarLens is an independent project by
+[Arkadipta Mojumder](https://github.com/arkaslittlemind). It isn't affiliated
+with the U.S. Department of Education, any state agency, or any of the
+programs it covers, and it isn't financial advice: it checks published
+eligibility rules, not the chance of receiving an award.
