@@ -171,7 +171,7 @@ flowchart LR
     AR --> AG[aggregate]
     AG --> RM[RunMetrics<br/>corpus vs web splits]
     RM --> J[(evaluation-runs.jsonl)]
-    J --> O[/ops]
+    J --> O["/ops"]
 ```
 
 The timing travels as a small frozen dataclass, `RunMeasurement`, returned next
