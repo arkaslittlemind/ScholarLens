@@ -16,32 +16,42 @@ compared directly.
   keyless daily quota returned HTTP 429 on every call, so Lighthouse ran
   locally instead. Local runs depend on the machine, so 23i should repeat them
   on the same machine and tool version.
+- **After (23i):** Lighthouse runs 2026-10-08 17:39 to 17:42 UTC against the
+  live site with `main` at `83b008b`, confirmed by the live `/` `h1` reading
+  "A scholarship and grant eligibility checker that shows its sources." Same
+  Lighthouse 13.5.0 CLI, mobile preset and simulated throttling, three runs per
+  page and the same median rule. The browser was HeadlessChrome 154, one
+  version newer than 23a's 153, on a Windows 11 laptop (AMD Ryzen 5 4600H,
+  15 GB RAM), the machine 23f used. 23a did not record its machine, so local
+  TBT compares only loosely. The keyless PageSpeed Insights API again returned
+  HTTP 429, so the PageSpeed Insights and field data cells come from the web
+  UI, as in 23a.
 
 ## Lab metrics (mobile)
 
 | Page | Metric | Before | After |
 |---|---|---|---|
-| `/` | Performance | 78 (runs: 74, 78, 81) | |
-| `/` | SEO | 100 | |
-| `/` | FCP | 1.1 s | |
-| `/` | LCP | 3.8 s | |
-| `/` | CLS | 0 | |
-| `/` | TBT | 450 ms | |
-| `/` | LCP element | Header logo wordmark, `<span class="font-display text-title-sm">ScholarLens</span>` (runs: `h1`, logo, logo) | |
-| `/check` | Performance | 84 (runs: 82, 84, 87) | |
-| `/check` | SEO | 100 | |
-| `/check` | FCP | 1.1 s | |
-| `/check` | LCP | 3.8 s | |
-| `/check` | CLS | 0 | |
-| `/check` | TBT | 270 ms | |
-| `/check` | LCP element | Intro paragraph, `<p class="max-w-150 text-lg ...">Describe your situation and we'll tell you where you stand...` (same in all runs) | |
-| `/methodology` | Performance | 88 (runs: 86, 88, 88) | |
-| `/methodology` | SEO | 100 | |
-| `/methodology` | FCP | 1.1 s | |
-| `/methodology` | LCP | 3.7 s | |
-| `/methodology` | CLS | 0 | |
-| `/methodology` | TBT | 150 ms | |
-| `/methodology` | LCP element | The `h1`, "How ScholarLens reaches an answer." (runs: logo, `h1`, logo) | |
+| `/` | Performance | 78 (runs: 74, 78, 81) | 89 (runs: 86, 89, 93) |
+| `/` | SEO | 100 | 100 |
+| `/` | FCP | 1.1 s | 1.1 s |
+| `/` | LCP | 3.8 s | 3.2 s |
+| `/` | CLS | 0 | 0 |
+| `/` | TBT | 450 ms | 140 ms |
+| `/` | LCP element | Header logo wordmark, `<span class="font-display text-title-sm">ScholarLens</span>` (runs: `h1`, logo, logo) | Header logo wordmark, `<span class="font-display text-title-sm leading-none">ScholarLens</span>` (same in all runs) |
+| `/check` | Performance | 84 (runs: 82, 84, 87) | 91 (runs: 91, 91, 90) |
+| `/check` | SEO | 100 | 100 |
+| `/check` | FCP | 1.1 s | 1.1 s |
+| `/check` | LCP | 3.8 s | 3.1 s |
+| `/check` | CLS | 0 | 0 |
+| `/check` | TBT | 270 ms | 90 ms |
+| `/check` | LCP element | Intro paragraph, `<p class="max-w-150 text-lg ...">Describe your situation and we'll tell you where you stand...` (same in all runs) | Intro paragraph, `<p class="max-w-150 text-lg ...">Describe your situation and we'll tell you where you stand...` (same in all runs) |
+| `/methodology` | Performance | 88 (runs: 86, 88, 88) | 90 (runs: 90, 90, 90) |
+| `/methodology` | SEO | 100 | 100 |
+| `/methodology` | FCP | 1.1 s | 1.0 s |
+| `/methodology` | LCP | 3.7 s | 3.2 s |
+| `/methodology` | CLS | 0 | 0 |
+| `/methodology` | TBT | 150 ms | 140 ms |
+| `/methodology` | LCP element | The `h1`, "How ScholarLens reaches an answer." (runs: logo, `h1`, logo) | Header logo wordmark, `<span class="font-display text-title-sm leading-none">ScholarLens</span>` (same in all runs) |
 
 Every Lighthouse SEO audit passed on all three pages. A 100 here only means
 the basics are present (status codes, a title, a description, crawlable
@@ -57,10 +67,10 @@ either.
 
 | Scope | Before | After |
 |---|---|---|
-| `/` | No Data | |
-| `/check` | No Data (no origin data) | |
-| `/methodology` | No Data (no origin data) | |
-| Origin | No Data | |
+| `/` | No Data | No Data |
+| `/check` | No Data (no origin data) | No Data (no origin data) |
+| `/methodology` | No Data (no origin data) | No Data (no origin data) |
+| Origin | No Data | No Data |
 
 ## PageSpeed Insights cross-check (`/`)
 
@@ -71,51 +81,77 @@ than the local runs, which shows how much local TBT depends on the machine.
 
 | Form factor | Metric | Before | After |
 |---|---|---|---|
-| Mobile | Performance | 88 | |
-| Mobile | Accessibility / Best Practices / SEO | 100 / 100 / 100 | |
-| Mobile | FCP | 1.4 s | |
-| Mobile | LCP | 3.8 s | |
-| Mobile | TBT | 10 ms | |
-| Mobile | CLS | 0 | |
-| Mobile | Speed Index | 3.4 s | |
-| Desktop | Performance | 100 | |
-| Desktop | LCP | 0.7 s | |
+| Mobile | Performance | 88 | 91 |
+| Mobile | Accessibility / Best Practices / SEO | 100 / 100 / 100 | 100 / 100 / 100 |
+| Mobile | FCP | 1.4 s | 1.4 s |
+| Mobile | LCP | 3.8 s | 3.2 s |
+| Mobile | TBT | 10 ms | 40 ms |
+| Mobile | CLS | 0 | 0 |
+| Mobile | Speed Index | 3.4 s | 4.5 s |
+| Desktop | Performance | 100 | 99 |
+| Desktop | LCP | 0.7 s | 0.7 s |
 
 PageSpeed Insights also flagged unused JavaScript (about 69 KiB), legacy
 JavaScript (about 14 KiB) and render-blocking requests on both form factors.
+
+The After run was taken in the PageSpeed Insights web UI at 2026-10-08 20:22
+UTC (Lighthouse 13.5.0, emulated Moto G Power, HeadlessChromium 153), against
+the same deployment as the lab runs, so its method matches Before. Field data
+showed "No Data" again. On both form factors it still flagged unused
+JavaScript (about 69 KiB), legacy JavaScript (about 14 KiB), render-blocking
+requests and a network dependency chain, the items 23f left for a later
+decision. Mobile TBT rose from 10 ms to 40 ms and Speed Index from 3.4 s to
+4.5 s while LCP fell from 3.8 s to 3.2 s. Before and After are one run each,
+so these two rises may be run-to-run variation; they were not investigated.
 
 ## On-page inventory (served HTML, before JavaScript)
 
 | Page | Field | Before | After |
 |---|---|---|---|
-| `/` | HTTP status | 200 | |
-| `/` | Title | ScholarLens | |
-| `/` | Description | Find scholarships you actually qualify for, with the exact rule behind every match. | |
-| `/` | Canonical | none | |
-| `/` | Robots meta | none | |
-| `/` | Open Graph / Twitter | none | |
-| `/` | Headings | `h1` See which scholarships you qualify for, and why. `h2` x5 (problem, why ScholarLens, how it works, FAQ, closing call to action), `h3` x14 (problem points, feature cards, steps, FAQ questions) | |
-| `/check` | HTTP status | 200 | |
-| `/check` | Title | ScholarLens (inherited from the root layout) | |
-| `/check` | Description | Same as `/` (inherited from the root layout) | |
-| `/check` | Canonical | none | |
-| `/check` | Robots meta | none | |
-| `/check` | Open Graph / Twitter | none | |
-| `/check` | Headings | `h1` "Check your eligibility", `h2` "What helps the check", "Programs in the knowledge base" | |
-| `/methodology` | HTTP status | 200 | |
-| `/methodology` | Title | Methodology · ScholarLens | |
-| `/methodology` | Description | How ScholarLens reads program rules, decides where to look, and cites every answer. | |
-| `/methodology` | Canonical | none | |
-| `/methodology` | Robots meta | none | |
-| `/methodology` | Open Graph / Twitter | none | |
-| `/methodology` | Headings | `h1` How ScholarLens reaches an answer. `h2` x6 (one per section plus the closing call to action) | |
-| Unknown URL | HTTP status | 404 | |
+| `/` | HTTP status | 200 | 200 |
+| `/` | Title | ScholarLens | Scholarship and grant eligibility checker \| ScholarLens |
+| `/` | Description | Find scholarships you actually qualify for, with the exact rule behind every match. | Describe your situation and see which scholarships and grants you qualify for, from the Pell Grant to state aid, with the exact program rule quoted. |
+| `/` | Canonical | none | `https://scholar-lens-kappa.vercel.app` |
+| `/` | Robots meta | none | none (indexable by default) |
+| `/` | Open Graph / Twitter | none | Open Graph (title, description, url, site name, locale, type, 1200x630 PNG image with alt) and Twitter `summary_large_image` (title, description, image with alt); JSON-LD `WebSite` and `Person` |
+| `/` | Headings | `h1` See which scholarships you qualify for, and why. `h2` x5 (problem, why ScholarLens, how it works, FAQ, closing call to action), `h3` x14 (problem points, feature cards, steps, FAQ questions) | `h1` A scholarship and grant eligibility checker that shows its sources. `h2` x7 (program coverage summary, problem, why ScholarLens, how it works, who built it, FAQ, closing call to action), `h3` x14 (problem points, feature cards, steps, FAQ questions) |
+| `/check` | HTTP status | 200 | 200 |
+| `/check` | Title | ScholarLens (inherited from the root layout) | Check your scholarship and grant eligibility \| ScholarLens |
+| `/check` | Description | Same as `/` (inherited from the root layout) | Tell us your state, income, GPA and year in school, and we will check your situation against federal and state aid rules and show the rule behind each result. |
+| `/check` | Canonical | none | `https://scholar-lens-kappa.vercel.app/check` |
+| `/check` | Robots meta | none | none (indexable by default) |
+| `/check` | Open Graph / Twitter | none | Open Graph (title, description, url, site name, locale, type, 1200x630 PNG image with alt) and Twitter `summary_large_image` (title, description, image with alt), page-specific image; JSON-LD `WebApplication` (with `Offer` and `Person`) and `BreadcrumbList` |
+| `/check` | Headings | `h1` "Check your eligibility", `h2` "What helps the check", "Programs in the knowledge base" | `h1` "Check your eligibility", `h2` "What helps the check", "Programs in the knowledge base" |
+| `/methodology` | HTTP status | 200 | 200 |
+| `/methodology` | Title | Methodology · ScholarLens | How the scholarship eligibility checker works \| ScholarLens |
+| `/methodology` | Description | How ScholarLens reads program rules, decides where to look, and cites every answer. | How ScholarLens reads official program rules, when it searches the web, and why it never calls you eligible without quoting the rule it relied on. |
+| `/methodology` | Canonical | none | `https://scholar-lens-kappa.vercel.app/methodology` |
+| `/methodology` | Robots meta | none | none (indexable by default) |
+| `/methodology` | Open Graph / Twitter | none | Open Graph (title, description, url, site name, locale, type, 1200x630 PNG image with alt) and Twitter `summary_large_image` (title, description, image with alt), page-specific image; JSON-LD `BreadcrumbList` |
+| `/methodology` | Headings | `h1` How ScholarLens reaches an answer. `h2` x6 (one per section plus the closing call to action) | `h1` How ScholarLens reaches an answer. `h2` x6 (one per section plus the closing call to action) |
+| Unknown URL | HTTP status | 404 | 404, with `noindex` robots meta and no canonical |
+
+Pages added since the baseline: `/programs` and ten program pages (for example
+`/programs/federal-pell-grant`) shipped after 23a, so they have no "Before" to
+compare against. On 2026-10-08 both returned 200 with their own title,
+description, self-referencing canonical, Open Graph and Twitter tags, and a
+`BreadcrumbList`, and no robots meta. The sitemap lists all 14 URLs and
+`robots.txt` disallows only `/ops`.
 
 ## Index status
 
 | Check | Before | After |
 |---|---|---|
-| Google `site:scholar-lens-kappa.vercel.app` (2026-10-07) | 0 results, no URLs indexed | |
+| Google `site:scholar-lens-kappa.vercel.app` (2026-10-07) | 0 results, no URLs indexed | Not provided: 23i was completed on 2026-10-09, before the planned check on or after 2026-10-11 |
+
+On 2026-10-09 Search Console's URL Inspection reported `/` as "URL is on
+Google" with "Page is indexed", so Google indexed the homepage between 23a and
+then. The same day the sitemap still showed "Couldn't fetch" with an empty
+Last read, and Request indexing for `/check`, `/methodology` and `/programs`
+hit Search Console's daily quota. Bing Webmaster Tools processed the sitemap
+on 2026-10-08 and discovered all 14 URLs. The Pages and Breadcrumbs reports
+and the `site:` count were not checked; that follow-up is not tracked by any
+feature.
 
 ## Observations for later steps
 
@@ -128,7 +164,8 @@ JavaScript (about 14 KiB) and render-blocking requests on both form factors.
 - The JavaScript and render-blocking issues in the PageSpeed Insights
   cross-check above belong to 23f.
 - Google has indexed nothing yet, so Search Console submission (23i) matters
-  more than any ranking tweak.
+  more than any ranking tweak. (By 2026-10-09 Google had indexed `/`; see
+  Index status.)
 - `/check` has no title or description of its own (23b).
 - No page declares a canonical URL or any social share tags (23b, 23d).
 
@@ -239,4 +276,5 @@ in the lab would mean shipping less JavaScript before first paint (for example
 lighter Motion loading in the header and mobile menu, or fewer client
 components) or dropping the `opsz` axis, which changes how the headings look.
 Both are outside this feature and need their own decision. The production
-re-run after deploy is pending for 23i.
+re-run after deploy is in the "After" columns at the top of this document
+(23i, 2026-10-08).
