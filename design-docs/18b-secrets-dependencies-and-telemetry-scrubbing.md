@@ -178,7 +178,7 @@ version exist, and does *our* use of the package reach the vulnerable code?
 ```mermaid
 flowchart LR
     subgraph App["FastAPI process"]
-        S["Settings<br/>(SecretStr fields)"] -->|secret_value()| C["Clients:<br/>Gemini, Tavily,<br/>Grafana, /ops check"]
+        S["Settings<br/>(SecretStr fields)"] -->|"secret_value()"| C["Clients:<br/>Gemini, Tavily,<br/>Grafana, /ops check"]
         L["logger calls<br/>extra={...}"] --> F["JsonFormatter<br/>allowlist + type/frames only"]
         T["Spans from FastAPI,<br/>Pydantic AI, app"] --> SP["ScrubbingSpanProcessor<br/>drop IP, UA, exception text"]
         SP --> B["BatchSpanProcessor"]

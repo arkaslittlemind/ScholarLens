@@ -252,7 +252,7 @@ sequenceDiagram
     T->>B: page.goto("/check")
     B->>N: GET /check
     N-->>B: HTML + JS (NEXT_PUBLIC_API_URL = http://127.0.0.1:9)
-    T->>B: fill description, state, GPA; click "Check eligibility"
+    T->>B: fill description, state, GPA, then click "Check eligibility"
     B->>R: POST http://127.0.0.1:9/eligibility (intercepted)
     Note over R: awaits responseReleased
     T->>B: assert "Checking eligibility..." disabled, "Searching program rules" visible
