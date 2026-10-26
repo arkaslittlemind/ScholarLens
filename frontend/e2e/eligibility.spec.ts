@@ -38,8 +38,13 @@ test("a student checks eligibility and reads a cited verdict", async ({ page }) 
   await expect(page.getByRole("heading", { name: "Check your eligibility" })).toBeVisible();
 
   await page.getByLabel("Describe your situation").fill(`  ${DESCRIPTION}  `);
-  await page.getByLabel("State (optional)").fill("New Jersey");
-  await page.getByLabel("GPA (optional)").fill("3.6");
+  await page.getByLabel("Country (optional)").fill("India");
+  await page.getByLabel("State or region (optional)").fill("Maharashtra");
+  // Indian digit grouping and a trailing % are how many students write these.
+  await page.getByLabel("Yearly household income (optional)").fill("4,00,000");
+  await page.getByLabel("Currency").selectOption("INR");
+  await page.getByLabel("Grades (optional)").fill("88%");
+  await page.getByLabel("Grading scale").selectOption("100");
   await page.getByRole("button", { name: "Check eligibility" }).click();
 
   const pendingButton = page.getByRole("button", { name: "Checking eligibility..." });
@@ -51,11 +56,15 @@ test("a student checks eligibility and reads a cited verdict", async ({ page }) 
   expect(requests[0].method()).toBe("POST");
   // The dead address from playwright.config.ts, so an unstubbed call could never reach a backend.
   expect(requests[0].url()).toBe("http://127.0.0.1:9/eligibility");
-  // Blank optional fields are omitted and numbers stay numbers, as the backend expects.
+  // Blank optional fields are omitted, numbers stay numbers, and each travels with its unit.
   expect(requests[0].postDataJSON()).toEqual({
     description: DESCRIPTION,
-    state: "New Jersey",
-    gpa: 3.6,
+    country: "India",
+    state: "Maharashtra",
+    income: 400000,
+    currency: "INR",
+    gpa: 88,
+    gpa_scale: 100,
   });
 
   releaseResponse();

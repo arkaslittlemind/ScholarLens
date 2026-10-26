@@ -1,9 +1,10 @@
 "use client";
 
-import { ArrowUpRight, CheckCircle2, CircleDot, Info, XCircle } from "lucide-react";
+import { ArrowUpRight, BookCheck, CheckCircle2, CircleDot, Globe, Info, PencilLine, XCircle } from "lucide-react";
 import { motion, useReducedMotion, type Variants } from "motion/react";
 import { StreamingSummary, summaryRevealDelay } from "@/components/check/StreamingSummary";
 import { EASE_IN_OUT, EASE_OUT } from "@/components/motion/easing";
+import { Button } from "@/components/ui/button";
 import {
   displayLabel,
   safeHttpUrl,
@@ -11,6 +12,7 @@ import {
   type EligibilityResult,
   type EligibilityStatus,
   type Source,
+  type SourceOrigin,
 } from "@/lib/eligibility";
 
 // Renders arbitrary model/web-search output (summary, reasons, next steps,
@@ -39,6 +41,16 @@ const STATUS_META: Record<
     icon: XCircle,
     badgeClassName: "border border-input bg-paper text-ink",
     headerClassName: "bg-tint",
+  },
+};
+
+// Where the cited rule came from, decided on the server by which tool returned its URL.
+// A web answer is not wrong, but nobody here has reviewed it, and the student should know.
+const ORIGIN_META: Record<SourceOrigin, { icon: typeof Globe; text: string }> = {
+  knowledge_base: { icon: BookCheck, text: "From the program rules we've reviewed." },
+  web: {
+    icon: Globe,
+    text: "Found on the web. This isn't one of the programs we've reviewed.",
   },
 };
 
@@ -174,24 +186,32 @@ interface VerdictRuleProps {
   clause: string | null;
   source: Source | null;
   sweepDelay: number;
+  awaitingDetails: boolean;
+  fromWeb: boolean;
 }
 
-function VerdictRule({ clause, source, sweepDelay }: VerdictRuleProps) {
+function VerdictRule({ clause, source, sweepDelay, awaitingDetails, fromWeb }: VerdictRuleProps) {
+  // A web quote keeps the panel (it is still the rule the answer rests on) but says where it
+  // was published and that nobody here reviewed it, right where the student reads it.
+  const webHost = fromWeb && source ? safeHttpUrl(source.url)?.hostname : undefined;
   if (!clause) {
     return (
       <p className="rounded-xl bg-tint p-4 text-sm text-ink-secondary">
-        No rule was quoted. This result rests on missing information.
+        {awaitingDetails
+          ? "There's no rule to quote yet, because the answer depends on details you haven't shared."
+          : "No rule could be quoted for this result."}
       </p>
     );
   }
   return (
     <figure aria-labelledby="verdict-rule" className="flex flex-col gap-3 rounded-xl border-l-2 border-rust bg-tint py-4 pr-4 pl-5">
-      <SectionHeading id="verdict-rule">The rule</SectionHeading>
+      <SectionHeading id="verdict-rule">{webHost ? `The rule, as published on ${webHost}` : "The rule"}</SectionHeading>
       <blockquote className="font-display text-lg leading-snug text-ink wrap-anywhere sm:text-xl">
         &ldquo;
-        {/* The marker sweep: a gradient whose width grows behind the text. */}
+        {/* The marker sweep: a gradient whose width grows behind the text. Rust Wash alone
+            barely differs from the tint panel, so the stroke is rust itself at low strength. */}
         <motion.span
-          className="box-decoration-clone bg-linear-to-r from-rust-tint to-rust-tint bg-no-repeat"
+          className="box-decoration-clone bg-linear-to-r from-rust/20 to-rust/20 bg-no-repeat"
           initial={{ backgroundSize: "0% 100%" }}
           animate={{ backgroundSize: "100% 100%" }}
           transition={{ duration: 0.8, ease: EASE_IN_OUT, delay: sweepDelay }}
@@ -200,7 +220,17 @@ function VerdictRule({ clause, source, sweepDelay }: VerdictRuleProps) {
         </motion.span>
         &rdquo;
       </blockquote>
-      {source && <figcaption className="text-sm text-ink-secondary wrap-anywhere">{source.document}</figcaption>}
+      {source && (
+        <figcaption className="text-sm text-ink-secondary wrap-anywhere">
+          {source.document}
+          {webHost && (
+            <span className="mt-1 flex items-start gap-1.5">
+              <Globe aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
+              Not reviewed by ScholarLens. Check the wording on the official page before you rely on it.
+            </span>
+          )}
+        </figcaption>
+      )}
     </figure>
   );
 }
@@ -250,11 +280,15 @@ function VerdictTrace({ steps }: VerdictTraceProps) {
 
 interface VerdictCardProps {
   result: EligibilityResult;
+  // Takes the student back to the description, so missing details lead somewhere.
+  onAddDetails?: () => void;
 }
 
-export function VerdictCard({ result }: VerdictCardProps) {
+export function VerdictCard({ result, onAddDetails }: VerdictCardProps) {
   const meta = STATUS_META[result.status];
   const Icon = meta.icon;
+  const origin = result.source && result.source_origin ? ORIGIN_META[result.source_origin] : undefined;
+  const OriginIcon = origin?.icon;
   const reduceMotion = useReducedMotion() ?? false;
   // Everything after the summary waits for its last word, so the card reads top to bottom.
   const followDelay = reduceMotion ? 0 : summaryRevealDelay(result.summary);
@@ -283,6 +317,12 @@ export function VerdictCard({ result }: VerdictCardProps) {
         <motion.h2 variants={rise} className="motion-reduce:transform-none! font-display text-title leading-tight text-ink wrap-anywhere sm:text-title-lg">
           {result.source ? result.source.program : "Your result"}
         </motion.h2>
+        {origin && OriginIcon && (
+          <motion.p variants={rise} className="motion-reduce:transform-none! flex items-start gap-2 text-body-sm text-ink-secondary">
+            <OriginIcon aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+            {origin.text}
+          </motion.p>
+        )}
       </div>
 
       <div className="px-6 pt-6 sm:px-8 sm:pt-8">
@@ -297,6 +337,8 @@ export function VerdictCard({ result }: VerdictCardProps) {
               clause={result.supporting_clause}
               source={result.source}
               sweepDelay={RULE_SWEEP_DELAY_SECONDS + followDelay}
+              awaitingDetails={result.missing_info.length > 0}
+              fromWeb={result.source_origin === "web"}
             />
           </motion.div>
 
@@ -316,6 +358,12 @@ export function VerdictCard({ result }: VerdictCardProps) {
                     <li key={item}>{item}</li>
                   ))}
                 </ul>
+                {onAddDetails && (
+                  <Button type="button" variant="outline" size="sm" onClick={onAddDetails} className="mt-4 h-auto min-h-8 py-1.5 text-left whitespace-normal pointer-coarse:min-h-11">
+                    <PencilLine aria-hidden="true" />
+                    Add these details and check again
+                  </Button>
+                )}
               </div>
             </motion.div>
           )}

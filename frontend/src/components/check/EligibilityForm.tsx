@@ -1,15 +1,16 @@
 "use client";
 
-import { ArrowRight, Loader2, Sparkles } from "lucide-react";
-import { useState, type FormEvent, type ReactNode } from "react";
+import { ArrowRight, ChevronDown, Loader2, Sparkles } from "lucide-react";
+import { useState, type ComponentProps, type FormEvent, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { EligibilityRequest } from "@/lib/eligibility";
 
-// Adapted from real profiles in backend/data/evaluation/profiles.json so the
-// examples reflect what the corpus can actually answer.
+// The first two are adapted from real profiles in backend/data/evaluation/profiles.json,
+// so they reflect what the corpus can answer. The third is outside the corpus on
+// purpose: it shows a student abroad that the check still works for them, through the web.
 const EXAMPLE_QUERIES = [
   {
     label: "First-year Pell Grant",
@@ -21,40 +22,110 @@ const EXAMPLE_QUERIES = [
     description:
       "I already earned a Bachelor's degree and I'm now enrolled in a second undergraduate program. Am I eligible for the Federal Pell Grant?",
   },
+  {
+    label: "Class 12 student in India",
+    description:
+      "I'm in Class 12 in Maharashtra, India, and scored 88% in my board exams. My family's yearly income is about ₹4,00,000 and I want to study engineering. Which scholarships could I apply for?",
+  },
+];
+
+// The currencies most visitors are likely to earn in. Anything else can go in the description.
+const CURRENCIES = [
+  { code: "USD", label: "$ USD" },
+  { code: "INR", label: "₹ INR" },
+  { code: "EUR", label: "€ EUR" },
+  { code: "GBP", label: "£ GBP" },
+  { code: "CAD", label: "$ CAD" },
+  { code: "AUD", label: "$ AUD" },
+  { code: "NGN", label: "₦ NGN" },
+  { code: "PKR", label: "₨ PKR" },
+  { code: "BDT", label: "৳ BDT" },
+  { code: "NPR", label: "₨ NPR" },
+];
+
+const GRADE_SCALES = [
+  { value: "4", label: "out of 4" },
+  { value: "5", label: "out of 5" },
+  { value: "10", label: "out of 10" },
+  { value: "100", label: "percent" },
 ];
 
 const DESCRIPTION_MAX = 2000;
+const COUNTRY_MAX = 100;
 const STATE_MAX = 100;
 const MAJOR_MAX = 200;
 
-type FieldErrors = Partial<Record<keyof EligibilityRequest, string>>;
+type FieldName = keyof EligibilityRequest;
+type Values = Record<FieldName, string>;
+type FieldErrors = Partial<Record<FieldName, string>>;
+
+const EMPTY_VALUES: Values = {
+  description: "",
+  country: "",
+  state: "",
+  income: "",
+  currency: "",
+  gpa: "",
+  gpa_scale: "",
+  major: "",
+};
 
 // Visual order of the fields, whose element ids match these names, so a failed
 // submit can focus the first one that needs fixing.
-const FIELD_ORDER: (keyof EligibilityRequest)[] = ["description", "income", "state", "gpa", "major"];
+const FIELD_ORDER: FieldName[] = ["description", "country", "state", "income", "currency", "gpa", "gpa_scale", "major"];
 
-function isNonNegativeNumber(value: string): boolean {
-  const number = Number(value);
-  return Number.isFinite(number) && number >= 0;
+// A number and its unit are checked together, so editing one re-checks the other.
+const PARTNER: Partial<Record<FieldName, FieldName>> = {
+  income: "currency",
+  currency: "income",
+  gpa: "gpa_scale",
+  gpa_scale: "gpa",
+};
+
+// Digit-group separators differ by country (40,000 and 4,00,000 are both common), so
+// they are dropped rather than validated. A trailing % is how many students write grades.
+function parseAmount(value: string): number | undefined {
+  const cleaned = value.replace(/[\s,_'%]/g, "");
+  if (cleaned === "") return undefined;
+  const number = Number(cleaned);
+  return Number.isFinite(number) && number >= 0 ? number : Number.NaN;
 }
 
 // One rule per field, shared by submit-time validation and the live re-check of a
 // field that is already showing an error.
-function fieldError(field: keyof EligibilityRequest, value: string): string | undefined {
-  const trimmed = value.trim();
+function fieldError(field: FieldName, values: Values): string | undefined {
+  const trimmed = values[field].trim();
   switch (field) {
     case "description":
-      return trimmed.length < 1 || trimmed.length > DESCRIPTION_MAX
-        ? `Describe your situation in 1-${DESCRIPTION_MAX} characters.`
+      return trimmed.length < 1
+        ? "Tell us a little about your situation first, like your year in school and where you live."
         : undefined;
-    case "income":
-      return trimmed !== "" && !isNonNegativeNumber(value) ? "Income must be zero or a positive number." : undefined;
-    case "gpa":
-      return trimmed !== "" && !isNonNegativeNumber(value) ? "GPA must be zero or a positive number." : undefined;
+    case "country":
+      return trimmed.length > COUNTRY_MAX ? `Country must be ${COUNTRY_MAX} characters or fewer.` : undefined;
     case "state":
-      return trimmed.length > STATE_MAX ? `State must be ${STATE_MAX} characters or fewer.` : undefined;
+      return trimmed.length > STATE_MAX ? `State or region must be ${STATE_MAX} characters or fewer.` : undefined;
+    case "income":
+      return Number.isNaN(parseAmount(values.income))
+        ? "Enter your income as a number, like 400000 or 4,00,000."
+        : undefined;
+    case "currency":
+      return parseAmount(values.income) !== undefined && values.currency === ""
+        ? "Choose the currency your income is in."
+        : undefined;
+    case "gpa": {
+      const gpa = parseAmount(values.gpa);
+      if (Number.isNaN(gpa)) return "Enter your grades as a number, like 3.6 or 85.";
+      if (gpa !== undefined && values.gpa_scale !== "" && gpa > Number(values.gpa_scale)) {
+        return "That's above the top of the scale you chose.";
+      }
+      return undefined;
+    }
+    case "gpa_scale":
+      return parseAmount(values.gpa) !== undefined && values.gpa_scale === ""
+        ? "Choose the scale your grades use."
+        : undefined;
     case "major":
-      return trimmed.length > MAJOR_MAX ? `Major must be ${MAJOR_MAX} characters or fewer.` : undefined;
+      return trimmed.length > MAJOR_MAX ? `Field of study must be ${MAJOR_MAX} characters or fewer.` : undefined;
   }
 }
 
@@ -67,13 +138,15 @@ function labelLayerClass(active: boolean): string {
 }
 
 interface FieldProps {
-  id: keyof EligibilityRequest;
+  id: FieldName;
   label: string;
   error: string | undefined;
+  // The field whose message is showing, when a number and its unit share one label.
+  errorFor?: FieldName;
   children: ReactNode;
 }
 
-function Field({ id, label, error, children }: FieldProps) {
+function Field({ id, label, error, errorFor = id, children }: FieldProps) {
   return (
     <div className="flex flex-col gap-2">
       <Label htmlFor={id} className="text-sm font-semibold text-ink">
@@ -82,12 +155,29 @@ function Field({ id, label, error, children }: FieldProps) {
       {children}
       {error && (
         <p
-          id={`${id}-error`}
+          id={`${errorFor}-error`}
           className="text-sm font-medium text-destructive transition-[opacity,translate] duration-150 ease-out-strong starting:-translate-y-1 starting:opacity-0 motion-reduce:translate-none!"
         >
           {error}
         </p>
       )}
+    </div>
+  );
+}
+
+// A themed native select: the platform picker stays (best on phones), the chrome matches Input.
+function UnitSelect({ className, children, ...props }: ComponentProps<"select">) {
+  // Unset reads like a placeholder, so it doesn't pass for a chosen value.
+  const unset = props.value === "";
+  return (
+    <div className={`relative shrink-0 ${className ?? ""}`}>
+      <select
+        className={`h-11 w-full appearance-none rounded-md border border-input bg-paper pr-8 pl-3 text-base transition-[border-color,box-shadow,opacity,background-color] duration-200 outline-none hover:border-ink-secondary/50 focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/10 focus-visible:transition-none disabled:cursor-not-allowed disabled:bg-tint disabled:opacity-60 aria-invalid:border-destructive aria-invalid:ring-4 aria-invalid:ring-destructive/10 ${unset ? "text-ink-secondary/80" : "text-ink"} [&>option]:text-ink`}
+        {...props}
+      >
+        {children}
+      </select>
+      <ChevronDown aria-hidden="true" className="pointer-events-none absolute top-1/2 right-2.5 size-4 -translate-y-1/2 text-ink-secondary" />
     </div>
   );
 }
@@ -102,38 +192,36 @@ interface EligibilityFormProps {
 }
 
 export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors }: EligibilityFormProps) {
-  const [description, setDescription] = useState("");
-  const [income, setIncome] = useState("");
-  const [state, setState] = useState("");
-  const [gpa, setGpa] = useState("");
-  const [major, setMajor] = useState("");
+  const [values, setValues] = useState<Values>(EMPTY_VALUES);
   const [errors, setErrors] = useState<FieldErrors>({});
   // Server-flagged fields the student has edited since; their stale flag is hidden.
-  const [dismissedServerFields, setDismissedServerFields] = useState<ReadonlySet<keyof EligibilityRequest>>(
-    () => new Set(),
-  );
+  const [dismissedServerFields, setDismissedServerFields] = useState<ReadonlySet<FieldName>>(() => new Set());
   // Counts example fills; each new value remounts the flash layer over the field.
   const [fillCount, setFillCount] = useState(0);
 
-  function displayError(field: keyof EligibilityRequest): string | undefined {
+  function displayError(field: FieldName): string | undefined {
     if (errors[field]) return errors[field];
     if (serverFieldErrors?.includes(field) && !dismissedServerFields.has(field)) {
-      return "The server flagged this field. Please check it.";
+      return "Please check this field.";
     }
     return undefined;
   }
 
   // A field already showing an error re-checks as the student types, so the message
   // goes away the moment it's fixed. Untouched fields still wait for submit.
-  function handleChange(field: keyof EligibilityRequest, value: string, setValue: (value: string) => void) {
-    setValue(value);
-    if (errors[field]) {
-      const nextError = fieldError(field, value);
+  function handleChange(field: FieldName, value: string) {
+    const next = { ...values, [field]: value };
+    setValues(next);
+    const recheck = [field, PARTNER[field]].filter((name): name is FieldName => name !== undefined && Boolean(errors[name]));
+    if (recheck.length > 0) {
       setErrors((previous) => {
-        const next = { ...previous };
-        if (nextError) next[field] = nextError;
-        else delete next[field];
-        return next;
+        const updated = { ...previous };
+        for (const name of recheck) {
+          const error = fieldError(name, next);
+          if (error) updated[name] = error;
+          else delete updated[name];
+        }
+        return updated;
       });
     }
     if (serverFieldErrors?.includes(field) && !dismissedServerFields.has(field)) {
@@ -142,19 +230,19 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
   }
 
   // Shared ARIA wiring so every input points at its own error message.
-  function errorProps(field: keyof EligibilityRequest) {
+  function errorProps(field: FieldName, describedBy?: string) {
     const error = displayError(field);
+    const ids = [describedBy, error ? `${field}-error` : undefined].filter(Boolean).join(" ");
     return {
       "aria-invalid": Boolean(error),
-      "aria-describedby": error ? `${field}-error` : undefined,
+      "aria-describedby": ids || undefined,
     };
   }
 
   function validate(): { request: EligibilityRequest } | { errors: FieldErrors } {
-    const values: Record<keyof EligibilityRequest, string> = { description, income, state, gpa, major };
     const nextErrors: FieldErrors = {};
     for (const field of FIELD_ORDER) {
-      const error = fieldError(field, values[field]);
+      const error = fieldError(field, values);
       if (error) nextErrors[field] = error;
     }
 
@@ -162,13 +250,19 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
       return { errors: nextErrors };
     }
 
+    const income = parseAmount(values.income);
+    const gpa = parseAmount(values.gpa);
     return {
       request: {
-        description: description.trim(),
-        income: income.trim() === "" ? undefined : Number(income),
-        state: state.trim() || undefined,
-        gpa: gpa.trim() === "" ? undefined : Number(gpa),
-        major: major.trim() || undefined,
+        description: values.description.trim(),
+        country: values.country.trim() || undefined,
+        state: values.state.trim() || undefined,
+        income,
+        // A unit alone means nothing to the agent, so it travels only with its number.
+        currency: income === undefined ? undefined : values.currency,
+        gpa,
+        gpa_scale: gpa === undefined ? undefined : Number(values.gpa_scale),
+        major: values.major.trim() || undefined,
       },
     };
   }
@@ -189,6 +283,9 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
     onSubmit(outcome.request);
   }
 
+  const incomeError = displayError("income") ?? displayError("currency");
+  const gradesError = displayError("gpa") ?? displayError("gpa_scale");
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -206,7 +303,7 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
             type="button"
             disabled={disabled}
             onClick={() => {
-              handleChange("description", example.description, setDescription);
+              handleChange("description", example.description);
               setFillCount((count) => count + 1);
             }}
             className="rounded-full border border-hairline bg-tint px-3 py-1.5 text-caption pointer-coarse:min-h-11 pointer-coarse:px-4 font-semibold text-ink transition-press hover:border-input hover:bg-paper active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50"
@@ -221,13 +318,13 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
           <div className="relative">
             <Textarea
               id="description"
-              value={description}
-              onChange={(event) => handleChange("description", event.target.value, setDescription)}
+              value={values.description}
+              onChange={(event) => handleChange("description", event.target.value)}
               disabled={disabled}
               maxLength={DESCRIPTION_MAX}
               rows={5}
-              placeholder="I'm a first-year undergraduate, U.S. citizen, household income..."
-              {...errorProps("description")}
+              placeholder="For example: I'm in my final year of school in India and want to study engineering. My family earns about ₹4,00,000 a year."
+              {...errorProps("description", "description-count")}
             />
             {fillCount > 0 && (
               <span
@@ -238,8 +335,10 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
             )}
           </div>
         </Field>
-        <p aria-hidden="true" className="self-end text-xs text-ink-secondary tabular-nums">
-          {description.length} / {DESCRIPTION_MAX}
+        {/* Read once with the field, so the limit is known before it is hit. */}
+        <p id="description-count" className="self-end text-xs text-ink-secondary tabular-nums">
+          {values.description.length} / {DESCRIPTION_MAX}
+          <span className="sr-only"> characters used</span>
         </p>
       </div>
 
@@ -249,53 +348,112 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
           <span aria-hidden="true" className="h-px flex-1 bg-hairline" />
         </legend>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field id="income" label="Household income (optional)" error={displayError("income")}>
+          <Field id="country" label="Country (optional)" error={displayError("country")}>
             <Input
-              id="income"
-              type="number"
-              min={0}
-              inputMode="numeric"
-              placeholder="40000"
-              value={income}
-              onChange={(event) => handleChange("income", event.target.value, setIncome)}
+              id="country"
+              autoComplete="country-name"
+              placeholder="e.g. India"
+              value={values.country}
+              onChange={(event) => handleChange("country", event.target.value)}
               disabled={disabled}
-              {...errorProps("income")}
+              maxLength={COUNTRY_MAX}
+              {...errorProps("country")}
             />
           </Field>
 
-          <Field id="state" label="State (optional)" error={displayError("state")}>
+          <Field id="state" label="State or region (optional)" error={displayError("state")}>
             <Input
               id="state"
-              placeholder="New Jersey"
-              value={state}
-              onChange={(event) => handleChange("state", event.target.value, setState)}
+              autoComplete="address-level1"
+              placeholder="e.g. Maharashtra or Texas"
+              value={values.state}
+              onChange={(event) => handleChange("state", event.target.value)}
               disabled={disabled}
               maxLength={STATE_MAX}
               {...errorProps("state")}
             />
           </Field>
 
-          <Field id="gpa" label="GPA (optional)" error={displayError("gpa")}>
-            <Input
-              id="gpa"
-              type="number"
-              min={0}
-              step="0.01"
-              inputMode="decimal"
-              placeholder="3.6"
-              value={gpa}
-              onChange={(event) => handleChange("gpa", event.target.value, setGpa)}
-              disabled={disabled}
-              {...errorProps("gpa")}
-            />
+          <Field
+            id="income"
+            label="Yearly household income (optional)"
+            error={incomeError}
+            errorFor={displayError("income") ? "income" : "currency"}
+          >
+            <div className="flex gap-2">
+              <Input
+                id="income"
+                inputMode="numeric"
+                placeholder="e.g. 400000"
+                value={values.income}
+                onChange={(event) => handleChange("income", event.target.value)}
+                disabled={disabled}
+                {...errorProps("income")}
+              />
+              <UnitSelect
+                id="currency"
+                aria-label="Currency"
+                className="w-28"
+                value={values.currency}
+                onChange={(event) => handleChange("currency", event.target.value)}
+                disabled={disabled}
+                {...errorProps("currency")}
+              >
+                <option value="" disabled>
+                  Currency
+                </option>
+                {CURRENCIES.map((currency) => (
+                  <option key={currency.code} value={currency.code}>
+                    {currency.label}
+                  </option>
+                ))}
+              </UnitSelect>
+            </div>
           </Field>
 
-          <Field id="major" label="Major (optional)" error={displayError("major")}>
+          <Field
+            id="gpa"
+            label="Grades (optional)"
+            error={gradesError}
+            errorFor={displayError("gpa") ? "gpa" : "gpa_scale"}
+          >
+            <div className="flex gap-2">
+              <Input
+                id="gpa"
+                inputMode="decimal"
+                placeholder="e.g. 3.6 or 85"
+                value={values.gpa}
+                onChange={(event) => handleChange("gpa", event.target.value)}
+                disabled={disabled}
+                {...errorProps("gpa")}
+              />
+              <UnitSelect
+                id="gpa_scale"
+                aria-label="Grading scale"
+                className="w-32"
+                value={values.gpa_scale}
+                onChange={(event) => handleChange("gpa_scale", event.target.value)}
+                disabled={disabled}
+                {...errorProps("gpa_scale")}
+              >
+                <option value="" disabled>
+                  Scale
+                </option>
+                {GRADE_SCALES.map((scale) => (
+                  <option key={scale.value} value={scale.value}>
+                    {scale.label}
+                  </option>
+                ))}
+              </UnitSelect>
+            </div>
+          </Field>
+
+          <Field id="major" label="Field of study (optional)" error={displayError("major")}>
             <Input
               id="major"
-              placeholder="Education"
-              value={major}
-              onChange={(event) => handleChange("major", event.target.value, setMajor)}
+              placeholder="e.g. Engineering"
+              value={values.major}
+              onChange={(event) => handleChange("major", event.target.value)}
               disabled={disabled}
               maxLength={MAJOR_MAX}
               {...errorProps("major")}
@@ -305,7 +463,7 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
       </fieldset>
 
       <div className="flex flex-col gap-3 border-t border-hairline pt-6 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-caption text-ink-secondary">Usually under a minute. Nothing is stored.</p>
+        <p className="text-caption text-ink-secondary">Most checks take a few seconds. Nothing you enter is stored.</p>
         <Button type="submit" size="lg" disabled={disabled} className="w-full disabled:opacity-80 sm:w-auto">
           {/* Both labels share one grid cell, so the button is always as wide as the
               longer one and never jumps; only the active label is in the accessible name. */}

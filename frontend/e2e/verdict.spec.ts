@@ -26,7 +26,7 @@ test("a partial result with no rule or source says so explicitly", async ({ page
   await expect(page.getByRole("heading", { level: 2, name: "Your result" })).toBeVisible();
   await expect(page.getByText("Partial match", { exact: true })).toBeVisible();
   await expect(
-    page.getByText("No rule was quoted. This result rests on missing information."),
+    page.getByText("There's no rule to quote yet, because the answer depends on details you haven't shared."),
   ).toBeVisible();
   await expect(page.getByText("No source document was cited for this result.")).toBeVisible();
   await expect(page.getByText("This result may change with more information:")).toBeVisible();
@@ -36,6 +36,78 @@ test("a partial result with no rule or source says so explicitly", async ({ page
     }),
   ).toBeVisible();
   await expect(page.getByText("How this answer was found")).toHaveCount(0);
+
+  // The missing details lead back to the description, with what was written kept.
+  await page.getByRole("button", { name: "Add these details and check again" }).click();
+  const description = page.getByLabel("Describe your situation");
+  await expect(description).toBeFocused();
+  await expect(description).toHaveValue(DESCRIPTION);
+});
+
+const CITED_PELL: EligibilityResult = {
+  status: "eligible",
+  summary: "You meet the Pell Grant's enrollment rules.",
+  reasons: [],
+  next_steps: [],
+  alternatives: [],
+  supporting_clause: "Must be enrolled in an eligible undergraduate program.",
+  source: {
+    program: "Federal Pell Grant",
+    document: "Eligibility summary",
+    url: "https://studentaid.gov/understand-aid/types/grants/pell",
+  },
+  missing_info: [],
+  tool_trace: ["searching program rules", "validating eligibility", "preparing cited answer"],
+};
+
+test("a result says whether its rule came from a reviewed program or the web", async ({ page }) => {
+  await checkWith(page, { ...CITED_PELL, source_origin: "knowledge_base" });
+  await expect(page.getByText("From the program rules we've reviewed.")).toBeVisible();
+
+  await expect(page.getByRole("heading", { level: 3, name: "The rule", exact: true })).toBeVisible();
+
+  await checkWith(page, { ...CITED_PELL, source_origin: "web" });
+  await expect(page.getByText("Found on the web.", { exact: false })).toBeVisible();
+  await expect(page.getByText("From the program rules we've reviewed.")).toHaveCount(0);
+  // The unreviewed status sits on the quote itself, not only under the heading.
+  await expect(
+    page.getByRole("heading", { level: 3, name: "The rule, as published on studentaid.gov" }),
+  ).toBeVisible();
+  await expect(page.locator("figcaption")).toContainText("Not reviewed by ScholarLens.");
+});
+
+test("on a phone the reviewed-program scope shows before the form", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto("/check");
+  const note = page.getByText("We've reviewed 10 US programs in detail.", { exact: false });
+  await expect(note).toBeVisible();
+  const noteTop = (await note.boundingBox())!.y;
+  const formTop = (await page.locator("form").boundingBox())!.y;
+  expect(noteTop).toBeLessThan(formTop);
+
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await expect(note).toBeHidden();
+});
+
+test("a result with no confirmed origin claims neither", async ({ page }) => {
+  await checkWith(page, CITED_PELL);
+  await expect(page.getByText("Found on the web.", { exact: false })).toHaveCount(0);
+  await expect(page.getByText("From the program rules we've reviewed.")).toHaveCount(0);
+});
+
+test("a slow check says why it is taking longer", async ({ page }) => {
+  await page.clock.install();
+  // Never answered, so the check stays in flight while the clock moves.
+  await page.route("**/eligibility", () => {});
+  await page.goto("/check");
+  await page.getByLabel("Describe your situation").fill(DESCRIPTION);
+  await page.getByRole("button", { name: "Check eligibility" }).click();
+
+  await expect(page.getByText("This usually takes a few seconds.")).toBeVisible();
+  await page.clock.fastForward(13_000);
+  await expect(
+    page.getByText("Still working. Checks that search the web can take up to a minute."),
+  ).toBeVisible();
 });
 
 test("a cited result names its program, rule, source host, and steps", async ({ page }) => {
