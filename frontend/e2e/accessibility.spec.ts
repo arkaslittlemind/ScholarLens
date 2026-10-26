@@ -35,13 +35,27 @@ test("a failed submit moves focus to the first invalid field", async ({ page }) 
 
   const description = page.getByLabel("Describe your situation");
   await expect(description).toBeFocused();
-  await expect(page.getByText("Describe your situation in 1-2000 characters.")).toBeVisible();
+  await expect(page.getByText("Tell us a little about your situation first", { exact: false })).toBeVisible();
 
   await description.fill(DESCRIPTION);
-  await page.getByLabel("GPA (optional)").fill("-1");
+  await page.getByLabel("Grades (optional)").fill("-1");
   await page.getByRole("button", { name: "Check eligibility" }).click();
 
-  await expect(page.getByLabel("GPA (optional)")).toBeFocused();
+  await expect(page.getByLabel("Grades (optional)")).toBeFocused();
+});
+
+test("a number without its unit asks for the unit and focuses it", async ({ page }) => {
+  await page.goto("/check");
+  await page.getByLabel("Describe your situation").fill(DESCRIPTION);
+  await page.getByLabel("Yearly household income (optional)").fill("40000");
+  await page.getByRole("button", { name: "Check eligibility" }).click();
+
+  const currency = page.getByLabel("Currency");
+  await expect(currency).toBeFocused();
+  await expect(currency).toHaveAccessibleDescription("Choose the currency your income is in.");
+
+  await currency.selectOption("USD");
+  await expect(page.getByText("Choose the currency your income is in.")).toHaveCount(0);
 });
 
 test("a finished check is announced to screen readers", async ({ page }) => {

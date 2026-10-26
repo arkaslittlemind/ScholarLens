@@ -1,14 +1,21 @@
 // Mirrors backend/app/api/models.py's EligibilityRequest.
 export interface EligibilityRequest {
   description: string;
+  country?: string;
   income?: number;
+  // ISO 4217 code, required by the form whenever income is given.
+  currency?: string;
   state?: string;
   gpa?: number;
+  // The top of the grading scale: 4, 5, 10, or 100 for a percentage.
+  gpa_scale?: number;
   major?: string;
 }
 
-// Mirrors backend/app/agent/models.py's EligibilityStatus / Source / Alternative / EligibilityResult.
+// Mirrors backend/app/agent/models.py's EligibilityStatus / SourceOrigin / Source / Alternative / EligibilityResult.
 export type EligibilityStatus = "eligible" | "partial" | "not_eligible";
+
+export type SourceOrigin = "knowledge_base" | "web";
 
 export interface Source {
   program: string;
@@ -30,6 +37,8 @@ export interface EligibilityResult {
   alternatives: Alternative[];
   supporting_clause: string | null;
   source: Source | null;
+  // Optional so a response from a backend without the field still parses.
+  source_origin?: SourceOrigin | null;
   missing_info: string[];
   tool_trace: string[];
 }

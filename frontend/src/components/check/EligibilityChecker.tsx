@@ -96,6 +96,16 @@ export function EligibilityChecker() {
     mutation.mutate(request);
   }
 
+  // The form keeps its values, so the student adds to what they wrote rather than starting over.
+  function handleAddDetails() {
+    const description = document.querySelector<HTMLTextAreaElement>("#description");
+    if (!description) return;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    description.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "center" });
+    description.focus({ preventScroll: true });
+    description.setSelectionRange(description.value.length, description.value.length);
+  }
+
   const errorInfo = mutation.isError ? describeError(mutation.error) : undefined;
 
   return (
@@ -121,7 +131,7 @@ export function EligibilityChecker() {
               <AgentActivitySteps />
             </motion.div>
           )}
-          {mutation.isSuccess && <VerdictCard key="verdict" result={mutation.data} />}
+          {mutation.isSuccess && <VerdictCard key="verdict" result={mutation.data} onAddDetails={handleAddDetails} />}
         </AnimatePresence>
       </div>
 

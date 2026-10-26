@@ -11,6 +11,11 @@ class EligibilityStatus(StrEnum):
     NOT_ELIGIBLE = "not_eligible"
 
 
+class SourceOrigin(StrEnum):
+    KNOWLEDGE_BASE = "knowledge_base"
+    WEB = "web"
+
+
 class Source(BaseModel):
     program: str
     document: str
@@ -33,6 +38,8 @@ class EligibilityResult(BaseModel):
     # Null only when the verdict rests on missing information rather than a rule.
     supporting_clause: str | None = None
     source: Source | None = None
+    # Set by the server from the tool that returned source.url, never by the model.
+    source_origin: SourceOrigin | None = None
     missing_info: list[str] = Field(default_factory=list)
     # User-facing activity labels only, never model reasoning.
     tool_trace: list[str] = Field(default_factory=list)

@@ -19,7 +19,7 @@ from pydantic_ai.exceptions import ModelHTTPError
 from pydantic_ai.models.google import GoogleModel
 from pydantic_ai.providers.google import GoogleProvider
 
-from app.agent.models import Alternative, EligibilityResult, Source
+from app.agent.models import Alternative, EligibilityResult, Source, SourceOrigin
 from app.agent.provider_errors import ProviderRateLimit, QuotaType, classify_rate_limit
 from app.api.models import EligibilityRequest
 from app.config import Settings, get_settings, secret_value
@@ -86,6 +86,8 @@ class _Deps:
     first_tool_at: float | None = None
     # Every URL a tool returned in this attempt; an alternative must link to one of them.
     seen_urls: set[str] = field(default_factory=set)
+    # The subset retrieval returned, so the answer can say whether its source was curated.
+    knowledge_base_urls: set[str] = field(default_factory=set)
 
     def tool_started(self) -> float:
         now = time.perf_counter()
@@ -147,6 +149,18 @@ def _grounded_alternatives(
     return kept, len(alternatives) - len(kept)
 
 
+def _source_origin(source: Source | None, deps: _Deps) -> SourceOrigin | None:
+    """Which tool returned the cited URL; None when no tool did, so nothing vouches for it."""
+    cited = _comparable_url(source.url) if source else None
+    if cited is None:
+        return None
+    if cited in {_comparable_url(url) for url in deps.knowledge_base_urls}:
+        return SourceOrigin.KNOWLEDGE_BASE
+    if cited in {_comparable_url(url) for url in deps.seen_urls}:
+        return SourceOrigin.WEB
+    return None
+
+
 def _model_name(settings: Settings) -> str:
     return settings.agent_model.removeprefix("google:")
 
@@ -189,6 +203,7 @@ def _build_agent(settings: Settings) -> Agent[_Deps, EligibilityResult]:
         finally:
             ctx.deps.retrieval_seconds += time.perf_counter() - started
         ctx.deps.seen_urls.update(chunk.url for chunk in chunks)
+        ctx.deps.knowledge_base_urls.update(chunk.url for chunk in chunks)
         return [chunk.model_dump() for chunk in chunks]
 
     @agent.tool
@@ -210,12 +225,16 @@ def _build_agent(settings: Settings) -> Agent[_Deps, EligibilityResult]:
 
 def _build_prompt(request: EligibilityRequest) -> str:
     parts = [f"Student description: {request.description}"]
+    if request.country is not None:
+        parts.append(f"Country: {request.country}")
     if request.income is not None:
-        parts.append(f"Household income: {request.income}")
+        currency = f" {request.currency}" if request.currency else ""
+        parts.append(f"Household income: {request.income}{currency}")
     if request.state is not None:
         parts.append(f"State: {request.state}")
     if request.gpa is not None:
-        parts.append(f"GPA: {request.gpa}")
+        scale = f" out of {request.gpa_scale:g}" if request.gpa_scale is not None else ""
+        parts.append(f"GPA: {request.gpa}{scale}")
     if request.major is not None:
         parts.append(f"Major: {request.major}")
     return "\n".join(parts)
@@ -274,6 +293,7 @@ class EligibilityAgent:
         llm_requests.add(run_result.usage.requests, {"gen_ai.request.model": self._model_name})
         output = run_result.output
         output.tool_trace = [*deps.trace, VALIDATING_ELIGIBILITY, PREPARING_CITED_ANSWER]
+        output.source_origin = _source_origin(output.source, deps)
         output.alternatives, dropped = _grounded_alternatives(
             output.alternatives, output.source, deps.seen_urls
         )

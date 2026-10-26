@@ -311,6 +311,61 @@ def test_the_prompt_holds_only_the_fields_provided(build_agent):
     assert prompt == "Student description: Senior at a New Jersey high school\nGPA: 3.6"
 
 
+def test_the_prompt_carries_the_country_currency_and_grading_scale(build_agent):
+    model, seen = scripted()
+
+    _check(
+        build_agent(model),
+        country="India",
+        income=400000,
+        currency="INR",
+        state="Maharashtra",
+        gpa=88,
+        gpa_scale=100,
+    )
+
+    prompt = next(p.content for p in seen[0][0].parts if p.part_kind == "user-prompt")
+    assert prompt.splitlines()[1:] == [
+        "Country: India",
+        "Household income: 400000.0 INR",
+        "State: Maharashtra",
+        "GPA: 88.0 out of 100",
+    ]
+
+
+def _citing(url: str) -> dict[str, object]:
+    return {**_ANSWER, "source": {**_ANSWER["source"], "url": url}}
+
+
+@pytest.mark.parametrize(
+    ("turns", "url", "origin"),
+    [
+        ([("retrieve_program_rules", "NJ STARS")], "https://example.org/stars/", "knowledge_base"),
+        ([("search_the_web", "grants")], "https://Example.org", "web"),
+        ([("retrieve_program_rules", "NJ STARS")], "https://example.org/made-up", None),
+    ],
+)
+def test_the_source_origin_names_the_tool_that_returned_the_cited_url(
+    build_agent, turns, url, origin
+):
+    model, _ = scripted(turns, answer={**_citing(url), "source_origin": "knowledge_base"})
+
+    result, _ = _check(build_agent(model))
+
+    assert result.source_origin == origin
+
+
+def test_a_verdict_without_a_source_has_no_origin(build_agent):
+    model, _ = scripted(
+        [("retrieve_program_rules", "NJ STARS")],
+        answer={**_ANSWER, "status": "partial", "supporting_clause": None, "source": None},
+    )
+
+    result, _ = _check(build_agent(model))
+
+    assert result.source_origin is None
+
+
 @pytest.mark.parametrize(
     ("tool", "error"),
     [
