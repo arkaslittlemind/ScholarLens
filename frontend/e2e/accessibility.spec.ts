@@ -68,7 +68,7 @@ test("a finished check is announced to screen readers", async ({ page }) => {
   await page.getByLabel("Describe your situation").fill(DESCRIPTION);
   await page.getByRole("button", { name: "Check eligibility" }).click();
 
-  await expect(announcement).toHaveText("Result ready: Eligible.");
+  await expect(announcement).toHaveText("Result ready: Eligible for Federal Pell Grant.");
   await expect(announcement).toHaveAttribute("aria-live", "polite");
 });
 

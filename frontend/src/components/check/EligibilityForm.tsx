@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, ChevronDown, Loader2, Sparkles } from "lucide-react";
+import { ArrowRight, ChevronDown, Info, Loader2, Sparkles } from "lucide-react";
 import { useState, type ComponentProps, type FormEvent, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -189,15 +189,38 @@ interface EligibilityFormProps {
   // ErrorDetail.fields), so a server-side rejection highlights the same input a client-side
   // one would.
   serverFieldErrors?: string[];
+  // What a partial result said was missing, shown under the description while the student adds it.
+  detailsToAdd?: string[];
 }
 
-export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors }: EligibilityFormProps) {
+export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors, detailsToAdd }: EligibilityFormProps) {
   const [values, setValues] = useState<Values>(EMPTY_VALUES);
   const [errors, setErrors] = useState<FieldErrors>({});
   // Server-flagged fields the student has edited since; their stale flag is hidden.
   const [dismissedServerFields, setDismissedServerFields] = useState<ReadonlySet<FieldName>>(() => new Set());
   // Counts example fills; each new value remounts the flash layer over the field.
   const [fillCount, setFillCount] = useState(0);
+  // What the student had written before an example replaced it; null once restored or edited.
+  const [replacedText, setReplacedText] = useState<string | null>(null);
+
+  function fillExample(description: string) {
+    const current = values.description;
+    // Only the student's own words are worth restoring, not one example replacing another.
+    if (current.trim() && !EXAMPLE_QUERIES.some((example) => example.description === current)) {
+      setReplacedText(current);
+    }
+    handleChange("description", description);
+    setFillCount((count) => count + 1);
+  }
+
+  function restoreText(form: HTMLFormElement | null) {
+    if (replacedText === null) return;
+    handleChange("description", replacedText);
+    setReplacedText(null);
+    form?.querySelector<HTMLTextAreaElement>("#description")?.focus();
+  }
+
+  const hasDetailsHint = detailsToAdd !== undefined && detailsToAdd.length > 0;
 
   function displayError(field: FieldName): string | undefined {
     if (errors[field]) return errors[field];
@@ -302,10 +325,7 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
             key={example.label}
             type="button"
             disabled={disabled}
-            onClick={() => {
-              handleChange("description", example.description);
-              setFillCount((count) => count + 1);
-            }}
+            onClick={() => fillExample(example.description)}
             className="rounded-full border border-hairline bg-tint px-3 py-1.5 text-caption pointer-coarse:min-h-11 pointer-coarse:px-4 font-semibold text-ink transition-press hover:border-input hover:bg-paper active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50"
           >
             {example.label}
@@ -319,12 +339,16 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
             <Textarea
               id="description"
               value={values.description}
-              onChange={(event) => handleChange("description", event.target.value)}
+              onChange={(event) => {
+                // Restoring after the student has edited would throw their edits away.
+                setReplacedText(null);
+                handleChange("description", event.target.value);
+              }}
               disabled={disabled}
               maxLength={DESCRIPTION_MAX}
               rows={5}
               placeholder="For example: I'm in my final year of school in India and want to study engineering. My family earns about ₹4,00,000 a year."
-              {...errorProps("description", "description-count")}
+              {...errorProps("description", hasDetailsHint ? "description-hint description-count" : "description-count")}
             />
             {fillCount > 0 && (
               <span
@@ -335,11 +359,42 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors 
             )}
           </div>
         </Field>
-        {/* Read once with the field, so the limit is known before it is hit. */}
-        <p id="description-count" className="self-end text-xs text-ink-secondary tabular-nums">
-          {values.description.length} / {DESCRIPTION_MAX}
-          <span className="sr-only"> characters used</span>
-        </p>
+        {hasDetailsHint && (
+          <div id="description-hint" className="flex gap-3 rounded-xl border border-dashed border-rust/50 p-4">
+            <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-rust-text" />
+            <div className="text-sm">
+              <p className="font-semibold text-ink">Add these to your description:</p>
+              <ul className="mt-2 list-disc pl-5 text-ink-secondary marker:text-rust">
+                {detailsToAdd.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+        <div className="flex items-start justify-between gap-4">
+          {/* Announced, so a replaced description never goes unnoticed. */}
+          <p aria-live="polite" className="text-caption text-ink-secondary">
+            {replacedText !== null && (
+              <>
+                The example replaced what you wrote.{" "}
+                <button
+                  type="button"
+                  disabled={disabled}
+                  onClick={(event) => restoreText(event.currentTarget.form)}
+                  className="rounded-sm font-semibold text-ink underline decoration-input underline-offset-4 transition-colors duration-150 hover:decoration-ink disabled:opacity-50 pointer-coarse:inline-flex pointer-coarse:min-h-11 pointer-coarse:items-center"
+                >
+                  Restore your text
+                </button>
+              </>
+            )}
+          </p>
+          {/* Read once with the field, so the limit is known before it is hit. */}
+          <p id="description-count" className="shrink-0 text-xs text-ink-secondary tabular-nums">
+            {values.description.length} / {DESCRIPTION_MAX}
+            <span className="sr-only"> characters used</span>
+          </p>
+        </div>
       </div>
 
       <fieldset className="flex flex-col gap-4">
