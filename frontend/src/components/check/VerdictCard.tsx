@@ -54,8 +54,14 @@ const ORIGIN_META: Record<SourceOrigin, { icon: typeof Globe; text: string }> = 
   },
 };
 
-export function statusLabel(status: EligibilityStatus): string {
-  return STATUS_META[status].label;
+// A partial match that quotes no rule isn't a weak yes: it is waiting on the student.
+// Same rust voice as any partial match, plainer words.
+function awaitsDetails(result: EligibilityResult): boolean {
+  return result.status === "partial" && !result.supporting_clause && result.missing_info.length > 0;
+}
+
+export function verdictLabel(result: EligibilityResult): string {
+  return awaitsDetails(result) ? "Depends on your details" : STATUS_META[result.status].label;
 }
 
 // A UI response, not marketing: each item within the 300ms budget, and the whole
@@ -240,10 +246,13 @@ interface VerdictSourceProps {
   // The heading always names the program, and a quoted rule's caption names the
   // document, so the document is repeated here only when there is no rule.
   showDocument: boolean;
+  // The missing-details box already says why nothing is cited, so silence is clearer here.
+  awaitingDetails: boolean;
 }
 
-function VerdictSource({ source, showDocument }: VerdictSourceProps) {
+function VerdictSource({ source, showDocument, awaitingDetails }: VerdictSourceProps) {
   if (!source) {
+    if (awaitingDetails) return null;
     return <p className="text-sm text-ink-secondary">No source document was cited for this result.</p>;
   }
   return (
@@ -312,10 +321,10 @@ export function VerdictCard({ result, onAddDetails }: VerdictCardProps) {
           className={`motion-reduce:transform-none! inline-flex origin-left items-center gap-1.5 rounded-full px-2.5 py-1 text-caption font-semibold ${meta.badgeClassName}`}
         >
           <Icon aria-hidden="true" className="size-4" />
-          {meta.label}
+          {verdictLabel(result)}
         </motion.div>
         <motion.h2 variants={rise} className="motion-reduce:transform-none! font-display text-title leading-tight text-ink wrap-anywhere sm:text-title-lg">
-          {result.source ? result.source.program : "Your result"}
+          {result.source ? result.source.program : awaitsDetails(result) ? "We need a few more details" : "Your result"}
         </motion.h2>
         {origin && OriginIcon && (
           <motion.p variants={rise} className="motion-reduce:transform-none! flex items-start gap-2 text-body-sm text-ink-secondary">
@@ -381,7 +390,11 @@ export function VerdictCard({ result, onAddDetails }: VerdictCardProps) {
           )}
 
           <motion.div variants={rise} className="motion-reduce:transform-none! grid gap-6 sm:grid-cols-2">
-            <VerdictSource source={result.source} showDocument={!result.supporting_clause} />
+            <VerdictSource
+              source={result.source}
+              showDocument={!result.supporting_clause}
+              awaitingDetails={awaitsDetails(result)}
+            />
             <VerdictTrace steps={result.tool_trace} />
           </motion.div>
         </div>

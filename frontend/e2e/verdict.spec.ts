@@ -23,12 +23,14 @@ test("a partial result with no rule or source says so explicitly", async ({ page
     tool_trace: [],
   });
 
-  await expect(page.getByRole("heading", { level: 2, name: "Your result" })).toBeVisible();
-  await expect(page.getByText("Partial match", { exact: true })).toBeVisible();
+  // Waiting on the student, so it says so instead of reading like a weak yes.
+  await expect(page.getByRole("heading", { level: 2, name: "We need a few more details" })).toBeVisible();
+  await expect(page.getByText("Depends on your details", { exact: true })).toBeVisible();
   await expect(
     page.getByText("There's no rule to quote yet, because the answer depends on details you haven't shared."),
   ).toBeVisible();
-  await expect(page.getByText("No source document was cited for this result.")).toBeVisible();
+  // The missing-details box already explains the missing citation.
+  await expect(page.getByText("No source document was cited for this result.")).toHaveCount(0);
   await expect(page.getByText("This result may change with more information:")).toBeVisible();
   await expect(
     page.getByText("ScholarLens checks eligibility rules, not your chances of an award.", {
@@ -42,6 +44,35 @@ test("a partial result with no rule or source says so explicitly", async ({ page
   const description = page.getByLabel("Describe your situation");
   await expect(description).toBeFocused();
   await expect(description).toHaveValue(DESCRIPTION);
+  // The list stays beside the field while the student types, and is part of its description.
+  const hint = page.locator("#description-hint");
+  await expect(hint).toContainText("Your enrollment status");
+  await expect(description).toHaveAttribute("aria-describedby", /description-hint/);
+
+  await page.getByRole("button", { name: "Check eligibility" }).click();
+  await expect(hint).toHaveCount(0);
+});
+
+test("an example never silently replaces what the student wrote", async ({ page }) => {
+  await page.goto("/check");
+  const description = page.getByLabel("Describe your situation");
+  await description.fill("My own words.");
+
+  await page.getByRole("button", { name: "Class 12 student in India" }).click();
+  await expect(description).toHaveValue(/Class 12 in Maharashtra/);
+  await page.getByRole("button", { name: "First-year Pell Grant" }).click();
+
+  // One example replacing another keeps the student's text as the one to restore.
+  await page.getByRole("button", { name: "Restore your text" }).click();
+  await expect(description).toHaveValue("My own words.");
+  await expect(description).toBeFocused();
+  await expect(page.getByRole("button", { name: "Restore your text" })).toHaveCount(0);
+});
+
+test("an example over an empty field offers nothing to restore", async ({ page }) => {
+  await page.goto("/check");
+  await page.getByRole("button", { name: "First-year Pell Grant" }).click();
+  await expect(page.getByRole("button", { name: "Restore your text" })).toHaveCount(0);
 });
 
 const CITED_PELL: EligibilityResult = {

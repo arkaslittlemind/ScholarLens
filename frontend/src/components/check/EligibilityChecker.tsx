@@ -3,11 +3,11 @@
 import { useMutation } from "@tanstack/react-query";
 import { AlertCircle } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AgentActivitySteps } from "@/components/check/AgentActivitySteps";
 import { EligibilityForm } from "@/components/check/EligibilityForm";
 import { EASE_OUT } from "@/components/motion/easing";
-import { statusLabel, VerdictCard } from "@/components/check/VerdictCard";
+import { VerdictCard, verdictLabel } from "@/components/check/VerdictCard";
 import {
   checkEligibility,
   EligibilityClientError,
@@ -79,6 +79,8 @@ export function EligibilityChecker() {
   });
 
   const resultRef = useRef<HTMLDivElement>(null);
+  // Set by "Add these details", so the missing list stays in view while the student types.
+  const [detailsToAdd, setDetailsToAdd] = useState<string[]>([]);
 
   // On a phone the result renders below the fold; bring it up without moving focus,
   // since the live region below already announces it. A result that already starts
@@ -92,12 +94,14 @@ export function EligibilityChecker() {
   }, [mutation.isSuccess]);
 
   function handleSubmit(request: EligibilityRequest) {
+    setDetailsToAdd([]);
     mutation.reset();
     mutation.mutate(request);
   }
 
   // The form keeps its values, so the student adds to what they wrote rather than starting over.
   function handleAddDetails() {
+    if (mutation.isSuccess) setDetailsToAdd(mutation.data.missing_info);
     const description = document.querySelector<HTMLTextAreaElement>("#description");
     if (!description) return;
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -114,6 +118,7 @@ export function EligibilityChecker() {
         onSubmit={handleSubmit}
         disabled={mutation.isPending}
         serverFieldErrors={errorInfo?.fields}
+        detailsToAdd={detailsToAdd}
       />
 
       <div ref={resultRef} className="scroll-mt-24">
@@ -138,7 +143,9 @@ export function EligibilityChecker() {
       {/* Always mounted, so screen readers announce the text when it changes.
           Not role="status": the activity list already uses that role. */}
       <p aria-live="polite" data-testid="result-announcement" className="sr-only">
-        {mutation.isSuccess ? `Result ready: ${statusLabel(mutation.data.status)}.` : ""}
+        {mutation.isSuccess
+          ? `Result ready: ${verdictLabel(mutation.data)}${mutation.data.source ? ` for ${mutation.data.source.program}` : ""}.`
+          : ""}
       </p>
 
       {errorInfo && (
