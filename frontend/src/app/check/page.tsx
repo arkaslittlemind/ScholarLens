@@ -36,6 +36,12 @@ export default function Check() {
               Describe your situation and we&apos;ll tell you where you stand, with the exact rule
               behind the result.
             </p>
+            {/* On wide screens the aside says this beside the form; below lg the aside falls
+                after it, so a student abroad would otherwise learn the scope only after submitting. */}
+            <p className="max-w-150 text-body-sm leading-relaxed text-ink-secondary lg:hidden">
+              We&apos;ve reviewed {COVERED_PROGRAMS.length} US programs in detail. For anything else,
+              including programs outside the US, we search official websites and tell you so.
+            </p>
           </div>
         </section>
 

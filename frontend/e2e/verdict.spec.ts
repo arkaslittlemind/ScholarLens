@@ -64,9 +64,29 @@ test("a result says whether its rule came from a reviewed program or the web", a
   await checkWith(page, { ...CITED_PELL, source_origin: "knowledge_base" });
   await expect(page.getByText("From the program rules we've reviewed.")).toBeVisible();
 
+  await expect(page.getByRole("heading", { level: 3, name: "The rule", exact: true })).toBeVisible();
+
   await checkWith(page, { ...CITED_PELL, source_origin: "web" });
   await expect(page.getByText("Found on the web.", { exact: false })).toBeVisible();
   await expect(page.getByText("From the program rules we've reviewed.")).toHaveCount(0);
+  // The unreviewed status sits on the quote itself, not only under the heading.
+  await expect(
+    page.getByRole("heading", { level: 3, name: "The rule, as published on studentaid.gov" }),
+  ).toBeVisible();
+  await expect(page.locator("figcaption")).toContainText("Not reviewed by ScholarLens.");
+});
+
+test("on a phone the reviewed-program scope shows before the form", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto("/check");
+  const note = page.getByText("We've reviewed 10 US programs in detail.", { exact: false });
+  await expect(note).toBeVisible();
+  const noteTop = (await note.boundingBox())!.y;
+  const formTop = (await page.locator("form").boundingBox())!.y;
+  expect(noteTop).toBeLessThan(formTop);
+
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await expect(note).toBeHidden();
 });
 
 test("a result with no confirmed origin claims neither", async ({ page }) => {

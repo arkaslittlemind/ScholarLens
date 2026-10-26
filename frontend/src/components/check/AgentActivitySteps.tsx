@@ -13,15 +13,17 @@ export const PREPARING_CITED_ANSWER = "preparing cited answer";
 
 // Steps every real run reports (agent.py's system prompt requires retrieval first, and
 // tool_trace always ends with these two). "checking official sources" is conditional on
-// a web search happening, so it is never assumed during the simulated wait below; it
-// only appears once a real tool_trace confirms it (see `completedSteps`).
+// a web search happening, so it is never assumed during the wait below; it only
+// appears once a real tool_trace confirms it (see `completedSteps`).
 const GUARANTEED_STEPS = [SEARCHING_PROGRAM_RULES, VALIDATING_ELIGIBILITY, PREPARING_CITED_ANSWER];
 
-// Exported so a future test can control timing instead of depending on wall-clock delays.
-export const STEP_INTERVAL_MS = 1400;
+// POST /eligibility is one call with no progress events, so the only step known to be under
+// way is retrieval, which always runs first. The rest wait as upcoming: ticking them off on a
+// timer would claim work that may not have happened yet.
+const ACTIVE_INDEX = 0;
 
-// The simulated steps finish in about 3 s, but a run that searches the web can take far
-// longer (the backend allows 45 s). Past this point the card says why instead of going quiet.
+// A run that searches the web can take far longer than a few seconds (the backend allows
+// 45 s). Past this point the card says why instead of going quiet.
 export const SLOW_AFTER_MS = 12000;
 
 interface AgentActivityStepsProps {
@@ -29,16 +31,13 @@ interface AgentActivityStepsProps {
   // progression and every listed step renders as done. POST /eligibility is a single
   // synchronous call (no streaming), so this is the earliest point the real steps are known.
   completedSteps?: string[];
-  intervalMs?: number;
   slowAfterMs?: number;
 }
 
 export function AgentActivitySteps({
   completedSteps,
-  intervalMs = STEP_INTERVAL_MS,
   slowAfterMs = SLOW_AFTER_MS,
 }: AgentActivityStepsProps) {
-  const [activeIndex, setActiveIndex] = useState(0);
   const [slow, setSlow] = useState(false);
 
   useEffect(() => {
@@ -46,14 +45,6 @@ export function AgentActivitySteps({
     const id = setTimeout(() => setSlow(true), slowAfterMs);
     return () => clearTimeout(id);
   }, [completedSteps, slowAfterMs]);
-
-  useEffect(() => {
-    if (completedSteps) return;
-    const id = setInterval(() => {
-      setActiveIndex((index) => Math.min(index + 1, GUARANTEED_STEPS.length - 1));
-    }, intervalMs);
-    return () => clearInterval(id);
-  }, [completedSteps, intervalMs]);
 
   const steps = completedSteps ?? GUARANTEED_STEPS;
 
@@ -68,13 +59,11 @@ export function AgentActivitySteps({
       </p>
       <div
         role="status"
-        // False so each tick announces only the step that changed, not the whole list again.
-        aria-atomic="false"
         className="mt-6 flex flex-col"
       >
         {steps.map((step, index) => {
-          const isDone = completedSteps !== undefined || index < activeIndex;
-          const isActive = completedSteps === undefined && index === activeIndex;
+          const isDone = completedSteps !== undefined || index < ACTIVE_INDEX;
+          const isActive = completedSteps === undefined && index === ACTIVE_INDEX;
           const isLast = index === steps.length - 1;
           return (
             <div key={step} className="flex gap-3">

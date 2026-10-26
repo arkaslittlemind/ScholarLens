@@ -50,7 +50,7 @@ const ORIGIN_META: Record<SourceOrigin, { icon: typeof Globe; text: string }> = 
   knowledge_base: { icon: BookCheck, text: "From the program rules we've reviewed." },
   web: {
     icon: Globe,
-    text: "Found on the web. This isn't one of the programs we've reviewed, so confirm it on the official page.",
+    text: "Found on the web. This isn't one of the programs we've reviewed.",
   },
 };
 
@@ -187,9 +187,13 @@ interface VerdictRuleProps {
   source: Source | null;
   sweepDelay: number;
   awaitingDetails: boolean;
+  fromWeb: boolean;
 }
 
-function VerdictRule({ clause, source, sweepDelay, awaitingDetails }: VerdictRuleProps) {
+function VerdictRule({ clause, source, sweepDelay, awaitingDetails, fromWeb }: VerdictRuleProps) {
+  // A web quote keeps the panel (it is still the rule the answer rests on) but says where it
+  // was published and that nobody here reviewed it, right where the student reads it.
+  const webHost = fromWeb && source ? safeHttpUrl(source.url)?.hostname : undefined;
   if (!clause) {
     return (
       <p className="rounded-xl bg-tint p-4 text-sm text-ink-secondary">
@@ -201,7 +205,7 @@ function VerdictRule({ clause, source, sweepDelay, awaitingDetails }: VerdictRul
   }
   return (
     <figure aria-labelledby="verdict-rule" className="flex flex-col gap-3 rounded-xl border-l-2 border-rust bg-tint py-4 pr-4 pl-5">
-      <SectionHeading id="verdict-rule">The rule</SectionHeading>
+      <SectionHeading id="verdict-rule">{webHost ? `The rule, as published on ${webHost}` : "The rule"}</SectionHeading>
       <blockquote className="font-display text-lg leading-snug text-ink wrap-anywhere sm:text-xl">
         &ldquo;
         {/* The marker sweep: a gradient whose width grows behind the text. Rust Wash alone
@@ -216,7 +220,17 @@ function VerdictRule({ clause, source, sweepDelay, awaitingDetails }: VerdictRul
         </motion.span>
         &rdquo;
       </blockquote>
-      {source && <figcaption className="text-sm text-ink-secondary wrap-anywhere">{source.document}</figcaption>}
+      {source && (
+        <figcaption className="text-sm text-ink-secondary wrap-anywhere">
+          {source.document}
+          {webHost && (
+            <span className="mt-1 flex items-start gap-1.5">
+              <Globe aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
+              Not reviewed by ScholarLens. Check the wording on the official page before you rely on it.
+            </span>
+          )}
+        </figcaption>
+      )}
     </figure>
   );
 }
@@ -324,6 +338,7 @@ export function VerdictCard({ result, onAddDetails }: VerdictCardProps) {
               source={result.source}
               sweepDelay={RULE_SWEEP_DELAY_SECONDS + followDelay}
               awaitingDetails={result.missing_info.length > 0}
+              fromWeb={result.source_origin === "web"}
             />
           </motion.div>
 
