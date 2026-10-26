@@ -172,7 +172,7 @@ function UnitSelect({ className, children, ...props }: ComponentProps<"select">)
   return (
     <div className={`relative shrink-0 ${className ?? ""}`}>
       <select
-        className={`h-11 w-full appearance-none rounded-md border border-input bg-paper pr-8 pl-3 text-base transition-[border-color,box-shadow,opacity,background-color] duration-200 outline-none hover:border-ink-secondary/50 focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/10 focus-visible:transition-none disabled:cursor-not-allowed disabled:bg-tint disabled:opacity-60 aria-invalid:border-destructive aria-invalid:ring-4 aria-invalid:ring-destructive/10 ${unset ? "text-ink-secondary/80" : "text-ink"}`}
+        className={`h-11 w-full appearance-none rounded-md border border-input bg-paper pr-8 pl-3 text-base transition-[border-color,box-shadow,opacity,background-color] duration-200 outline-none hover:border-ink-secondary/50 focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/10 focus-visible:transition-none disabled:cursor-not-allowed disabled:bg-tint disabled:opacity-60 aria-invalid:border-destructive aria-invalid:ring-4 aria-invalid:ring-destructive/10 ${unset ? "text-ink-secondary/80" : "text-ink"} [&>option]:text-ink`}
         {...props}
       >
         {children}

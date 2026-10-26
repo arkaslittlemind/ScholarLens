@@ -204,9 +204,10 @@ function VerdictRule({ clause, source, sweepDelay, awaitingDetails }: VerdictRul
       <SectionHeading id="verdict-rule">The rule</SectionHeading>
       <blockquote className="font-display text-lg leading-snug text-ink wrap-anywhere sm:text-xl">
         &ldquo;
-        {/* The marker sweep: a gradient whose width grows behind the text. */}
+        {/* The marker sweep: a gradient whose width grows behind the text. Rust Wash alone
+            barely differs from the tint panel, so the stroke is rust itself at low strength. */}
         <motion.span
-          className="box-decoration-clone bg-linear-to-r from-rust-tint to-rust-tint bg-no-repeat"
+          className="box-decoration-clone bg-linear-to-r from-rust/20 to-rust/20 bg-no-repeat"
           initial={{ backgroundSize: "0% 100%" }}
           animate={{ backgroundSize: "100% 100%" }}
           transition={{ duration: 0.8, ease: EASE_IN_OUT, delay: sweepDelay }}
