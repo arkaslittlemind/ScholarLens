@@ -22,6 +22,12 @@ const PAGES = [
     canonical: `${SITE_URL}/methodology`,
     imageAlt: "How ScholarLens checks official program rules and cites every answer",
   },
+  {
+    path: "/methodology/how-its-built",
+    title: "How the eligibility checker is built and measured | ScholarLens",
+    canonical: `${SITE_URL}/methodology/how-its-built`,
+    imageAlt: "How ScholarLens is built, and how its eligibility answers are measured",
+  },
 ];
 
 for (const { path, imageAlt } of PAGES) {
@@ -86,7 +92,9 @@ test("the sitemap lists every indexable page", async ({ request }) => {
     `${SITE_URL}/programs`,
     ...COVERED_PROGRAMS.map((program) => `${SITE_URL}${programPath(program.slug)}`),
   ]);
-  expect(body.match(/<lastmod>2026-10-07<\/lastmod>/g)).toHaveLength(PAGES.length + 1);
+  // The landing page, /check and /programs; the two methodology pages changed later.
+  expect(body.match(/<lastmod>2026-10-07<\/lastmod>/g)).toHaveLength(3);
+  expect(body.match(/<lastmod>2026-10-27<\/lastmod>/g)).toHaveLength(2);
   // Program pages carry their corpus review date.
   expect(body.match(/<lastmod>2026-09-21<\/lastmod>/g)).toHaveLength(COVERED_PROGRAMS.length);
 });
@@ -95,6 +103,7 @@ const JSON_LD_TYPES: Record<string, string[]> = {
   "/": ["WebSite", "Person"],
   "/check": ["WebApplication", "Person", "BreadcrumbList"],
   "/methodology": ["BreadcrumbList"],
+  "/methodology/how-its-built": ["BreadcrumbList"],
 };
 
 for (const [path, types] of Object.entries(JSON_LD_TYPES)) {

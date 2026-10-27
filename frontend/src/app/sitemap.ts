@@ -8,7 +8,8 @@ import { SITE_URL } from "@/lib/site";
 const ROUTES = [
   { path: "", lastModified: "2026-10-07" },
   { path: "/check", lastModified: "2026-10-07" },
-  { path: "/methodology", lastModified: "2026-10-07" },
+  { path: "/methodology", lastModified: "2026-10-27" },
+  { path: "/methodology/how-its-built", lastModified: "2026-10-27" },
   { path: "/programs", lastModified: "2026-10-07" },
 ];
 

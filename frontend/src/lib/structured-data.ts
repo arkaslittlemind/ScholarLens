@@ -65,9 +65,16 @@ export const CHECK_JSON_LD = {
   ],
 };
 
+const METHODOLOGY_CRUMB: Crumb = { name: "Methodology", path: "/methodology" };
+
 export const METHODOLOGY_JSON_LD = {
   "@context": CONTEXT,
-  "@graph": [breadcrumbs([{ name: "Methodology", path: "/methodology" }])],
+  "@graph": [breadcrumbs([METHODOLOGY_CRUMB])],
+};
+
+export const HOW_ITS_BUILT_JSON_LD = {
+  "@context": CONTEXT,
+  "@graph": [breadcrumbs([METHODOLOGY_CRUMB, { name: "How it's built", path: "/methodology/how-its-built" }])],
 };
 
 export const PROGRAMS_JSON_LD = {

@@ -11,7 +11,7 @@ const EARLIEST_REVIEWED = readdirSync(CORPUS_DIR)
   .map((file) => /^reviewed:\s*(\S+)/m.exec(readFileSync(join(CORPUS_DIR, file), "utf8"))?.[1] ?? "")
   .sort()[0];
 
-const PUBLIC_PAGES = ["/", "/check", "/methodology", "/programs", "/programs/federal-pell-grant"];
+const PUBLIC_PAGES = ["/", "/check", "/methodology", "/methodology/how-its-built", "/programs", "/programs/federal-pell-grant"];
 
 const VAGUE_LINK_TEXT = new Set(["learn more", "read more", "click here", "here"]);
 
