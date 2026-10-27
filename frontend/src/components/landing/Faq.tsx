@@ -6,7 +6,7 @@ import { Accordion } from "radix-ui";
 const FAQS = [
   {
     q: "Is ScholarLens free? Do I need an account?",
-    a: "It's free to use and there's no account. Open the checker, describe your situation, and you get a result in under a minute.",
+    a: "It's free to use and there's no account. Open the checker, describe your situation, and your result appears on the same page.",
   },
   {
     q: "What happens to what I type?",
@@ -14,10 +14,14 @@ const FAQS = [
   },
   {
     q: "Which programs can it check?",
-    a: "Ten federal and state programs live in the knowledge base today, including the Pell Grant, Cal Grant, Georgia HOPE, and New York TAP. If your question is about something outside that set, the agent can search official sources on the web, and it still has to quote the rule it relies on.",
+    a: "We've reviewed the rules of ten US programs: three federal grants, including the Pell Grant, and seven state programs such as Cal Grant, Georgia HOPE, and New York TAP. If your question is about anything outside that set, ScholarLens searches official websites instead, still has to quote the rule it relies on, and tells you the answer came from the web.",
   },
   {
-    q: "Does \"eligible\" mean I'll get the award?",
+    q: "I'm not in the US. Can I still use it?",
+    a: "Yes. Describe your situation and, if you have one in mind, the program you're asking about. None of the programs we've reviewed are outside the US yet, so your answer will come from official websites. It still quotes the rule it found and links the page, and it's marked as a web answer so you know to confirm the details with the program.",
+  },
+  {
+    q: "Does “eligible” mean I’ll get the award?",
     a: "Not necessarily, because ScholarLens checks whether you meet the published eligibility rules, not your chances of an award, which can depend on funding, deadlines, and the program's own review. Always confirm with the program before you apply.",
   },
   {

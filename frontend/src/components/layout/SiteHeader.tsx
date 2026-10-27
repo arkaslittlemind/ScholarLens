@@ -23,7 +23,14 @@ export function SiteHeader() {
 
   // The hairline only appears once content passes underneath, so the header
   // reads as part of the page at rest and as a bar while scrolling.
-  useMotionValueEvent(scrollY, "change", (y) => setScrolled(y > 8));
+  // On the landing page the hero carries the brown primary, so the header's copy of the
+  // action stays outlined until the hero has scrolled away: one primary per view.
+  const [pastHero, setPastHero] = useState(false);
+  useMotionValueEvent(scrollY, "change", (y) => {
+    setScrolled(y > 8);
+    setPastHero(y > 480);
+  });
+  const ctaVariant = pathname === "/" && !pastHero ? "outline" : "default";
 
   return (
     <header
@@ -53,9 +60,9 @@ export function SiteHeader() {
           {/* On /check this would link to the page you're already on. Below sm it
               moves into the menu: logo, button and menu don't fit one phone row. */}
           {pathname !== "/check" && (
-            <Button asChild size="sm" className="hidden h-9 px-4 sm:inline-flex pointer-coarse:h-11">
+            <Button asChild size="sm" variant={ctaVariant} className="hidden h-9 px-4 sm:inline-flex pointer-coarse:h-11">
               <Link href="/check">
-                Check eligibility
+                Check your eligibility
                 <ArrowRight aria-hidden="true" className="transition-transform duration-150 motion-safe:pointer-fine:group-hover/button:translate-x-0.5" />
               </Link>
             </Button>

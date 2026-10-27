@@ -50,7 +50,7 @@ for (const path of ["/", "/programs"]) {
 test("the About section names the author and links their profile", async ({ page }) => {
   await page.goto("/");
   const about = page.locator("#about");
-  await expect(about.getByRole("heading", { level: 2 })).toBeVisible();
+  await expect(about.getByRole("heading", { level: 3, name: "Who built ScholarLens" })).toBeVisible();
   await expect(about).toContainText(AUTHOR_NAME);
   await expect(about.locator(`a[href="${AUTHOR_URL}"]`)).toBeVisible();
   await expect(page.getByRole("contentinfo").getByRole("link", { name: "About", exact: true })).toHaveAttribute("href", "/#about");

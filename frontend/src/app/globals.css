@@ -130,18 +130,6 @@
   text-transform: uppercase;
 }
 
-/* Constant motion, so linear. Runs on the compositor; the track holds two
-   copies of the list, so -50% lands exactly where it started. */
-@keyframes marquee {
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-@utility animate-marquee {
-  animation: marquee 40s linear infinite;
-}
-
 /* For people who ask the OS for less transparency: translucent chrome goes solid. */
 @custom-variant reduce-transparency (@media (prefers-reduced-transparency: reduce));
 
