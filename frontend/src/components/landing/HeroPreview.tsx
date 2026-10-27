@@ -122,7 +122,7 @@ function ExampleResult({ example, switched }: { example: Example; switched: bool
   const delay = switched ? DELAYS.switched : DELAYS.initial;
 
   return (
-    <div role="img" aria-label={example.label} className="grid md:grid-cols-[0.85fr_1.15fr]">
+    <div role="img" aria-label={example.label} className="grid grid-cols-1 md:grid-cols-[0.85fr_1.15fr]">
       <div className="hidden flex-col gap-4 border-r border-hairline bg-tint/60 p-6 md:flex">
         <p className="type-eyebrow text-ink-secondary">Your situation</p>
         <p className="rounded-lg border border-hairline bg-paper p-4 text-body-sm leading-relaxed text-ink">

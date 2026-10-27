@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion, type Variants } from "motion/react";
+import { m, useReducedMotion, type Variants } from "motion/react";
 import { EASE_OUT } from "@/components/motion/easing";
 import { safeHttpUrl, type Source } from "@/lib/eligibility";
 
@@ -47,7 +47,7 @@ function SourceChip({ source, animated }: SourceChipProps) {
   const httpUrl = source ? safeHttpUrl(source.url) : null;
   if (!source || !httpUrl) return null;
   return (
-    <motion.a
+    <m.a
       variants={animated ? chip : undefined}
       // The raw string, not httpUrl.href: the check above already proved it is
       // http(s), and href normalization would change what the backend sent.
@@ -59,7 +59,7 @@ function SourceChip({ source, animated }: SourceChipProps) {
       <span className="sr-only">Source: </span>
       {httpUrl.hostname}
       <span className="sr-only"> (opens in a new tab)</span>
-    </motion.a>
+    </m.a>
   );
 }
 
@@ -78,14 +78,14 @@ export function StreamingSummary({ text, source }: StreamingSummaryProps) {
 
   return (
     // Takes "hidden"/"shown" from the verdict card, so it starts in the card's cascade.
-    <motion.p variants={reduceMotion ? undefined : container} className="text-lg leading-relaxed text-ink">
+    <m.p variants={reduceMotion ? undefined : container} className="text-lg leading-relaxed text-ink">
       {words.map((word, index) => (
         // Words can repeat, so the position is part of the key.
-        <motion.span key={`${index}-${word}`} variants={reduceMotion ? undefined : wordReveal}>
+        <m.span key={`${index}-${word}`} variants={reduceMotion ? undefined : wordReveal}>
           {word}{" "}
-        </motion.span>
+        </m.span>
       ))}
       <SourceChip source={source} animated={!reduceMotion} />
-    </motion.p>
+    </m.p>
   );
 }

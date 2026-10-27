@@ -435,8 +435,10 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors,
             error={incomeError}
             errorFor={displayError("income") ? "income" : "currency"}
           >
-            <div className="flex gap-2">
+            {/* Wraps only when large text leaves no room for the unit beside the number. */}
+            <div className="flex flex-wrap gap-2">
               <Input
+                className="flex-1 basis-32"
                 id="income"
                 inputMode="numeric"
                 placeholder="e.g. 400000"
@@ -472,8 +474,10 @@ export function EligibilityForm({ onSubmit, disabled = false, serverFieldErrors,
             error={gradesError}
             errorFor={displayError("gpa") ? "gpa" : "gpa_scale"}
           >
-            <div className="flex gap-2">
+            {/* Wraps only when large text leaves no room for the unit beside the number. */}
+            <div className="flex flex-wrap gap-2">
               <Input
+                className="flex-1 basis-32"
                 id="gpa"
                 inputMode="decimal"
                 placeholder="e.g. 3.6 or 85"

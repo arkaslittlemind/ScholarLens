@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import { m } from "motion/react";
 import type { ReactNode } from "react";
 import { EASE_OUT } from "@/components/motion/easing";
 
@@ -15,7 +15,7 @@ interface RevealProps {
 // The full transform string (not the `y` shorthand) keeps it on the compositor.
 export function Reveal({ children, delay = 0, className }: RevealProps) {
   return (
-    <motion.div
+    <m.div
       className={`motion-reduce:transform-none! ${className ?? ""}`}
       initial={{ opacity: 0, transform: "translateY(16px)" }}
       whileInView={{ opacity: 1, transform: "translateY(0px)" }}
@@ -23,6 +23,6 @@ export function Reveal({ children, delay = 0, className }: RevealProps) {
       transition={{ duration: 0.6, ease: EASE_OUT, delay }}
     >
       {children}
-    </motion.div>
+    </m.div>
   );
 }

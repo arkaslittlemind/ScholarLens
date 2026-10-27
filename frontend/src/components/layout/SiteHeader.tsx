@@ -37,11 +37,11 @@ export function SiteHeader() {
       data-scrolled={scrolled}
       className="sticky top-0 z-40 border-b border-transparent bg-paper/85 backdrop-blur-md transition-[border-color] duration-200 data-[scrolled=true]:border-hairline reduce-transparency:bg-paper reduce-transparency:backdrop-blur-none"
     >
-      {/* Three columns, so the nav stays centered whether or not the right-hand
-          button is shown. Cells are pinned to their columns: the nav is display:none
-          on phones, and an unpinned right group would slide into the middle column. */}
-      <div className="mx-auto grid h-16 max-w-280 grid-cols-[1fr_auto_1fr] items-center gap-6 px-4 sm:h-18 sm:px-6">
-        <div className="col-start-1 justify-self-start">
+      {/* From md, three columns keep the nav centered whether or not the right-hand
+          button is shown. Below md the nav is hidden, so two columns: the logo's can
+          shrink, which keeps the menu button on screen when the reader's text size is large. */}
+      <div className="mx-auto grid h-16 max-w-280 grid-cols-[minmax(0,1fr)_auto] items-center gap-6 px-4 sm:h-18 sm:px-6 md:grid-cols-[1fr_auto_1fr]">
+        <div className="col-start-1 min-w-0 max-w-full justify-self-start">
           <Logo />
         </div>
         <nav aria-label="Main" className="col-start-2 hidden items-center gap-7 md:flex">
@@ -56,11 +56,11 @@ export function SiteHeader() {
             </Link>
           ))}
         </nav>
-        <div className="col-start-3 flex items-center gap-2 justify-self-end">
+        <div className="col-start-2 flex items-center gap-2 justify-self-end md:col-start-3">
           {/* On /check this would link to the page you're already on. Below sm it
               moves into the menu: logo, button and menu don't fit one phone row. */}
           {pathname !== "/check" && (
-            <Button asChild size="sm" variant={ctaVariant} className="hidden h-9 px-4 sm:inline-flex pointer-coarse:h-11">
+            <Button asChild size="sm" variant={ctaVariant} className="hidden h-9 px-4 whitespace-nowrap sm:inline-flex pointer-coarse:h-11">
               <Link href="/check">
                 Check your eligibility
                 <ArrowRight aria-hidden="true" className="transition-transform duration-150 motion-safe:pointer-fine:group-hover/button:translate-x-0.5" />

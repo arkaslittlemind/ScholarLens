@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowRight, Menu, X } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, m } from "motion/react";
 import Link from "next/link";
 import { Dialog } from "radix-ui";
 import { useEffect, useRef, useState } from "react";
@@ -66,7 +66,7 @@ export function MobileMenu({ links, pathname, showCta }: MobileMenuProps) {
           <Dialog.Portal forceMount key="mobile-menu">
             {/* Starts below the header, so the header and its close button stay readable. */}
             <Dialog.Overlay asChild forceMount>
-              <motion.div
+              <m.div
                 className="fixed inset-x-0 top-16 bottom-0 z-30 bg-ink/20 sm:top-18 md:hidden"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1, transition: { duration: 0.2, ease: EASE_OUT } }}
@@ -88,7 +88,7 @@ export function MobileMenu({ links, pathname, showCta }: MobileMenuProps) {
                   and stacked translucency loses legibility. Enters and leaves along the
                   same path, out of the header; a critically damped spring in, a quicker
                   tween out. */}
-              <motion.div
+              <m.div
                 className="fixed inset-x-0 top-16 z-40 origin-top rounded-b-2xl border-b border-hairline bg-paper px-4 pb-6 shadow-lift outline-none motion-reduce:transform-none! sm:top-18 sm:px-6 md:hidden"
                 initial={{ opacity: 0, transform: "translateY(-8px) scale(0.98)" }}
                 animate={{
@@ -133,7 +133,7 @@ export function MobileMenu({ links, pathname, showCta }: MobileMenuProps) {
                 <Dialog.Close className="sr-only focus-visible:not-sr-only focus-visible:mt-4 focus-visible:inline-flex focus-visible:rounded-full focus-visible:bg-tint focus-visible:px-3 focus-visible:py-1.5 focus-visible:text-caption focus-visible:font-semibold focus-visible:text-ink">
                   Close menu
                 </Dialog.Close>
-              </motion.div>
+              </m.div>
             </Dialog.Content>
           </Dialog.Portal>
         )}

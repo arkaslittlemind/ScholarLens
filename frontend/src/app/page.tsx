@@ -99,7 +99,7 @@ export default function Home() {
             </Reveal>
             <div className="relative">
               <DrawLine className="absolute top-5 right-0 left-0 hidden h-px bg-input md:block" />
-              <ol className="relative grid gap-10 md:grid-cols-3 md:gap-8">
+              <ol className="relative grid grid-cols-1 gap-10 md:grid-cols-3 md:gap-8">
                 {STEPS.map((step, index) => (
                   <li key={step.title}>
                     <Reveal delay={0.15 + index * 0.08} className="flex flex-col gap-4">
@@ -144,7 +144,7 @@ export default function Home() {
 
         {/* FAQ */}
         <section id="faq" className="scroll-mt-20 bg-tint">
-          <div className="mx-auto grid max-w-280 gap-10 px-4 py-24 sm:px-6 md:grid-cols-[0.8fr_1.2fr] md:py-32">
+          <div className="mx-auto grid grid-cols-1 max-w-280 gap-10 px-4 py-24 sm:px-6 md:grid-cols-[0.8fr_1.2fr] md:py-32">
             <Reveal className="flex flex-col gap-4">
               <h2 className="font-display type-h2">Common questions</h2>
               <p className="text-body-sm leading-relaxed text-ink-secondary">

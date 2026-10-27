@@ -29,7 +29,7 @@ export function TrafficSection({ traffic }: TrafficSectionProps) {
         Last {traffic.window_seconds / 3600} hours, {traffic.step_seconds / 60}-minute steps,
         times in UTC.
       </p>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <TrendChart
           title="Request rate"
           unit="requests per second"
