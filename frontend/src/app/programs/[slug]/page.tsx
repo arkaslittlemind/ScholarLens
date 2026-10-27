@@ -120,7 +120,7 @@ export default async function ProgramPage({ params }: PageProps<"/programs/[slug
                 href={program.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex w-fit items-center gap-1 rounded-sm text-sm font-semibold text-ink underline decoration-hairline underline-offset-4 transition-colors duration-150 hover:decoration-ink"
+                className="inline-flex w-fit items-center gap-1 rounded-sm text-sm font-semibold text-ink underline decoration-hairline underline-offset-4 transition-colors duration-150 hover:decoration-ink pointer-coarse:min-h-11"
               >
                 Read the official rules on {officialHost}
                 <ArrowUpRight aria-hidden="true" className="size-4" />
