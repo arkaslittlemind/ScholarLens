@@ -77,20 +77,14 @@ test("every program page has its own title, canonical URL and description", asyn
   expect(descriptions.size).toBe(COVERED_PROGRAMS.length);
 });
 
-test("the landing rail links each program, and only the visible copy is focusable", async ({ page }) => {
+test("the landing page links each program once, grouped as federal and state", async ({ page }) => {
   await page.goto("/");
-  const visible = page.getByRole("list", { name: "Programs covered" }).getByRole("link");
-  await expect(visible).toHaveCount(COVERED_PROGRAMS.length);
-  await expect(visible.first()).toHaveAttribute("href", programPath(COVERED_PROGRAMS[0].slug));
-
-  const duplicate = page.locator('ul[aria-hidden="true"] a');
-  await expect(duplicate).toHaveCount(COVERED_PROGRAMS.length);
-  for (const link of await duplicate.all()) {
-    await expect(link).toHaveAttribute("tabindex", "-1");
+  const programs = page.locator("#programs");
+  const links = programs.getByRole("link");
+  await expect(links).toHaveCount(COVERED_PROGRAMS.length);
+  for (const program of COVERED_PROGRAMS) {
+    await expect(programs.locator(`a[href="${programPath(program.slug)}"]`)).toHaveCount(1);
   }
-
-  // A focused chip must not slide away while it has focus.
-  await visible.first().focus();
-  const track = page.getByRole("list", { name: "Programs covered" }).locator("..");
-  await expect(track).toHaveCSS("animation-play-state", "paused");
+  await expect(programs.getByRole("heading", { name: "Federal grants (3)" })).toBeVisible();
+  await expect(programs.getByRole("heading", { name: "State programs (7)" })).toBeVisible();
 });
