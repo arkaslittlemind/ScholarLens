@@ -78,20 +78,24 @@ that the API validates and grounds before responding.
 
 ## Evaluation
 
-25 hand-labeled student profiles, each answered 3 times (75 answers), against
-the production deployment on 2026-10-05 with `gemini-3.8-flash` and
-`gemini-embedding-001`:
+28 hand-labeled student profiles, each answered 3 times (84 answers), run
+locally on 2026-10-27 against the ingested knowledge base with
+`gemini-3.8-flash` and `gemini-embedding-001`:
 
 | Metric | Result | Target |
 | --- | --- | --- |
-| Eligibility accuracy: the verdict matches the label | 93.3% | above 80% |
-| Citation accuracy: the quoted rule and program match the knowledge base | 97.0% | above 70% |
-| Hallucination rate: eligible with no citation, or a rule not in the knowledge base | 1.4% | below 10% |
-| Consistency: the same verdict across the 3 repeats | 92.0% | none |
+| Eligibility accuracy: the verdict matches the label | 97.6% | above 80% |
+| Citation accuracy: the quoted rule and program match the knowledge base | 93.9% | above 70% |
+| Hallucination rate: eligible with no citation, or a rule not in the knowledge base | 0.0% | below 10% |
+| Consistency: the same verdict across the 3 repeats | 92.9% | none |
 
-Mean latency was 7.6 s per answer with 1.01 tool calls, at about Rs 0.47 of
-model usage per answer. Run it with `python -m app.evaluation`; each run is
-appended to `data/evaluation-runs.jsonl` and shown on the AI quality dashboard.
+Mean latency was 8.9 s per answer (8.4 s from the knowledge base, 12.8 s when
+it searched the web) with 1.11 tool calls, at about Rs 0.47 of model usage per
+answer. The citation misses all named the right program but quoted a different
+clause of it than the label expects. Run it with `python -m app.evaluation`;
+each run is appended to `data/evaluation-runs.jsonl` and shown on the AI
+quality dashboard. The screenshot below is from the earlier production run on
+2026-10-05.
 
 ![Grafana AI quality dashboard for production: eligibility accuracy 93%, citation accuracy 97%, hallucination rate 1%, consistency 92%, 7.60 s average latency, and trend charts against the 80%, 70%, and 10% targets](docs/screenshots/ai-quality.png)
 
