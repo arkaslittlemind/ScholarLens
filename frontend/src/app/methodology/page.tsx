@@ -96,7 +96,7 @@ export default function Methodology() {
           </div>
         </section>
 
-        <div className="mx-auto grid max-w-280 gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-20 lg:py-24">
+        <div className="mx-auto grid grid-cols-1 max-w-280 gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-20 lg:py-24">
           <nav aria-label="On this page" className="hidden lg:sticky lg:top-28 lg:block lg:self-start">
             <p className="type-eyebrow text-ink-secondary">On this page</p>
             <ol className="mt-4 flex flex-col gap-1 border-l border-hairline">
@@ -120,7 +120,7 @@ export default function Methodology() {
                 eligibility rules for {COVERED_PROGRAMS.length} federal and state programs, split
                 into passages the agent can retrieve and quote.
               </p>
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {scopes.map((scope) => (
                   <div key={scope} className="rounded-xl border border-hairline p-4">
                     <p className="flex items-center gap-2 text-sm font-semibold text-ink">
@@ -180,7 +180,7 @@ export default function Methodology() {
             </Section>
 
             <Section id="what-you-get" number={4} title="What you get back.">
-              <dl className="grid gap-px overflow-hidden rounded-xl border border-hairline bg-hairline sm:grid-cols-2">
+              <dl className="grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-hairline bg-hairline sm:grid-cols-2">
                 {ANATOMY.map((item) => (
                   <div key={item.term} className="flex flex-col gap-1 bg-paper p-5">
                     <dt className="text-sm font-semibold text-ink">{item.term}</dt>

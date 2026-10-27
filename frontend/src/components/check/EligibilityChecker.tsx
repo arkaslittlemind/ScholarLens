@@ -2,7 +2,7 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { AlertCircle } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, m } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { AgentActivitySteps } from "@/components/check/AgentActivitySteps";
 import { EligibilityForm } from "@/components/check/EligibilityForm";
@@ -126,7 +126,7 @@ export function EligibilityChecker() {
             two never stack and jump the layout. Exit is quicker than enter. */}
         <AnimatePresence mode="wait" initial={false}>
           {mutation.isPending && (
-            <motion.div
+            <m.div
               key="activity"
               className="motion-reduce:transform-none!"
               initial={{ opacity: 0, transform: "translateY(8px)" }}
@@ -134,7 +134,7 @@ export function EligibilityChecker() {
               exit={{ opacity: 0, transition: { duration: 0.12, ease: EASE_OUT } }}
             >
               <AgentActivitySteps />
-            </motion.div>
+            </m.div>
           )}
           {mutation.isSuccess && <VerdictCard key="verdict" result={mutation.data} onAddDetails={handleAddDetails} />}
         </AnimatePresence>

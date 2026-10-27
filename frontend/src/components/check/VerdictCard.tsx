@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowUpRight, BookCheck, CheckCircle2, CircleDot, Globe, Info, PencilLine, XCircle } from "lucide-react";
-import { motion, useReducedMotion, type Variants } from "motion/react";
+import { m, useReducedMotion, type Variants } from "motion/react";
 import { StreamingSummary, summaryRevealDelay } from "@/components/check/StreamingSummary";
 import { EASE_IN_OUT, EASE_OUT } from "@/components/motion/easing";
 import { Button } from "@/components/ui/button";
@@ -119,7 +119,7 @@ function SourceLink({ url, label }: SourceLinkProps) {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="group inline-flex w-fit items-center gap-1 rounded-sm font-semibold text-ink underline decoration-input underline-offset-4 transition-colors duration-150 hover:decoration-ink"
+      className="group inline-flex w-fit items-center gap-1 rounded-sm font-semibold text-ink underline decoration-input underline-offset-4 transition-colors duration-150 hover:decoration-ink pointer-coarse:min-h-11"
     >
       {label} {httpUrl.hostname}
       <span className="sr-only"> (opens in a new tab)</span>
@@ -216,14 +216,14 @@ function VerdictRule({ clause, source, sweepDelay, awaitingDetails, fromWeb }: V
         &ldquo;
         {/* The marker sweep: a gradient whose width grows behind the text. Rust Wash alone
             barely differs from the tint panel, so the stroke is rust itself at low strength. */}
-        <motion.span
+        <m.span
           className="box-decoration-clone bg-linear-to-r from-rust/20 to-rust/20 bg-no-repeat"
           initial={{ backgroundSize: "0% 100%" }}
           animate={{ backgroundSize: "100% 100%" }}
           transition={{ duration: 0.8, ease: EASE_IN_OUT, delay: sweepDelay }}
         >
           {clause}
-        </motion.span>
+        </m.span>
         &rdquo;
       </blockquote>
       {source && (
@@ -307,7 +307,7 @@ export function VerdictCard({ result, onAddDetails }: VerdictCardProps) {
   };
 
   return (
-    <motion.div
+    <m.div
       initial="hidden"
       animate="shown"
       // Leaving on a new check: a quick fade instead of the tall card vanishing in one frame.
@@ -316,21 +316,21 @@ export function VerdictCard({ result, onAddDetails }: VerdictCardProps) {
       className="overflow-hidden rounded-2xl border border-hairline bg-paper shadow-card"
     >
       <div className={`flex flex-col items-start gap-3 border-b border-hairline px-6 py-6 sm:px-8 ${meta.headerClassName}`}>
-        <motion.div
+        <m.div
           variants={result.status === "not_eligible" ? rise : settle}
           className={`motion-reduce:transform-none! inline-flex origin-left items-center gap-1.5 rounded-full px-2.5 py-1 text-caption font-semibold ${meta.badgeClassName}`}
         >
           <Icon aria-hidden="true" className="size-4" />
           {verdictLabel(result)}
-        </motion.div>
-        <motion.h2 variants={rise} className="motion-reduce:transform-none! font-display text-title leading-tight text-ink wrap-anywhere sm:text-title-lg">
+        </m.div>
+        <m.h2 variants={rise} className="motion-reduce:transform-none! font-display text-title leading-tight text-ink wrap-anywhere sm:text-title-lg">
           {result.source ? result.source.program : awaitsDetails(result) ? "We need a few more details" : "Your result"}
-        </motion.h2>
+        </m.h2>
         {origin && OriginIcon && (
-          <motion.p variants={rise} className="motion-reduce:transform-none! flex items-start gap-2 text-body-sm text-ink-secondary">
+          <m.p variants={rise} className="motion-reduce:transform-none! flex items-start gap-2 text-body-sm text-ink-secondary">
             <OriginIcon aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
             {origin.text}
-          </motion.p>
+          </m.p>
         )}
       </div>
 
@@ -339,9 +339,9 @@ export function VerdictCard({ result, onAddDetails }: VerdictCardProps) {
       </div>
 
       {/* One sequence for everything after the summary, so the footer still comes last. */}
-      <motion.div variants={followSummary}>
+      <m.div variants={followSummary}>
         <div className="flex flex-col gap-6 px-6 pt-6 pb-6 sm:px-8 sm:pb-8">
-          <motion.div variants={rise} className="motion-reduce:transform-none!">
+          <m.div variants={rise} className="motion-reduce:transform-none!">
             <VerdictRule
               clause={result.supporting_clause}
               source={result.source}
@@ -349,16 +349,16 @@ export function VerdictCard({ result, onAddDetails }: VerdictCardProps) {
               awaitingDetails={result.missing_info.length > 0}
               fromWeb={result.source_origin === "web"}
             />
-          </motion.div>
+          </m.div>
 
           {result.reasons.length > 0 && (
-            <motion.div variants={rise} className="motion-reduce:transform-none!">
+            <m.div variants={rise} className="motion-reduce:transform-none!">
               <VerdictList id="verdict-reasons" heading="Why" items={result.reasons} />
-            </motion.div>
+            </m.div>
           )}
 
           {result.missing_info.length > 0 && (
-            <motion.div variants={rise} className="motion-reduce:transform-none! flex gap-3 rounded-xl border border-dashed border-rust/50 p-4">
+            <m.div variants={rise} className="motion-reduce:transform-none! flex gap-3 rounded-xl border border-dashed border-rust/50 p-4">
               <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-rust-text" />
               <div>
                 <p className="text-sm font-semibold text-ink">This result may change with more information:</p>
@@ -374,36 +374,36 @@ export function VerdictCard({ result, onAddDetails }: VerdictCardProps) {
                   </Button>
                 )}
               </div>
-            </motion.div>
+            </m.div>
           )}
 
           {result.next_steps.length > 0 && (
-            <motion.div variants={rise} className="motion-reduce:transform-none!">
+            <m.div variants={rise} className="motion-reduce:transform-none!">
               <VerdictList id="verdict-next-steps" heading="Next steps" items={result.next_steps} ordered />
-            </motion.div>
+            </m.div>
           )}
 
           {result.alternatives.length > 0 && (
-            <motion.div variants={rise} className="motion-reduce:transform-none!">
+            <m.div variants={rise} className="motion-reduce:transform-none!">
               <VerdictAlternatives alternatives={result.alternatives} />
-            </motion.div>
+            </m.div>
           )}
 
-          <motion.div variants={rise} className="motion-reduce:transform-none! grid gap-6 sm:grid-cols-2">
+          <m.div variants={rise} className="motion-reduce:transform-none! grid grid-cols-1 gap-6 sm:grid-cols-2">
             <VerdictSource
               source={result.source}
               showDocument={!result.supporting_clause}
               awaitingDetails={awaitsDetails(result)}
             />
             <VerdictTrace steps={result.tool_trace} />
-          </motion.div>
+          </m.div>
         </div>
 
-        <motion.p variants={rise} className="motion-reduce:transform-none! border-t border-hairline bg-tint/60 px-6 py-4 text-caption text-ink-secondary sm:px-8">
+        <m.p variants={rise} className="motion-reduce:transform-none! border-t border-hairline bg-tint/60 px-6 py-4 text-caption text-ink-secondary sm:px-8">
           ScholarLens checks eligibility rules, not your chances of an award. Confirm details with the
           program before applying.
-        </motion.p>
-      </motion.div>
-    </motion.div>
+        </m.p>
+      </m.div>
+    </m.div>
   );
 }

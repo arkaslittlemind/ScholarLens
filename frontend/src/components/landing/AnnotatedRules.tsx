@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import { m } from "motion/react";
 import type { ReactNode } from "react";
 import { EASE_IN_OUT } from "@/components/motion/easing";
 import { Reveal } from "@/components/motion/Reveal";
@@ -61,7 +61,7 @@ function NoteText({ index }: { index: number }) {
 // is not movement across the page, so it plays under reduced motion too.
 function Highlight({ children, delay }: { children: ReactNode; delay: number }) {
   return (
-    <motion.mark
+    <m.mark
       className="box-decoration-clone bg-linear-to-r from-rust-tint to-rust-tint bg-no-repeat text-ink"
       initial={{ backgroundSize: "0% 100%" }}
       whileInView={{ backgroundSize: "100% 100%" }}
@@ -69,7 +69,7 @@ function Highlight({ children, delay }: { children: ReactNode; delay: number }) 
       transition={{ duration: 0.9, ease: EASE_IN_OUT, delay }}
     >
       {children}
-    </motion.mark>
+    </m.mark>
   );
 }
 
@@ -86,7 +86,7 @@ export function AnnotatedRules() {
         </p>
       </Reveal>
 
-      <div className="grid gap-10 lg:grid-cols-[1.15fr_1fr] lg:gap-14">
+      <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1.15fr_1fr] lg:gap-14">
         <Reveal className="rounded-2xl border border-hairline bg-paper p-6 shadow-card sm:p-8">
           <p className="text-caption text-ink-secondary">
             Federal Pell Grant, eligibility summary, studentaid.gov
@@ -99,7 +99,7 @@ export function AnnotatedRules() {
                     <Highlight delay={0.2 + rule.note * 0.25}>{rule.text}</Highlight>
                     <sup className="ml-1 font-display text-sm font-semibold text-rust-text">{rule.note}</sup>
                     {rule.quotedAbove && (
-                      <span className="mt-1 block font-display text-caption text-rust-text italic">
+                      <span className="mt-1 block font-display text-caption text-rust-text">
                         quoted in the US example above
                       </span>
                     )}

@@ -40,7 +40,7 @@ export default function Programs() {
           </div>
         </section>
 
-        <div className="mx-auto grid max-w-280 items-start gap-6 px-4 py-16 sm:grid-cols-2 sm:px-6 sm:py-20 lg:grid-cols-3">
+        <div className="mx-auto grid grid-cols-1 max-w-280 items-start gap-6 px-4 py-16 sm:grid-cols-2 sm:px-6 sm:py-20 lg:grid-cols-3">
           {scopes.map((scope) => {
             const headingId = `scope-${scope.toLowerCase().replaceAll(" ", "-")}`;
             return (

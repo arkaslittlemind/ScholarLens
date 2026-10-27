@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import { m } from "motion/react";
 import { EASE_OUT } from "@/components/motion/easing";
 
 interface MarkerUnderlineProps {
@@ -18,7 +18,7 @@ export function MarkerUnderline({ className, delay = 0.35 }: MarkerUnderlineProp
       preserveAspectRatio="none"
       className={className}
     >
-      <motion.path
+      <m.path
         d="M4 16C68 7 150 4 226 6c58 2 112 6 170 3"
         stroke="var(--color-rust)"
         strokeWidth="7"
