@@ -24,7 +24,8 @@ interface Example {
 
 // Each clause is quoted word for word from its official source, so the preview
 // never shows a rule ScholarLens could not actually quote. The Pell clause comes
-// from the corpus document; the scheme clause from education.gov.in/node/255.
+// from the corpus document; the scheme clause from section 4(i) of the PM-USP CSSS
+// guidelines (scholarships.gov.in/public/schemeGuidelines/CSSS_GUIDLINES_07022024_updated.pdf).
 // Both are partial matches on purpose: neither student gave the one number their
 // program turns on, and a confident "eligible" here would contradict the page.
 const EXAMPLES: Example[] = [
@@ -71,9 +72,9 @@ const EXAMPLES: Example[] = [
     fromWeb: true,
     missing: "Your Class XII percentile within your board and stream",
     clause:
-      "above 80th percentile of successful candidates in the relevant stream from a particular Board of Examination in class XII",
-    clauseSource: "Ministry of Education, India",
-    sourceHost: "education.gov.in",
+      "Students who are above 80th percentile of successful candidates in the relevant stream from the respective Board of Examination in Class XII of 10+2 pattern or equivalent",
+    clauseSource: "Scheme guidelines, Ministry of Education, India",
+    sourceHost: "scholarships.gov.in",
     annotations: [
       { text: "labeled as a\nweb answer", className: "top-[10%]" },
       { text: "what it still\nneeds to know", className: "top-[77%]" },
@@ -182,12 +183,10 @@ function ExampleResult({ example, switched }: { example: Example; switched: bool
           <p className="text-caption font-semibold text-ink">The rule</p>
           <p className="mt-1.5 font-display text-body-lg leading-snug text-ink">
             &ldquo;
-            {example.fromWeb && "…"}
             {/* The marker sweep: a gradient whose width grows behind the text. */}
             <span className={`animate-marker-sweep box-decoration-clone bg-linear-to-r from-rust-tint to-rust-tint bg-no-repeat ${delay.sweep}`}>
               {example.clause}
             </span>
-            {example.fromWeb && "…"}
             &rdquo;
           </p>
           <p className="mt-2 text-caption text-ink-secondary">{example.clauseSource}</p>
