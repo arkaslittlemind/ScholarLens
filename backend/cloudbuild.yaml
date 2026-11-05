@@ -1,0 +1,87 @@
+# The build source is the repository root, because a GitHub trigger checks out the whole repo.
+# How to run it (deploy service account, substitutions): docs/readme-versions/README-2026-10-09.md,
+# Deploy. Per-account values are substitutions; secrets come from Secret Manager.
+
+substitutions:
+  _REGION: asia-south1
+  _SERVICE: scholarlens-backend
+  _REPOSITORY: scholarlens
+  _IMAGE: ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/backend:${BUILD_ID}
+  _FRONTEND_ORIGIN: ""
+  # Cloud Run's internal proxy range; never "*" (see the Deploy runbook, Client IP).
+  _FORWARDED_ALLOW_IPS: 169.254.0.0/16
+  _OTEL_EXPORTER_OTLP_ENDPOINT: ""
+  _GRAFANA_PROMETHEUS_URL: ""
+  _GRAFANA_PROMETHEUS_USER: ""
+
+options:
+  dynamicSubstitutions: true
+  # Required when the trigger runs as a user-specified service account.
+  logging: CLOUD_LOGGING_ONLY
+
+availableSecrets:
+  secretManager:
+    - versionName: projects/${PROJECT_ID}/secrets/GOOGLE_API_KEY/versions/latest
+      env: GOOGLE_API_KEY
+
+steps:
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    entrypoint: bash
+    # The key reaches the Dockerfile only as a BuildKit secret mount, never as a build arg.
+    secretEnv: [GOOGLE_API_KEY]
+    args:
+      - -c
+      - >-
+        docker buildx build --progress=plain
+        --build-arg BAKE_INDEX=true
+        --secret id=google_api_key,env=GOOGLE_API_KEY
+        --tag ${_IMAGE}
+        backend
+
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args: [push, "${_IMAGE}"]
+
+  - id: deploy
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: bash
+    # $$ is a literal $ for bash; ${_NAME} is filled in by Cloud Build before bash runs.
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        # An empty origin would deploy a service that every browser request fails CORS on.
+        if [ -z "${_FRONTEND_ORIGIN}" ]; then
+          echo "_FRONTEND_ORIGIN substitution is required" >&2
+          exit 1
+        fi
+        secrets="GOOGLE_API_KEY=GOOGLE_API_KEY:latest,TAVILY_API_KEY=TAVILY_API_KEY:latest,OPS_API_TOKEN=OPS_API_TOKEN:latest"
+        # Telemetry and the /ops trend charts are optional. Their secrets are attached only once
+        # their substitutions are set, so the service deploys before Grafana is configured.
+        if [ -n "${_OTEL_EXPORTER_OTLP_ENDPOINT}" ]; then
+          secrets="$$secrets,OTEL_EXPORTER_OTLP_HEADERS=OTEL_EXPORTER_OTLP_HEADERS:latest"
+        fi
+        if [ -n "${_GRAFANA_PROMETHEUS_URL}" ]; then
+          secrets="$$secrets,GRAFANA_PROMETHEUS_TOKEN=GRAFANA_PROMETHEUS_TOKEN:latest"
+        fi
+        # Scale to zero keeps it inside the free tier. One instance at most, because embedded
+        # Chroma allows one process and the rate limits live in that process's memory.
+        # --cpu-throttling allocates (and bills) CPU only while a request is handled. The
+        # runtime service account can read the service's secrets and nothing else. "^|^" makes
+        # "|" the env-var list delimiter, so values may contain commas.
+        gcloud run deploy ${_SERVICE} \
+          --image=${_IMAGE} \
+          --region=${_REGION} \
+          --allow-unauthenticated \
+          --service-account=scholarlens-runtime@${PROJECT_ID}.iam.gserviceaccount.com \
+          --min-instances=0 \
+          --max-instances=1 \
+          --cpu=1 \
+          --memory=1Gi \
+          --cpu-throttling \
+          --startup-probe=httpGet.path=/health,periodSeconds=2,timeoutSeconds=2,failureThreshold=30 \
+          --set-secrets="$$secrets" \
+          --set-env-vars="^|^FRONTEND_ORIGIN=${_FRONTEND_ORIGIN}|CHROMA_PERSIST_PATH=/app/data/chroma|EVALUATION_RUNS_PATH=data/evaluation/production-runs.jsonl|FORWARDED_ALLOW_IPS=${_FORWARDED_ALLOW_IPS}|OTEL_EXPORTER_OTLP_ENDPOINT=${_OTEL_EXPORTER_OTLP_ENDPOINT}|OTEL_RESOURCE_ATTRIBUTES=deployment.environment=production|GRAFANA_PROMETHEUS_URL=${_GRAFANA_PROMETHEUS_URL}|GRAFANA_PROMETHEUS_USER=${_GRAFANA_PROMETHEUS_USER}"
+
+timeout: 1200s
