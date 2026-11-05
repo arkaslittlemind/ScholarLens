@@ -1,0 +1,17 @@
+# A manual `gcloud builds submit .` needs only backend/: the build context and cloudbuild.yaml.
+# Uploading just that folder keeps local-only files (excluded through .git/info/exclude, which
+# gcloud does not read) off Cloud Build.
+/*
+!/backend/
+#!include:.gitignore
+# gcloud reads only this directory's .gitignore, so backend/.gitignore's local state is
+# repeated here.
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+backend/data/chroma/
+*.sqlite3
+backend/data/ingestion-status.json*
+backend/data/evaluation-runs.jsonl

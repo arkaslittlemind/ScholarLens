@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     chroma_host: str = "127.0.0.1"
     chroma_port: int = 8001
     chroma_collection_name: str = "scholarship_programs"
-    # Set in production to run Chroma embedded on the service's volume instead of as a server.
+    # Set in production to run Chroma embedded from the index baked into the image, not a server.
     chroma_persist_path: str | None = None
     agent_model: str = "google:gemini-3.8-flash"
     embedding_model: str = "gemini-embedding-001"
@@ -63,29 +63,38 @@ class Settings(BaseSettings):
 
     @field_validator("frontend_origin")
     @classmethod
-    def _single_origin(cls, value: str) -> str:
-        # CORS compares origins byte for byte, so a trailing slash or path silently blocks
-        # every browser request instead of failing loudly.
-        error = "must be a single origin such as https://app.example.com"
-        parts = urlsplit(value)
-        try:
-            port = parts.port
-        except ValueError as exc:
-            raise ValueError(error) from exc
-        hostname = parts.hostname or ""
-        default_port = {"http": 80, "https": 443}.get(parts.scheme)
-        if (
-            default_port is None
-            or not re.fullmatch(r"[a-z0-9.-]+|[0-9a-f:.]+", hostname)
-            or port in (0, default_port)
-        ):
-            raise ValueError(error)
-        # Browsers send the origin lowercased and without a default port, so anything but that
-        # exact form (case, empty port, path, userinfo) would never match.
-        host = f"[{hostname}]" if ":" in hostname else hostname
-        if value != f"{parts.scheme}://{host}" + (f":{port}" if port is not None else ""):
-            raise ValueError(error)
-        return value
+    def _exact_origins(cls, value: str) -> str:
+        """One origin, or several separated by commas, each in the exact form a browser sends."""
+        return ",".join(_exact_origin(item.strip()) for item in value.split(","))
+
+    @property
+    def frontend_origins(self) -> list[str]:
+        return self.frontend_origin.split(",")
+
+
+def _exact_origin(value: str) -> str:
+    # CORS compares origins byte for byte, so a trailing slash or path silently blocks
+    # every browser request instead of failing loudly.
+    error = "must be an origin such as https://app.example.com, or several separated by commas"
+    parts = urlsplit(value)
+    try:
+        port = parts.port
+    except ValueError as exc:
+        raise ValueError(error) from exc
+    hostname = parts.hostname or ""
+    default_port = {"http": 80, "https": 443}.get(parts.scheme)
+    if (
+        default_port is None
+        or not re.fullmatch(r"[a-z0-9.-]+|[0-9a-f:.]+", hostname)
+        or port in (0, default_port)
+    ):
+        raise ValueError(error)
+    # Browsers send the origin lowercased and without a default port, so anything but that
+    # exact form (case, empty port, path, userinfo) would never match.
+    host = f"[{hostname}]" if ":" in hostname else hostname
+    if value != f"{parts.scheme}://{host}" + (f":{port}" if port is not None else ""):
+        raise ValueError(error)
+    return value
 
 
 def secret_value(secret: SecretStr | None) -> str:

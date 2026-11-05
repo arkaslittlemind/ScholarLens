@@ -39,6 +39,37 @@ def test_frontend_origin_rejects_anything_a_browser_would_not_send(make_settings
         make_settings(frontend_origin=origin)
 
 
+def test_a_single_frontend_origin_is_the_only_allowed_origin(make_settings):
+    settings = make_settings(frontend_origin="https://app.example.com")
+    assert settings.frontend_origins == ["https://app.example.com"]
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "https://app.example.com,https://www.example.org",
+        "https://app.example.com, https://www.example.org",
+    ],
+)
+def test_frontend_origin_accepts_a_comma_separated_list(make_settings, value):
+    settings = make_settings(frontend_origin=value)
+    assert settings.frontend_origins == ["https://app.example.com", "https://www.example.org"]
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "https://app.example.com,https://www.example.org/",
+        "https://app.example.com,",
+        "https://app.example.com,,https://www.example.org",
+        ",https://app.example.com",
+    ],
+)
+def test_frontend_origin_list_rejects_any_bad_or_empty_entry(make_settings, value):
+    with pytest.raises(ValidationError):
+        make_settings(frontend_origin=value)
+
+
 def test_secrets_stay_out_of_reprs_and_dumps(make_settings):
     settings = make_settings(google_api_key="real-key-value")
     assert "real-key-value" not in repr(settings)

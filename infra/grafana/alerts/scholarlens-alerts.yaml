@@ -4,17 +4,8 @@ groups:
   - name: scholarlens-service
     interval: 1m
     rules:
-      # The ingestion gauge is exported every interval while its status file exists,
-      # even with no traffic. HTTP series vanish after a restart until the first request.
-      - alert: ScholarLensMetricsMissing
-        expr: absent_over_time(scholarlens_ingestion_last_run_timestamp_seconds{job="scholarlens-api",deployment_environment="production"}[10m])
-        for: 5m
-        labels:
-          severity: critical
-        annotations:
-          summary: No production metrics for 15 minutes. The backend is down or its export to Grafana Cloud fails.
-          description: Check the Railway service status, GET /health, and the Railway logs for "Failed to export".
-
+      # No "metrics missing" alert: Cloud Run scales the service to zero when idle, so an
+      # absence of production metrics is the normal state, not a sign of an outage.
       - alert: ScholarLensServerErrors
         expr: sum(increase(http_server_duration_milliseconds_count{job="scholarlens-api",deployment_environment="production",http_status_code=~"5.."}[15m])) >= 3
         for: 0m

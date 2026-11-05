@@ -62,6 +62,20 @@ def test_cors_preflight_is_allowed_only_for_the_configured_origin(client):
     assert "access-control-allow-origin" not in foreign.headers
 
 
+def test_cors_preflight_is_allowed_for_every_configured_origin(api_client):
+    second = "https://www.example.org"
+    client = api_client(frontend_origin=f"{ALLOWED_ORIGIN},{second}")
+    preflight = {"Access-Control-Request-Method": "POST"}
+
+    for origin in (ALLOWED_ORIGIN, second):
+        response = client.options("/eligibility", headers={"Origin": origin, **preflight})
+        assert response.headers["access-control-allow-origin"] == origin
+    foreign = client.options(
+        "/eligibility", headers={"Origin": "https://evil.example.com", **preflight}
+    )
+    assert "access-control-allow-origin" not in foreign.headers
+
+
 def test_retry_after_is_exposed_to_the_allowed_origin(client):
     response = client.post("/eligibility", json=_BODY, headers={"Origin": ALLOWED_ORIGIN})
     assert response.headers["access-control-allow-origin"] == ALLOWED_ORIGIN
