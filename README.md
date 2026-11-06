@@ -208,6 +208,8 @@ docs/          Screenshots, the SEO baseline, and earlier README versions
   endpoint to production observability.
 - [SEO baseline](docs/seo-baseline.md): Lighthouse and on-page measurements
   before and after the SEO work.
+- [Changelog](CHANGELOG.md): what changed in each release, and what is waiting
+  for the next one.
 
 ## Contributing
 

@@ -1,6 +1,6 @@
 [project]
 name = "scholarlens-backend"
-version = "0.1.0"
+version = "1.0.0"
 description = "ScholarLens API — FastAPI service for the Agentic RAG eligibility engine"
 readme = "README.md"
 requires-python = ">=3.11"

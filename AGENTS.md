@@ -76,6 +76,23 @@ multi-tenant admin. Don't build toward those unless the project plan changes.
 - Comment the why, not the what; delete comments that restate the code
 - No em dashes in generated docs, comments, or commit messages
 
+## Changelog
+
+`CHANGELOG.md` follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
+and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+- Every completed feature, fix, or rollback adds its entry under
+  `## [Unreleased]` in the same work commit, under Added, Changed, Deprecated,
+  Removed, Fixed, or Security.
+- Write entries for what a student or the maintainer notices, not for internal
+  refactors. Work that changes nothing anyone would notice adds no entry.
+- To cut a release, rename `Unreleased` to the new version and today's date,
+  choosing the version by SemVer, and add a fresh empty `Unreleased` above it.
+  Update the link references at the bottom, commit, then tag that commit with
+  an annotated `vX.Y.Z` tag and push the tag. Bump `version` in
+  `frontend/package.json`, `frontend/package-lock.json`, and
+  `backend/pyproject.toml` in the same commit.
+
 ## Commands
 
 ### Frontend (`frontend/`)
