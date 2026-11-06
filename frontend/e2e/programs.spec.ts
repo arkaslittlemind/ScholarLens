@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { expect, type Page, test } from "@playwright/test";
 import { COVERED_PROGRAMS, programPath } from "../src/lib/programs";
 
-const SITE_URL = "https://scholar-lens-kappa.vercel.app";
+const SITE_URL = "https://scholarlens.arkaslittlemind.com";
 
 // Read from the corpus so the test follows the rule text instead of copying it.
 const PELL_ENROLLMENT_RULE = readFileSync(join(process.cwd(), "../backend/data/programs/federal_pell_grant.md"), "utf8")

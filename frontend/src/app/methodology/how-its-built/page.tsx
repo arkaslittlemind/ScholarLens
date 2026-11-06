@@ -36,7 +36,7 @@ const PARTS = [
   },
   {
     term: "API",
-    body: "FastAPI on Railway. Every request and response is validated with Pydantic, and each visitor has a rate limit.",
+    body: "FastAPI on Google Cloud Run. Every request and response is validated with Pydantic, and each visitor has a rate limit.",
   },
   {
     term: "Agent",

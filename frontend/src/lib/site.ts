@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 
-// The one place the production hostname lives. Moving to a custom domain later
-// means changing this line, then adding redirects and re-verifying Search Console.
-export const SITE_URL = "https://scholar-lens-kappa.vercel.app";
+// The one place the production hostname lives. The old scholar-lens-kappa.vercel.app
+// host now 308s here (next.config.ts), so search engines carry its history over.
+export const SITE_URL = "https://scholarlens.arkaslittlemind.com";
 
-// Belongs to the Search Console URL-prefix property for SITE_URL; a new domain needs a new token.
-export const GOOGLE_SITE_VERIFICATION = "Y1G3d4WXB0oYTFD_5C336PP4zDh57hXcEwTAYdEw6ZA";
+// One token per Search Console URL-prefix property. The old vercel.app token can go
+// once that property's Change of Address to the custom domain completes.
+const OLD_VERCEL_PROPERTY_TOKEN = "Y1G3d4WXB0oYTFD_5C336PP4zDh57hXcEwTAYdEw6ZA";
+const CUSTOM_DOMAIN_PROPERTY_TOKEN = "bN_W5N96kGp3-O5Alk4bTMg1OdG7hhYiREZvDDU4U6g";
+export const GOOGLE_SITE_VERIFICATION = [OLD_VERCEL_PROPERTY_TOKEN, CUSTOM_DOMAIN_PROPERTY_TOKEN];
 
 export const SITE_NAME = "ScholarLens";
 

@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { COVERED_PROGRAMS, programPath } from "../src/lib/programs";
 
-const SITE_URL = "https://scholar-lens-kappa.vercel.app";
+const SITE_URL = "https://scholarlens.arkaslittlemind.com";
 
 const PAGES = [
   {
@@ -118,9 +118,10 @@ for (const [path, types] of Object.entries(JSON_LD_TYPES)) {
   });
 }
 
-test("/ carries the Google Search Console verification tag", async ({ page }) => {
+test("/ carries a verification tag for the old and the new Search Console property", async ({ page }) => {
   await page.goto("/");
-  const tag = page.locator('meta[name="google-site-verification"]');
-  await expect(tag).toHaveCount(1);
-  await expect(tag).toHaveAttribute("content", "Y1G3d4WXB0oYTFD_5C336PP4zDh57hXcEwTAYdEw6ZA");
+  const tags = page.locator('meta[name="google-site-verification"]');
+  await expect(tags).toHaveCount(2);
+  await expect(tags.nth(0)).toHaveAttribute("content", "Y1G3d4WXB0oYTFD_5C336PP4zDh57hXcEwTAYdEw6ZA");
+  await expect(tags.nth(1)).toHaveAttribute("content", "bN_W5N96kGp3-O5Alk4bTMg1OdG7hhYiREZvDDU4U6g");
 });

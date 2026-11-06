@@ -5,7 +5,7 @@ your situation in plain words, and ScholarLens tells you which programs you may
 qualify for, quoting the exact rule behind each answer and linking to the
 official page it came from.
 
-**[Live demo](https://scholar-lens-kappa.vercel.app)** ·
+**[Live demo](https://scholarlens.arkaslittlemind.com)** ·
 **[Technical guide](docs/readme-versions/README-2026-10-09.md)** ·
 **[Design docs](design-docs/)**
 
@@ -46,13 +46,13 @@ Grant, Cal Grant, NY TAP and Georgia HOPE.
 
 ### Architecture
 
-![ScholarLens architecture: the student's browser loads the Next.js app on Vercel, which calls the FastAPI service on Railway. The Pydantic AI agent inside it talks to Gemini, an embedded ChromaDB knowledge base, and Tavily web search, and the service sends traces, metrics, and logs to Grafana Cloud. A separate ingestion job fills ChromaDB.](docs/screenshots/architecture.png)
+![ScholarLens architecture: the student's browser loads the Next.js app on Vercel, which calls the FastAPI service on Google Cloud Run. The Pydantic AI agent inside it talks to Gemini, a ChromaDB knowledge base built into the service image, and Tavily web search, and the service sends traces, metrics, and logs to Grafana Cloud. A separate ingestion job fills ChromaDB.](docs/screenshots/architecture.png)
 
 The Next.js frontend on Vercel calls `POST /eligibility` on a FastAPI service
-on Railway. The service runs the agent on Google Gemini with two tools:
-`retrieve_program_rules`, which queries ChromaDB (embedded on a persistent
-volume in production), and `search_the_web`, which calls Tavily. An ingestion
-job chunks and embeds the program documents in `backend/data/programs/`.
+on Google Cloud Run. The service runs the agent on Google Gemini with two tools:
+`retrieve_program_rules`, which queries ChromaDB (embedded in production, from
+an index built into the container image rather than kept on a volume), and
+`search_the_web`, which calls Tavily. An ingestion job chunks and embeds the program documents in `backend/data/programs/`.
 Traces, metrics, and logs go to Grafana Cloud over OTLP.
 
 ### Request flow
@@ -108,7 +108,7 @@ quality dashboard. The screenshot below is from the earlier production run on
 | AI and retrieval | Google Gemini (`gemini-3.8-flash`, `gemini-embedding-001`), ChromaDB, Tavily |
 | Testing | pytest, Playwright, Ruff, ESLint, an evaluation pipeline |
 | Observability | OpenTelemetry, Grafana Cloud (Tempo, Prometheus, Loki) |
-| Hosting | Vercel (frontend), Railway (backend), Docker Compose for local development |
+| Hosting | Vercel (frontend), Google Cloud Run (backend), Docker Compose for local development |
 
 ## Getting started
 
@@ -200,7 +200,7 @@ docs/          Screenshots, the SEO baseline, and earlier README versions
 ## Documentation
 
 - [Technical guide](docs/readme-versions/README-2026-10-09.md): deployment to
-  Railway and Vercel, Grafana Cloud telemetry, metrics, dashboards, alerts, and
+  Google Cloud Run and Vercel, Grafana Cloud telemetry, metrics, dashboards, alerts, and
   the maintainer `/ops` page.
 - [Backend README](backend/README.md): timeouts, retries, dependency pinning,
   and ingestion details.
